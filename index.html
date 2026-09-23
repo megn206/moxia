@@ -175,6 +175,12 @@ header{
   display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);
 }
 .cats-shape-btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.cats-del{
+  width:26px;height:26px;border:1px solid var(--line);background:var(--input-bg);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--faint);
+  border-radius:50%;margin-left:auto;flex:none;line-height:1;
+}
+.cats-del:hover{border-color:#c0392b;color:#c0392b;background:#fdf0ee}
 .dock-body{padding:12px}
 .dock-panel .header-actions{
   flex-direction:column;align-items:stretch;flex-wrap:nowrap;gap:8px;min-width:150px;
@@ -3164,6 +3170,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   function buildRow(c, idx){
     var row=document.createElement('div');
     row.className='cats-row';
+    row.dataset.oi=idx;
     var colors=PALETTE.map(function(col){
       return '<button type="button" class="cats-swatch'+(col===c.color?' on':'')+'" data-color="'+col+'" style="background:'+col+'" title="'+col+'"></button>';
     }).join('');
@@ -3174,7 +3181,8 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       '<span class="preview" style="background:'+c.color+';border-radius:'+(c.shape==='square'||c.shape==='diamond'?'1px':'50%')+';transform:'+(c.shape==='diamond'?'rotate(45deg)':'none')+'"></span>'+
       '<input class="cat-name" data-idx="'+idx+'" value="'+esc(c.name)+'" maxlength="12">'+
       '<div class="cats-swatches">'+colors+'</div>'+
-      '<div class="cats-shapes">'+shapes+'</div>';
+      '<div class="cats-shapes">'+shapes+'</div>'+
+      '<button type="button" class="cats-del" title="删除分类">✕</button>';
     listEl.appendChild(row);
     row.querySelector('.cat-name').focus();
     row.querySelector('.cat-name').select();
@@ -3193,6 +3201,8 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   document.getElementById('btn-cats-cancel').addEventListener('click',function(){ modal.classList.remove('show'); });
   modal.addEventListener('click',function(e){ if(e.target===modal) modal.classList.remove('show'); });
   listEl.addEventListener('click',function(e){
+    var del=e.target.closest('.cats-del');
+    if(del){ del.closest('.cats-row').remove(); return; }
     var sw=e.target.closest('.cats-swatch');
     if(sw){
       var row=sw.closest('.cats-row');
@@ -3216,16 +3226,26 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var old=CATS.map(function(c){return {name:c.name,color:c.color,shape:c.shape||'circle'};});
     var next=[];
     listEl.querySelectorAll('.cats-row').forEach(function(row,i){
+      var prev=old[+row.dataset.oi]||null;
       var name=row.querySelector('.cat-name').value.trim()||('分类'+(i+1));
       var onSw=row.querySelector('.cats-swatch.on');
       var onSh=row.querySelector('.cats-shape-btn.on');
-      var defColor=old[i]?old[i].color:PALETTE[i%PALETTE.length];
-      next.push({name:name, color:onSw?onSw.dataset.color:defColor, shape:onSh?onSh.dataset.shape:'circle'});
+      var defColor=prev?prev.color:PALETTE[i%PALETTE.length];
+      var defShape=prev?(prev.shape||'circle'):'circle';
+      next.push({name:name, color:onSw?onSw.dataset.color:defColor, shape:onSh?onSh.dataset.shape:defShape});
     });
     var rename={};
-    old.forEach(function(o,i){ if(o.name!==next[i].name) rename[o.name]=next[i].name; });
+    old.forEach(function(o){
+      var matched=null;
+      next.forEach(function(n){ if(n.name===o.name) matched=n; });
+      if(matched && matched.name!==o.name) rename[o.name]=matched.name;
+    });
     if(Object.keys(rename).length){
       cards.forEach(function(c){ if(c.category && rename[c.category]) c.category=rename[c.category]; });
+    }
+    var removed=old.filter(function(o){ return !next.some(function(n){ return n.name===o.name; }); }).map(function(o){ return o.name; });
+    if(removed.length){
+      cards.forEach(function(c){ if(c.category && removed.indexOf(c.category)>=0) c.category='其他'; });
     }
     CATS=next;
     try{ localStorage.setItem(KEY+'-cats-custom', JSON.stringify(CATS)); }catch(e){}
