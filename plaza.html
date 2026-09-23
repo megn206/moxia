@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>墨匣 · 灵感广场</title>
+<style>
+:root{
+  --bg:#101118; --bg2:#151620; --card:#1a1c27; --card2:#20232f;
+  --line:#2a2d3d; --line2:#363a4d;
+  --accent:#c96f42; --accent-soft:rgba(201,111,66,.16); --accent-deep:#e8915f;
+  --ink:#e8e6f0; --ink-soft:#b9b6c8; --muted:#8a879c; --faint:#5f5d70;
+  --good:#6fc276; --bad:#e06666;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 500px at 80% -10%, rgba(201,111,66,.14), transparent 60%),
+    radial-gradient(900px 400px at -10% 110%, rgba(120,90,200,.12), transparent 60%),
+    var(--bg);
+  color:var(--ink); overflow:hidden;
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font-family:inherit}
+
+/* ---------- 顶栏 ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:50;height:56px;
+  display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:rgba(16,17,24,.82);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+header h1{
+  font-size:17px;font-weight:700;letter-spacing:1px;flex:1;
+  background:linear-gradient(90deg,#ffd9b0,#c96f42);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.icon-btn{
+  min-width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:var(--card);border:1px solid var(--line);font-size:15px;transition:.15s;
+}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-deep)}
+.ghost{
+  height:38px;padding:0 14px;border-radius:12px;font-size:13.5px;white-space:nowrap;
+  background:var(--card);border:1px solid var(--line);color:var(--ink-soft);
+}
+.ghost.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.ghost:active{transform:scale(.96)}
+
+/* ---------- 工具栏 ---------- */
+.bar{
+  position:fixed;top:56px;left:0;right:0;z-index:49;
+  display:flex;gap:8px;padding:10px 14px;background:rgba(16,17,24,.7);
+  border-bottom:1px solid var(--line);backdrop-filter:blur(10px);
+}
+.bar input{
+  flex:1;min-width:0;height:38px;padding:0 14px;border-radius:12px;font-size:14px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink);outline:none;
+}
+.bar input:focus{border-color:var(--accent)}
+.bar input::placeholder{color:var(--faint)}
+.cnt{font-size:12px;color:var(--muted);align-self:center;white-space:nowrap;padding:0 2px}
+
+/* ---------- 贴吧列表模式 ---------- */
+main{position:fixed;top:104px;left:0;right:0;bottom:0;overflow-y:auto;padding:12px 14px 80px;-webkit-overflow-scrolling:touch}
+.thread{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:14px 16px;margin-bottom:12px;transition:.15s;
+}
+.thread:active{background:var(--card2)}
+.thread-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.avatar{
+  width:34px;height:34px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#c96f42,#8a5bd8);
+}
+.nick{font-weight:600;font-size:14.5px}
+.time{font-size:11.5px;color:var(--faint);flex:1;text-align:right}
+.cat{
+  display:inline-block;font-size:11px;padding:1px 9px;border-radius:9px;margin:2px 0 7px;
+  background:var(--accent-soft);color:var(--accent-deep);
+}
+.thread .title{font-size:15.5px;font-weight:700;margin-bottom:5px;line-height:1.5}
+.thread .body{
+  font-size:13.8px;color:var(--ink-soft);line-height:1.75;white-space:pre-wrap;word-break:break-word;
+  display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+}
+.tags{margin-top:9px}
+.tag{
+  display:inline-block;font-size:11.5px;padding:1px 9px;border-radius:8px;margin:0 6px 0 0;
+  background:var(--card2);border:1px solid var(--line2);color:var(--ink-soft);
+}
+.thread-foot{display:flex;align-items:center;gap:8px;margin-top:10px}
+.thread-foot .views{font-size:12px;color:var(--faint);flex:1}
+.del{
+  font-size:12px;padding:4px 12px;border-radius:9px;color:var(--bad);
+  border:1px solid rgba(224,102,102,.35);background:rgba(224,102,102,.08);
+}
+.del:active{transform:scale(.95)}
+.empty{
+  text-align:center;color:var(--muted);padding:70px 20px;font-size:14px;line-height:2;
+}
+.empty b{display:block;font-size:17px;color:var(--ink-soft);margin-bottom:6px}
+
+/* ---------- 翻卡（短视频）模式 ---------- */
+#card-view{overflow:hidden}
+.cards-wrap{position:relative;width:100%;height:100%}
+.cards-wrap>div{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  padding:16px 16px 70px;transition:transform .32s ease;
+  will-change:transform;
+}
+.big-card{
+  flex:1;min-height:0;display:flex;flex-direction:column;
+  background:var(--card);border:1px solid var(--line);border-radius:22px;
+  padding:22px 20px;overflow:hidden;
+}
+.big-card .avatar{width:42px;height:42px;font-size:17px}
+.big-card .nick{font-size:15px}
+.big-card .cat{font-size:11.5px}
+.big-card .title{font-size:19px;font-weight:800;margin:6px 0 10px;line-height:1.5}
+.big-card .body{
+  flex:1;min-height:0;overflow-y:auto;font-size:15px;color:var(--ink-soft);
+  line-height:1.9;white-space:pre-wrap;word-break:break-word;
+}
+.big-card .tags{margin-top:12px}
+.counter{text-align:center;color:var(--muted);font-size:12px;margin-top:10px;flex:none}
+.counter b{color:var(--accent-deep);font-size:14px}
+.swipe-hint{text-align:center;color:var(--faint);font-size:11.5px;margin-top:6px}
+
+/* ---------- 详情弹层 ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:100;background:rgba(8,9,14,.78);
+  backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:18px;
+}
+.overlay.show{display:flex}
+.ov-box{
+  width:100%;max-width:640px;max-height:86vh;overflow-y:auto;
+  background:var(--card);border:1px solid var(--line2);border-radius:20px;padding:20px;
+  animation:pop .18s ease;
+}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.ov-box h2{font-size:17px;font-weight:800;margin:8px 0 10px;line-height:1.5}
+.ov-box .full-body{font-size:14.5px;color:var(--ink-soft);line-height:1.9;white-space:pre-wrap;word-break:break-word;margin-bottom:12px}
+.ov-head{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.ov-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+
+/* ---------- 发布弹层 ---------- */
+.form label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px}
+.form input,.form textarea{
+  width:100%;padding:11px 13px;border-radius:12px;font-size:14px;color:var(--ink);
+  background:var(--card2);border:1px solid var(--line2);outline:none;font-family:inherit;resize:none;
+}
+.form input:focus,.form textarea:focus{border-color:var(--accent)}
+.form textarea{min-height:110px;line-height:1.7}
+
+/* ---------- toast ---------- */
+#toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+  background:var(--card2);border:1px solid var(--line2);color:var(--ink);
+  padding:11px 18px;border-radius:14px;font-size:13.5px;opacity:0;pointer-events:none;
+  transition:.25s;z-index:200;max-width:88vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast .u{color:var(--accent-deep);cursor:pointer;pointer-events:auto;margin-left:10px}
+
+/* 滚动条 */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon-btn" id="btn-back" title="返回墨匣">←</button>
+  <h1>灵感广场</h1>
+  <button class="ghost primary" id="btn-post">＋ 发布</button>
+  <button class="icon-btn" id="btn-mode" title="切换模式">☷</button>
+</header>
+
+<div class="bar">
+  <input id="search" placeholder="搜索广场灵感…" maxlength="30">
+  <button class="ghost" id="btn-refresh">↻</button>
+  <span class="cnt" id="cnt"></span>
+</div>
+
+<main id="list-view"><div class="empty" id="list-empty"></div></main>
+
+<main id="card-view" hidden>
+  <div class="cards-wrap" id="cards-wrap"></div>
+  <div class="swipe-hint">滚轮 / 上下滑动 切换灵感</div>
+</main>
+
+<div class="overlay" id="detail"><div class="ov-box">
+  <div class="ov-head" id="ov-head"></div>
+  <div id="ov-cat"></div>
+  <h2 id="ov-title"></h2>
+  <div class="full-body" id="ov-body"></div>
+  <div class="tags" id="ov-tags"></div>
+  <div class="ov-actions">
+    <button class="ghost" id="ov-close">关闭</button>
+    <button class="ghost" id="ov-del" hidden>删除这条</button>
+  </div>
+</div></div>
+
+<div class="overlay" id="post"><div class="ov-box form">
+  <h2 style="margin-top:0">发布我的灵感</h2>
+  <label>标题（可选）</label>
+  <input id="p-title" maxlength="60" placeholder="给灵感起个标题">
+  <label>内容</label>
+  <textarea id="p-content" placeholder="写下想分享的灵感片段…"></textarea>
+  <label>标签（逗号分隔，可选）</label>
+  <input id="p-tags" maxlength="60" placeholder="如：古风,悬疑">
+  <label>分类（可选）</label>
+  <input id="p-cat" maxlength="12" placeholder="如：情节">
+  <div class="ov-actions">
+    <button class="ghost" id="p-cancel">取消</button>
+    <button class="ghost primary" id="p-send">发布到广场</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var SERVER='https://yudhxvbrcpyudthhnjwv.supabase.co';
+var KEY='sb_publishable_LwYl9xvwuenEj3l5b9-30A_u-dC3b5i';
+var $=function(s){return document.querySelector(s);};
+
+/* 设备身份 + 昵称（与主应用共享） */
+function devId(){
+  var k='novel-share-device', v=localStorage.getItem(k);
+  if(!v){ v='d'+Date.now().toString(36)+Math.floor(Math.random()*1e6).toString(36); localStorage.setItem(k,v); }
+  return v;
+}
+function getNick(){
+  var n=localStorage.getItem('novel-share-nick');
+  if(n) return n;
+  var auto='墨友'+Math.floor(1000+Math.random()*9000);
+  localStorage.setItem('novel-share-nick',auto);
+  return auto;
+}
+
+function fetchT(url, opts, ms){
+  opts=opts||{};
+  var ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+  if(ctrl){opts.signal=ctrl.signal;}
+  var timer=setTimeout(function(){ try{ctrl&&ctrl.abort();}catch(e){} }, ms||15000);
+  return fetch(url,opts).then(function(r){clearTimeout(timer);return r;},
+    function(e){clearTimeout(timer);throw (e&&e.name==='AbortError')?new Error('timeout'):e;});
+}
+function hdr(json){
+  var h={apikey:KEY,'Authorization':'Bearer '+KEY};
+  if(json) h['Content-Type']='application/json';
+  return h;
+}
+
+var state={rows:[],idx:0,mode:'list',q:'',device:devId()};
+
+/* ---------- 加载 ---------- */
+function buildUrl(){
+  var u=SERVER+'/rest/v1/public_shares?select=id,device_id,nick,title,content,tags,category,created_at&order=created_at.desc&limit=80';
+  if(state.q){ u+='&or=('+encodeURIComponent('title.ilike.*'+state.q+'*,content.ilike.*'+state.q+'*,tags.ilike.*'+state.q+'*')+')'; }
+  return u;
+}
+function load(){
+  var box=$('#list-empty');
+  box.innerHTML='<b>加载中…</b>广场正在翻找灵感';
+  fetchT(buildUrl(),{headers:hdr()}).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(rows){
+    state.rows=rows||[];
+    state.idx=0;
+    if(!state.rows.length){
+      box.innerHTML='<b>广场还空着 ✨</b>点右上角「＋发布」分享你的第一条灵感吧';
+      $('#cnt').textContent='0 条';
+    }else{
+      $('#cnt').textContent=state.rows.length+' 条';
+      box.innerHTML='';
+    }
+    if(state.mode==='list') renderList(); else renderCard();
+  }).catch(function(e){
+    var msg=String(e&&e.message||e);
+    box.innerHTML='<b>广场暂时连不上</b>'+msg+'<br>请确认 Supabase 已建 public_shares 表';
+    $('#cnt').textContent='—';
+  });
+}
+
+/* ---------- 贴吧模式 ---------- */
+function timeAgo(ts){
+  try{
+    var d=Date.now()-new Date(ts).getTime(), m=Math.floor(d/60000);
+    if(m<1)return '刚刚'; if(m<60)return m+'分钟前';
+    var h=Math.floor(m/60); if(h<24)return h+'小时前';
+    var day=Math.floor(h/24); if(day<7)return day+'天前';
+    var dt=new Date(ts);
+    return (dt.getMonth()+1)+'月'+dt.getDate()+'日';
+  }catch(e){return '';}
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+function avColor(nick){
+  var s=0; for(var i=0;i<nick.length;i++) s+=nick.charCodeAt(i);
+  var hue=(s*47)%360;
+  return 'linear-gradient(135deg,hsl('+hue+',55%,52%),hsl('+((hue+60)%360)+',55%,42%))';
+}
+function renderList(){
+  var box=$('#list-empty'), html='';
+  state.rows.forEach(function(r,i){
+    var mine=r.device_id===state.device;
+    var t=(r.tags||'').split(',').filter(Boolean).map(function(x){return '<span class="tag">#'+esc(x)+'</span>';}).join('');
+    html+='<div class="thread" data-i="'+i+'">'
+      +'<div class="thread-head"><span class="avatar" style="background:'+avColor(r.nick||'墨友')+'">'+esc((r.nick||'墨友').slice(0,1))+'</span>'
+      +'<span class="nick">'+esc(r.nick||'墨友')+'</span><span class="time">'+timeAgo(r.created_at)+'</span></div>'
+      +(r.category?'<span class="cat">'+esc(r.category)+'</span>':'')
+      +(r.title?'<div class="title">'+esc(r.title)+'</div>':'')
+      +'<div class="body">'+esc(r.content)+'</div>'
+      +'<div class="tags">'+t+'</div>'
+      +'<div class="thread-foot"><span class="views">灵感 · 第'+(state.rows.length-i)+'条</span>'
+      +(mine?'<button class="del" data-i="'+i+'">删除</button>':'')
+      +'</div></div>';
+  });
+  box.innerHTML=html;
+}
+
+/* ---------- 翻卡（短视频）模式 ---------- */
+function renderCard(){
+  var wrap=$('#cards-wrap');
+  if(!state.rows.length){ wrap.innerHTML=''; return; }
+  var n=state.rows.length, html='';
+  for(var i=0;i<n;i++){
+    var r=state.rows[i], mine=r.device_id===state.device;
+    var t=(r.tags||'').split(',').filter(Boolean).map(function(x){return '<span class="tag">#'+esc(x)+'</span>';}).join('');
+    html+='<div class="card-page" data-i="'+i+'" style="transform:translateY('+(i-state.idx)*100+'%)">'
+      +'<div class="big-card">'
+      +'<div class="thread-head"><span class="avatar" style="background:'+avColor(r.nick||'墨友')+'">'+esc((r.nick||'墨友').slice(0,1))+'</span>'
+      +'<span class="nick">'+esc(r.nick||'墨友')+'</span><span class="time">'+timeAgo(r.created_at)+'</span></div>'
+      +(r.category?'<span class="cat">'+esc(r.category)+'</span>':'')
+      +(r.title?'<div class="title">'+esc(r.title)+'</div>':'')
+      +'<div class="body">'+esc(r.content)+'</div>'
+      +'<div class="tags">'+t+'</div>'
+      +'<div class="counter"><b>'+(i+1)+'</b> / '+n+(mine?'<span style="margin-left:10px;color:var(--bad)">· 我的</span>':'')+'</div>'
+      +'</div></div>';
+  }
+  wrap.innerHTML=html;
+  $('#cnt').textContent=n+' 条';
+}
+function goCard(i){
+  if(i<0||i>=state.rows.length)return;
+  state.idx=i;
+  var pages=document.querySelectorAll('.card-page');
+  for(var k=0;k<pages.length;k++){
+    pages[k].style.transform='translateY('+((k-i)*100)+'%)';
+  }
+}
+
+/* ---------- 事件 ---------- */
+var touchY=null;
+var view=$('#card-view');
+function next(){ if(state.mode==='card') goCard(state.idx+1); }
+function prev(){ if(state.mode==='card') goCard(state.idx-1); }
+view.addEventListener('wheel',function(e){
+  if(state.mode!=='card')return;
+  e.preventDefault();
+  var acc=0;
+  acc += (e.deltaY>0?1:-1);
+  if(acc>0) next(); else prev();
+  acc=0;
+},{passive:false});
+view.addEventListener('touchstart',function(e){ touchY=e.touches[0].clientY; },{passive:true});
+view.addEventListener('touchend',function(e){
+  if(state.mode!=='card'||touchY===null)return;
+  var d=e.changedTouches[0].clientY-touchY; touchY=null;
+  if(Math.abs(d)<50)return;
+  if(d<0) next(); else prev();
+},{passive:true});
+document.addEventListener('keydown',function(e){
+  if(state.mode==='card'&&(e.key==='ArrowDown'||e.key==='PageDown')){e.preventDefault();next();}
+  if(state.mode==='card'&&(e.key==='ArrowUp'||e.key==='PageUp')){e.preventDefault();prev();}
+});
+
+/* 模式切换 */
+$('#btn-mode').addEventListener('click',function(){
+  state.mode = state.mode==='list'?'card':'list';
+  $('#list-view').hidden = state.mode!=='list';
+  $('#card-view').hidden = state.mode!=='card';
+  if(state.mode==='card') renderCard(); else renderList();
+  toast(state.mode==='card'?'已切换：翻卡模式，滚轮/滑动翻灵感':'已切换：贴吧模式');
+});
+
+/* 列表：点开详情 / 删除 */
+$('#list-view').addEventListener('click',function(e){
+  var del=e.target.closest('.del');
+  if(del){ delShare(state.rows[+del.dataset.i]); return; }
+  var th=e.target.closest('.thread');
+  if(th) openDetail(state.rows[+th.dataset.i]);
+});
+$('#card-view').addEventListener('click',function(e){
+  var mine=e.target.closest('.card-page');
+  if(!mine)return;
+  openDetail(state.rows[+mine.dataset.i]);
+});
+
+/* 详情 */
+function openDetail(r){
+  $('#ov-head').innerHTML='<span class="avatar" style="background:'+avColor(r.nick||'墨友')+'">'+esc((r.nick||'墨友').slice(0,1))+'</span><span class="nick" style="color:var(--ink)">'+esc(r.nick||'墨友')+'</span><span class="time">'+timeAgo(r.created_at)+'</span>';
+  $('#ov-cat').innerHTML=r.category?'<span class="cat">'+esc(r.category)+'</span>':'';
+  $('#ov-title').textContent=r.title||'（无标题灵感）';
+  $('#ov-body').textContent=r.content;
+  $('#ov-tags').innerHTML=(r.tags||'').split(',').filter(Boolean).map(function(x){return '<span class="tag">#'+esc(x)+'</span>';}).join('');
+  $('#ov-del').hidden = r.device_id!==state.device;
+  $('#ov-del').dataset.id=r.id;
+  $('#detail').classList.add('show');
+}
+$('#ov-close').addEventListener('click',function(){ $('#detail').classList.remove('show'); });
+$('#detail').addEventListener('click',function(e){ if(e.target===this)this.classList.remove('show'); });
+$('#ov-del').addEventListener('click',function(){
+  var id=+this.dataset.id;
+  if(!confirm('确定删除这条分享吗？'))return;
+  fetchT(SERVER+'/rest/v1/rpc/delete_share',{method:'POST',headers:hdr(true),body:JSON.stringify({p_id:id,p_device:state.device})})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); })
+    .then(function(){
+      $('#detail').classList.remove('show');
+      toast('已删除 ✨'); load();
+    }).catch(function(e){ toast('删除失败：'+String(e.message||e)); });
+});
+
+/* 删除（列表） */
+function delShare(r){
+  if(!confirm('确定删除这条分享吗？'))return;
+  fetchT(SERVER+'/rest/v1/rpc/delete_share',{method:'POST',headers:hdr(true),body:JSON.stringify({p_id:r.id,p_device:state.device})})
+    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); })
+    .then(function(){ toast('已删除 ✨'); load(); })
+    .catch(function(e){ toast('删除失败：'+String(e.message||e)); });
+}
+
+/* 搜索 / 刷新 */
+var searchTimer=null;
+$('#search').addEventListener('input',function(){
+  clearTimeout(searchTimer);
+  var v=this.value.trim();
+  searchTimer=setTimeout(function(){ state.q=v; load(); },350);
+});
+$('#btn-refresh').addEventListener('click',load);
+
+/* 发布 */
+$('#btn-post').addEventListener('click',function(){ $('#post').classList.add('show'); });
+$('#p-cancel').addEventListener('click',function(){ $('#post').classList.remove('show'); });
+$('#post').addEventListener('click',function(e){ if(e.target===this)this.classList.remove('show'); });
+$('#p-send').addEventListener('click',function(){
+  var title=$('#p-title').value.trim(), content=$('#p-content').value.trim(),
+      tags=$('#p-tags').value.trim(), cat=$('#p-cat').value.trim();
+  if(!content){ toast('内容不能为空'); return; }
+  var last=+localStorage.getItem('novel-share-last')||0;
+  if(Date.now()-last<30000){ toast('发太快啦，30秒后再试'); return; }
+  var btn=$('#p-send'); btn.disabled=true; btn.textContent='发布中…';
+  fetchT(SERVER+'/rest/v1/public_shares',{
+    method:'POST',headers:hdr(true),
+    body:JSON.stringify({device_id:state.device,nick:getNick(),title:title,content:content,tags:tags,category:cat})
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    localStorage.setItem('novel-share-last',String(Date.now()));
+    $('#post').classList.remove('show');
+    $('#p-title').value=''; $('#p-content').value=''; $('#p-tags').value=''; $('#p-cat').value='';
+    toast('已发布到广场 ✨');
+    load();
+  }).catch(function(e){
+    toast('发布失败：'+String(e.message||e));
+  }).then(function(){ btn.disabled=false; btn.textContent='发布到广场'; });
+});
+
+/* toast */
+var toastTimer=null;
+function toast(msg,withUndo){
+  var t=$('#toast'); t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ t.classList.remove('show'); },3000);
+}
+
+/* 返回主应用 */
+$('#btn-back').addEventListener('click',function(){ location.href='index.html'; });
+
+load();
+})();
+</script>
+</body>
+</html>

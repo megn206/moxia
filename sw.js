@@ -1,8 +1,9 @@
 /* 墨匣 · PWA Service Worker —— 仅缓存本站静态资源，跨域请求（如 OCR 引擎 CDN）不拦截 */
-const CACHE = 'moxia-v2';
+const CACHE = 'moxia-v3';
 const ASSETS = [
   './',
   './index.html',
+  './plaza.html',
   './manifest.json',
   './icon.png',
   './icon-192.png',

@@ -600,6 +600,25 @@ footer{
 .share-tags{margin-top:6px}
 .share-tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:8px;background:var(--tag-bg);border:1px solid var(--tag-border);color:var(--tag-ink);margin:0 6px 4px 0}
 .share-empty{color:var(--muted);text-align:center;padding:26px 0;font-size:13px;line-height:1.8}
+/* 编辑器灵感推荐侧栏 */
+#editor .modal{display:flex;flex-direction:row;align-items:stretch;padding:0;overflow:hidden;max-width:min(94vw,1000px);width:100%}
+#editor .ed-main{flex:1 1 auto;min-width:0;padding:20px;display:flex;flex-direction:column;overflow-y:auto}
+#editor .ed-inspire{flex:0 0 300px;border-left:1px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;min-width:200px;max-width:440px;position:relative}
+#editor .ed-resizer{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:5}
+#editor .ed-resizer:hover{background:rgba(201,111,66,.25)}
+.inspire-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.inspire-head .t{font-weight:700;font-size:14px;flex:1}
+.switch{position:relative;width:40px;height:22px;border-radius:11px;background:var(--line2);transition:.2s;flex:none;cursor:pointer}
+.switch::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.switch.on{background:var(--accent)}
+.switch.on::after{left:20px}
+.inspire-list{flex:1;overflow-y:auto;padding:10px 12px}
+.insp-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:.15s;background:var(--card)}
+.insp-item:hover{border-color:var(--accent)}
+.insp-item .n{font-size:11.5px;color:var(--accent-deep);margin-bottom:3px;display:flex;gap:6px;align-items:center}
+.insp-item .n .sc{font-size:10.5px;color:var(--faint)}
+.insp-item .c{font-size:12.8px;color:var(--ink-soft);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap}
+.insp-empty{color:var(--faint);font-size:12.5px;text-align:center;padding:30px 12px;line-height:1.8}
 /* 伏笔 */
 .fs-inputs{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .fs-grid{display:flex;gap:8px}
@@ -736,6 +755,7 @@ footer{
 <!-- 编辑 / 新建弹窗 -->
 <div class="overlay" id="editor">
   <div class="modal">
+    <div class="ed-main">
     <h3 class="serif" id="editor-title">新建灵感</h3>
     <input type="text" id="f-title" placeholder="标题（可选）" maxlength="60">
     <div class="cat-picker" id="f-cats"></div>
@@ -757,8 +777,23 @@ footer{
       <button class="btn ghost" id="btn-cancel">取消</button>
       <button class="btn primary" id="btn-save">保存</button>
     </div>
+    </div>
+    <div class="ed-inspire" id="ed-inspire">
+      <div class="ed-resizer" id="ed-resizer"></div>
+      <div class="inspire-head">
+        <span class="t">💡 灵感推荐</span>
+        <div class="switch on" id="inspire-switch" title="开关：写作时推荐相似灵感"></div>
+        <button type="button" class="btn ghost" id="btn-inspire-refresh" style="padding:2px 10px;font-size:12px">↻</button>
+      </div>
+      <div class="inspire-list" id="inspire-list"></div>
+    </div>
   </div>
 </div>
+<div class="overlay" id="inspire-view"><div class="modal">
+  <h3 class="serif" id="iv-title"></h3>
+  <div id="iv-body" style="white-space:pre-wrap;word-break:break-word;max-height:60vh;overflow-y:auto;font-size:14px;color:var(--ink-soft);line-height:1.8"></div>
+  <div class="modal-actions"><span class="hint" id="iv-meta" style="margin-right:auto"></span><button class="btn primary" id="iv-close">关闭</button></div>
+</div></div>
 
 <!-- 随机抽取弹窗 -->
 <div class="overlay" id="drawer">
@@ -2443,8 +2478,178 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     {icon:'📋', name:'卡片模板', desc:'用人物/场景/世界观/冲突/情节模板快速起稿。', run:openTemplates},
     {icon:'🗑', name:'灵感回收站', desc:'误删的卡片在这里恢复，可永久删除或清空。', run:openTrash},
     {icon:'⏱', name:'剧情时间线', desc:'按时间标记排列剧情卡片，防止时间线崩坏。', run:openTimeline},
-    {icon:'🌍', name:'灵感广场', desc:'看看大家分享的灵感，或把卡片发布到公开广场（可自定义昵称、可删除）。', run:function(){ showArea('tool-share'); if (window.openShare) window.openShare(); }}
+    {icon:'🌍', name:'灵感广场', desc:'看看大家分享的灵感，或把卡片发布到公开广场（可自定义昵称、可删除）。', run:function(){ location.href='plaza.html'; }}
   ];
+
+/* ---------- 编辑器灵感推荐侧栏 ---------- */
+(function(){
+  var SERVER='https://yudhxvbrcpyudthhnjwv.supabase.co';
+  var KEY='sb_publishable_LwYl9xvwuenEj3l5b9-30A_u-dC3b5i';
+  var inspireOn = localStorage.getItem('novel-inspire-on')!=='0';
+  var inspireCache=null, inspireCacheAt=0, scheduleT=null, seq=0;
+
+  function fetchT(url, opts, ms){
+    opts=opts||{};
+    var ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+    if(ctrl) opts.signal=ctrl.signal;
+    var timer=setTimeout(function(){ try{ctrl&&ctrl.abort();}catch(e){} }, ms||15000);
+    return fetch(url,opts).then(function(r){clearTimeout(timer);return r;},
+      function(e){clearTimeout(timer);throw (e&&e.name==='AbortError')?new Error('timeout'):e;});
+  }
+  function hdr(json){
+    var h={apikey:KEY,'Authorization':'Bearer '+KEY};
+    if(json) h['Content-Type']='application/json';
+    return h;
+  }
+  function $(s){ return document.querySelector(s); }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+
+  function ensureList(){
+    var list=$('#inspire-list');
+    var sw=$('#inspire-switch');
+    if(!list){ setTimeout(ensureList,300); return; }
+    sw.classList.toggle('on', inspireOn);
+    if(!inspireOn){
+      list.innerHTML='<div class="insp-empty">灵感推荐已关闭<br>打开开关后，写作时自动推荐相似灵感</div>';
+    }else{
+      list.innerHTML='<div class="insp-empty">写下标题或内容后，<br>这里会自动推荐相似的灵感 ✨</div>';
+    }
+  }
+
+  function pullAll(){
+    if(inspireCache && Date.now()-inspireCacheAt<60000) return Promise.resolve(inspireCache);
+    return fetchT(SERVER+'/rest/v1/public_shares?select=nick,title,content,tags,category&order=created_at.desc&limit=80',{headers:hdr()})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(rows){ inspireCache=rows||[]; inspireCacheAt=Date.now(); return inspireCache; })
+      .catch(function(e){ return []; });
+  }
+
+  function extractWords(text){
+    var words={};
+    var s=String(text||'');
+    var zh=s.match(/[一-龥]+/g)||[];
+    zh.forEach(function(seg){
+      if(seg.length>=2){
+        for(var i=0;i<=seg.length-2;i++){ var w=seg.slice(i,i+2); if(w!=='我们'&&w!=='一个'&&w!=='这个'&&w!=='就是'&&w!=='因为'&&w!=='可以'&&w!=='什么'&&w!=='自己'&&w!=='没有'&&w!=='还是'&&w!=='但是'&&w!=='如果') words[w]=(words[w]||0)+1; }
+      }
+      if(seg.length>=3){ for(var i=0;i<=seg.length-3;i++){ var w3=seg.slice(i,i+3); words[w3]=(words[w3]||0)+2; } }
+    });
+    var en=s.match(/[A-Za-z][A-Za-z-]{2,}/g)||[];
+    en.forEach(function(w){ words[w.toLowerCase()]=(words[w.toLowerCase()]||0)+2; });
+    return words;
+  }
+
+  function scoreShare(row, words){
+    var txt=((row.title||'')+' '+(row.content||'')+' '+(row.tags||'')).replace(/\s+/g,'');
+    var s=0, hit=0;
+    for(var w in words){ if(txt.indexOf(w)>=0){ s+=words[w]*w.length; hit++; } }
+    return {s:s,hit:hit};
+  }
+
+  function refreshInspire(){
+    var list=$('#inspire-list');
+    if(!list) return;
+    var t=$('#f-title')?($('#f-title').value||''):'';
+    var c=$('#f-content')?($('#f-content').value||''):'';
+    if(!t.trim() && !c.trim()){
+      list.innerHTML='<div class="insp-empty">写下标题或内容后，<br>这里会自动推荐相似的灵感 ✨</div>';
+      return;
+    }
+    if(!inspireOn) return;
+    var mySeq=++seq;
+    var words=extractWords(t+' '+c);
+    var wordKeys=Object.keys(words);
+    if(!wordKeys.length){ list.innerHTML='<div class="insp-empty">再多写几个字，推荐会更准 ✨</div>'; return; }
+    list.innerHTML='<div class="insp-empty">正在寻找相似灵感…</div>';
+    pullAll().then(function(rows){
+      if(mySeq!==seq) return;
+      var scored=rows.map(function(r){ var sc=scoreShare(r,words); return {r:r,sc:sc}; })
+        .filter(function(x){ return x.sc.s>0; })
+        .sort(function(a,b){ return b.sc.s-a.sc.s; })
+        .slice(0,6);
+      if(!scored.length){
+        list.innerHTML='<div class="insp-empty">暂时没找到相似的灵感<br>换个角度写写，或先去广场逛逛</div>';
+        return;
+      }
+      var html='';
+      scored.forEach(function(x,i){
+        var r=x.r;
+        html+='<div class="insp-item" data-i="'+i+'">'
+          +'<div class="n">'+(r.nick||'墨友')+'<span class="sc">· 相似度 '+Math.min(99,Math.round(x.sc.s/3))+'%</span></div>'
+          +(r.title?'<div style="font-weight:600;font-size:13px;margin:2px 0 3px">'+esc(r.title)+'</div>':'')
+          +'<div class="c">'+esc(r.content)+'</div>'
+          +'</div>';
+      });
+      list.innerHTML=html;
+      list._rows=scored;
+    });
+  }
+
+  function scheduleInspire(){
+    clearTimeout(scheduleT);
+    scheduleT=setTimeout(refreshInspire, 800);
+  }
+
+  /* 事件绑定 */
+  document.addEventListener('input',function(e){
+    if(e.target.id==='f-title'||e.target.id==='f-content') scheduleInspire();
+  });
+  document.addEventListener('click',function(e){
+    var sw=e.target.closest('#inspire-switch');
+    if(sw){
+      inspireOn=!inspireOn;
+      localStorage.setItem('novel-inspire-on', inspireOn?'1':'0');
+      sw.classList.toggle('on', inspireOn);
+      if(inspireOn) refreshInspire(); else { var list=$('#inspire-list'); if(list) list.innerHTML='<div class="insp-empty">灵感推荐已关闭<br>打开开关后，写作时自动推荐相似灵感</div>'; }
+      return;
+    }
+    var ref=e.target.closest('#btn-inspire-refresh');
+    if(ref){ refreshInspire(); return; }
+    var item=e.target.closest('.insp-item');
+    if(item && $('#inspire-list')._rows){
+      var x=$('#inspire-list')._rows[+item.dataset.i];
+      if(!x) return;
+      $('#iv-title').textContent=x.r.title||'（无标题灵感）';
+      $('#iv-body').textContent=x.r.content;
+      $('#iv-meta').textContent='来自 '+(x.r.nick||'墨友')+(x.r.category?' · '+x.r.category:'')+(x.r.tags?' · '+(x.r.tags||'').split(',').filter(Boolean).join(' #'):'');
+      $('#inspire-view').classList.add('show');
+      return;
+    }
+    var iv=e.target.closest('#iv-close');
+    if(iv){ $('#inspire-view').classList.remove('show'); }
+  });
+  document.addEventListener('click',function(e){
+    var v=$('#inspire-view');
+    if(v && e.target===v) v.classList.remove('show');
+  });
+
+  /* 拖拽调宽 */
+  var rz=null, edIn=null, body=null;
+  function initRz(){
+    rz=document.getElementById('ed-resizer'); edIn=document.getElementById('ed-inspire'); body=document.body;
+    if(!rz||!edIn) return;
+    rz.addEventListener('mousedown',startDrag);
+    rz.addEventListener('touchstart',startDrag,{passive:false});
+  }
+  function startDrag(e){
+    e.preventDefault();
+    var sx=e.clientX||(e.touches&&e.touches[0].clientX);
+    var sw=edIn.offsetWidth;
+    function mv(ev){
+      var x=ev.clientX||(ev.touches&&ev.touches[0].clientX);
+      if(x==null) return;
+      var w=sw+sx-x;
+      edIn.style.flex='0 0 '+Math.max(200,Math.min(440,w))+'px';
+    }
+    function up(){ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); document.removeEventListener('touchmove',mv); document.removeEventListener('touchend',up); body.style.userSelect=''; }
+    document.addEventListener('mousemove',mv);
+    document.addEventListener('mouseup',up);
+    document.addEventListener('touchmove',mv,{passive:false});
+    document.addEventListener('touchend',up);
+    body.style.userSelect='none';
+  }
+  setTimeout(function(){ ensureList(); initRz(); refreshInspire(); }, 400);
+})();
   function renderTools(){
     listEl.innerHTML='';
     TOOLS.forEach(function(t){
