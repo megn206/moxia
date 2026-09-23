@@ -99,6 +99,23 @@ main{position:fixed;top:104px;left:0;right:0;bottom:0;overflow-y:auto;padding:12
   font-size:12px;padding:4px 12px;border-radius:9px;color:var(--bad);
   border:1px solid rgba(224,102,102,.35);background:rgba(224,102,102,.08);
 }
+.del-card{margin-left:12px;font-family:inherit;cursor:pointer}
+.del-card:hover{background:rgba(224,102,102,.16)}
+.act-block{font-size:12px;padding:4px 12px;border-radius:9px;color:var(--muted);border:1px solid var(--line2);background:var(--card2);cursor:pointer;font-family:inherit}
+.act-block:hover{color:var(--ink);border-color:var(--line2)}
+.block-card{margin-left:12px}
+#btn-mod{flex:none;white-space:nowrap}
+.rep-opt{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-soft);padding:7px 0;cursor:pointer}
+.rep-opt input{accent-color:var(--accent)}
+.mod-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--card2);border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;font-size:13px}
+.mod-row span{color:var(--ink-soft)}
+.mod-row .ghost{height:28px;padding:0 10px;font-size:12px;border-radius:8px}
+.mod-rep{background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:12.5px;color:var(--ink-soft);line-height:1.6;word-break:break-word}
+.mod-rep-head{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:3px;flex-wrap:wrap}
+.mod-rep-head b{color:var(--ink-soft)}
+.mod-rep-head i{font-style:normal;color:var(--accent-deep);margin-left:auto}
+.mod-empty{font-size:12.5px;color:var(--muted);padding:6px 2px}
+.hint{font-size:12px;color:var(--muted);margin:2px 0 10px}
 .del:active{transform:scale(.95)}
 .empty{
   text-align:center;color:var(--muted);padding:70px 20px;font-size:14px;line-height:2;
@@ -185,6 +202,7 @@ main{position:fixed;top:104px;left:0;right:0;bottom:0;overflow-y:auto;padding:12
   <input id="search" placeholder="搜索广场灵感…" maxlength="30">
   <button class="ghost" id="btn-refresh">↻</button>
   <span class="cnt" id="cnt"></span>
+  <button class="ghost" id="btn-mod">🛡 管理</button>
 </div>
 
 <main id="list-view"><div class="empty" id="list-empty"></div></main>
@@ -201,8 +219,39 @@ main{position:fixed;top:104px;left:0;right:0;bottom:0;overflow-y:auto;padding:12
   <div class="full-body" id="ov-body"></div>
   <div class="tags" id="ov-tags"></div>
   <div class="ov-actions">
+    <button class="ghost" id="ov-block" hidden>屏蔽</button>
+    <button class="ghost" id="ov-report" hidden>举报</button>
     <button class="ghost" id="ov-close">关闭</button>
     <button class="ghost" id="ov-del" hidden>删除这条</button>
+  </div>
+</div></div>
+
+<div class="overlay" id="rep"><div class="ov-box form">
+  <h2 style="margin-top:0">举报这条灵感</h2>
+  <p class="hint">举报记录保存在本机，作为你的广场管理参考（公共平台级举报需后端审核，暂未接入）。</p>
+  <label>原因</label>
+  <label class="rep-opt"><input type="radio" name="reason" value="低俗色情" checked>低俗色情</label>
+  <label class="rep-opt"><input type="radio" name="reason" value="辱骂攻击">辱骂攻击</label>
+  <label class="rep-opt"><input type="radio" name="reason" value="广告营销">广告营销</label>
+  <label class="rep-opt"><input type="radio" name="reason" value="政治敏感">政治敏感</label>
+  <label class="rep-opt"><input type="radio" name="reason" value="其他">其他</label>
+  <label>补充说明（可选）</label>
+  <textarea id="rep-note" maxlength="200" placeholder="简单描述一下问题…"></textarea>
+  <div class="ov-actions">
+    <button class="ghost" id="rep-cancel">取消</button>
+    <button class="ghost primary" id="rep-send">提交举报</button>
+  </div>
+</div></div>
+
+<div class="overlay" id="mod"><div class="ov-box form">
+  <h2 style="margin-top:0">🛡 广场管理</h2>
+  <label>已屏蔽的用户</label>
+  <div id="mod-blocked"></div>
+  <label>举报记录（本机保存）</label>
+  <div id="mod-reports"></div>
+  <div class="ov-actions">
+    <button class="ghost" id="mod-cancel">关闭</button>
+    <button class="ghost" id="mod-export">导出举报记录</button>
   </div>
 </div></div>
 
@@ -259,7 +308,7 @@ function hdr(json){
   return h;
 }
 
-var state={rows:[],idx:0,mode:'list',q:'',device:devId()};
+var state={rows:[],idx:0,mode:'list',q:'',device:devId(),cloudHid:[],hidCloudCount:0};
 
 /* ---------- 加载 ---------- */
 function buildUrl(){
@@ -274,13 +323,14 @@ function load(){
     if(!r.ok) throw new Error('HTTP '+r.status);
     return r.json();
   }).then(function(rows){
-    state.rows=rows||[];
+    state.rows=filterRows(rows||[]);
     state.idx=0;
+    loadCloudReports();
     if(!state.rows.length){
       box.innerHTML='<b>广场还空着 ✨</b>点右上角「＋发布」分享你的第一条灵感吧';
-      $('#cnt').textContent='0 条';
+      updateCnt();
     }else{
-      $('#cnt').textContent=state.rows.length+' 条';
+      updateCnt();
       box.innerHTML='';
     }
     if(state.mode==='list') renderList(); else renderCard();
@@ -321,7 +371,7 @@ function renderList(){
       +'<div class="body">'+esc(r.content)+'</div>'
       +'<div class="tags">'+t+'</div>'
       +'<div class="thread-foot"><span class="views">灵感 · 第'+(state.rows.length-i)+'条</span>'
-      +(mine?'<button class="del" data-i="'+i+'">删除</button>':'')
+      +(mine?'<button class="del" data-i="'+i+'">删除</button>':'<button class="act-block" data-i="'+i+'">屏蔽</button>')
       +'</div></div>';
   });
   box.innerHTML=html;
@@ -343,7 +393,8 @@ function renderCard(){
       +(r.title?'<div class="title">'+esc(r.title)+'</div>':'')
       +'<div class="body">'+esc(r.content)+'</div>'
       +'<div class="tags">'+t+'</div>'
-      +'<div class="counter"><b>'+(i+1)+'</b> / '+n+(mine?'<span style="margin-left:10px;color:var(--bad)">· 我的</span>':'')+'</div>'
+      +'<div class="counter"><b>'+(i+1)+'</b> / '+n
+      +(mine?'<span style="margin-left:10px;color:var(--bad)">· 我的</span><button class="del del-card" data-i="'+i+'">删除这条</button>':'<button class="act-block block-card" data-i="'+i+'">屏蔽</button>')+'</div>'
       +'</div></div>';
   }
   wrap.innerHTML=html;
@@ -396,10 +447,16 @@ $('#btn-mode').addEventListener('click',function(){
 $('#list-view').addEventListener('click',function(e){
   var del=e.target.closest('.del');
   if(del){ delShare(state.rows[+del.dataset.i]); return; }
+  var blk=e.target.closest('.act-block');
+  if(blk){ blockUser(state.rows[+blk.dataset.i]); return; }
   var th=e.target.closest('.thread');
   if(th) openDetail(state.rows[+th.dataset.i]);
 });
 $('#card-view').addEventListener('click',function(e){
+  var del=e.target.closest('.del');
+  if(del){ delShare(state.rows[+del.dataset.i]); return; }
+  var blk=e.target.closest('.act-block');
+  if(blk){ blockUser(state.rows[+blk.dataset.i]); return; }
   var mine=e.target.closest('.card-page');
   if(!mine)return;
   openDetail(state.rows[+mine.dataset.i]);
@@ -414,6 +471,10 @@ function openDetail(r){
   $('#ov-tags').innerHTML=(r.tags||'').split(',').filter(Boolean).map(function(x){return '<span class="tag">#'+esc(x)+'</span>';}).join('');
   $('#ov-del').hidden = r.device_id!==state.device;
   $('#ov-del').dataset.id=r.id;
+  $('#ov-block').hidden = r.device_id===state.device;
+  $('#ov-block').dataset.id=r.id;
+  $('#ov-report').hidden = r.device_id===state.device;
+  $('#ov-report').dataset.id=r.id;
   $('#detail').classList.add('show');
 }
 $('#ov-close').addEventListener('click',function(){ $('#detail').classList.remove('show'); });
@@ -429,7 +490,133 @@ $('#ov-del').addEventListener('click',function(){
     }).catch(function(e){ toast('删除失败：'+String(e.message||e)); });
 });
 
-/* 删除（列表） */
+/* ---------- 内容治理：屏蔽 / 举报 ---------- */
+var BLOCK_KEY='moxia-blocked', REP_KEY='moxia-reports';
+function getBlocked(){ try{ return JSON.parse(localStorage.getItem(BLOCK_KEY))||[]; }catch(e){ return []; } }
+function setBlocked(v){ try{ localStorage.setItem(BLOCK_KEY,JSON.stringify(v)); }catch(e){} }
+function getReports(){ try{ return JSON.parse(localStorage.getItem(REP_KEY))||[]; }catch(e){ return []; } }
+function setReports(v){ try{ localStorage.setItem(REP_KEY,JSON.stringify(v)); }catch(e){} }
+function refreshBanner(){
+  var n=getBlocked().length;
+  $('#btn-mod').textContent = n?('🛡 '+n):'🛡 管理';
+}
+function filterRows(rows){
+  var bl=getBlocked().map(function(b){return b.device;});
+  var ch=state.cloudHid||[];
+  var out=[], hidN=0;
+  (rows||[]).forEach(function(r){
+    if(bl.indexOf(r.device_id)>=0) return;
+    if(ch.indexOf(String(r.id))>=0){ hidN++; return; }
+    out.push(r);
+  });
+  state.hidCloudCount=hidN;
+  return out;
+}
+function blockUser(r){
+  var bl=getBlocked();
+  if(bl.some(function(b){return b.device===r.device_id;})) return;
+  bl.push({device:r.device_id, nick:r.nick||'墨友', at:Date.now()});
+  setBlocked(bl); refreshBanner(); load();
+  showToast('已屏蔽「'+(r.nick||'墨友')+'」的内容');
+}
+function unblockUser(device){
+  setBlocked(getBlocked().filter(function(b){return b.device!==device;}));
+  refreshBanner(); load();
+}
+function renderMod(){
+  var bl=getBlocked();
+  $('#mod-blocked').innerHTML = bl.length
+    ? bl.map(function(b,i){return '<div class="mod-row"><span>'+esc(b.nick)+'</span><button class="ghost" data-unblock="'+i+'">解除屏蔽</button></div>';}).join('')
+    : '<p class="mod-empty">还没有屏蔽任何人</p>';
+  var reps=getReports();
+  $('#mod-reports').innerHTML = reps.length
+    ? reps.slice().reverse().map(function(rp){
+        return '<div class="mod-rep"><div class="mod-rep-head"><b>'+esc(rp.nick)+'</b><span>'+new Date(rp.at).toLocaleString()+'</span><i>'+esc(rp.reason)+'</i></div><div>'+esc((rp.title?rp.title+'：':'')+rp.content.slice(0,80))+'</div></div>';
+      }).join('')
+    : '<p class="mod-empty">还没有举报记录</p>';
+}
+function exportReports(){
+  var reps=getReports();
+  var blob=new Blob([JSON.stringify(reps,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='moxia-reports-'+Date.now()+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+  showToast('已导出举报记录');
+}
+$('#btn-mod').addEventListener('click',function(){ renderMod(); $('#mod').classList.add('show'); });
+$('#mod-cancel').addEventListener('click',function(){ $('#mod').classList.remove('show'); });
+$('#mod').addEventListener('click',function(e){
+  if(e.target===this){ this.classList.remove('show'); return; }
+  var b=e.target.closest('[data-unblock]');
+  if(b){ unblockUser(getBlocked()[+b.dataset.unblock].device); renderMod(); }
+});
+$('#mod-export').addEventListener('click',exportReports);
+$('#ov-block').addEventListener('click',function(){
+  var r=(state.rows||[]).filter(function(x){return String(x.id)===String($('#ov-block').dataset.id);})[0];
+  if(!r) return;
+  if(confirm('屏蔽「'+(r.nick||'墨友')+'」发布的所有内容？可在 🛡 管理 里解除。')){ blockUser(r); $('#detail').classList.remove('show'); }
+});
+$('#ov-report').addEventListener('click',function(){
+  var r=(state.rows||[]).filter(function(x){return String(x.id)===String($('#ov-report').dataset.id);})[0];
+  if(!r) return;
+  $('#rep-send').dataset.id=r.id;
+  $('#rep-note').value='';
+  $('#rep').classList.add('show');
+});
+$('#rep-cancel').addEventListener('click',function(){ $('#rep').classList.remove('show'); });
+$('#rep').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('show'); });
+$('#rep-send').addEventListener('click',function(){
+  var r=(state.rows||[]).filter(function(x){return String(x.id)===String($('#rep-send').dataset.id);})[0];
+  var reason=document.querySelector('input[name="reason"]:checked');
+  var note=$('#rep-note').value.trim();
+  if(r){
+    var reps=getReports();
+    reps.push({id:r.id, device:r.device_id, nick:r.nick||'墨友', reason:reason?reason.value:'其他', note:note, at:Date.now(), title:r.title||'', content:r.content});
+    setReports(reps);
+    reportCloud(r, reason?reason.value:'其他', note);
+  }
+  $('#rep').classList.remove('show');
+  showToast('已举报，感谢维护广场环境');
+});
+refreshBanner();
+
+/* ---------- 发布自检 + 云端举报自动下架 ---------- */
+var DIRTY_WORDS=['加微信','加vx','加 V','私聊','v我','转账','刷单','日结','博彩','荷官','百家乐','裸聊','约炮','援交','包养','一夜情','迷药','毒品','冰毒','海洛因','摇头丸','枪支','买枪','卖枪','代开发票','无抵押贷款','杀猪盘','稳赚','包赚','招代理','色情直播','福利群','资源群'];
+function checkDirty(text){
+  var hits=[];
+  DIRTY_WORDS.forEach(function(w){ if((text||'').toLowerCase().indexOf(w.toLowerCase())>=0) hits.push(w); });
+  return hits;
+}
+var CLOUD_REP_THRESHOLD=3;
+function reportCloud(r, reason, note){
+  fetchT(SERVER+'/rest/v1/reports',{method:'POST',headers:hdr(true),body:JSON.stringify({share_id:String(r.id),device_id:state.device,reason:reason,note:note})})
+    .then(function(res){ if(!res.ok) throw new Error('HTTP '+res.status); })
+    .catch(function(){ /* 未建 reports 表时自动降级为本地记录 */ });
+}
+function loadCloudReports(){
+  fetchT(SERVER+'/rest/v1/reports?select=share_id&limit=1000',{headers:hdr()})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(rows){
+      var cnt={};
+      (rows||[]).forEach(function(x){ var k=String(x.share_id); cnt[k]=(cnt[k]||0)+1; });
+      state.cloudHid=[];
+      Object.keys(cnt).forEach(function(k){ if(cnt[k]>=CLOUD_REP_THRESHOLD) state.cloudHid.push(k); });
+      if(state.rows.length){
+        state.rows=filterRows(state.rows);
+        if(state.mode==='list') renderList(); else renderCard();
+        updateCnt();
+      }
+    })
+    .catch(function(){ /* 未建 reports 表时静默 */ });
+}
+function updateCnt(){
+  var n=state.rows.length, h=state.hidCloudCount||0;
+  $('#cnt').textContent=(n+h)+' 条'+(h?'（已自动下架 '+h+'）':'');
+}
+
+/* ---------- 删除（列表） ---------- */
 function delShare(r){
   if(!confirm('确定删除这条分享吗？'))return;
   fetchT(SERVER+'/rest/v1/rpc/delete_share',{method:'POST',headers:hdr(true),body:JSON.stringify({p_id:r.id,p_device:state.device})})
@@ -455,6 +642,8 @@ $('#p-send').addEventListener('click',function(){
   var title=$('#p-title').value.trim(), content=$('#p-content').value.trim(),
       tags=$('#p-tags').value.trim(), cat=$('#p-cat').value.trim();
   if(!content){ toast('内容不能为空'); return; }
+  var hits=checkDirty(title+'\n'+content+'\n'+tags);
+  if(hits.length){ toast('检测到疑似违规内容（'+hits.slice(0,3).join('、')+'），请修改后再发布（创作类词汇不受影响）'); return; }
   var last=+localStorage.getItem('novel-share-last')||0;
   if(Date.now()-last<30000){ toast('发太快啦，30秒后再试'); return; }
   var btn=$('#p-send'); btn.disabled=true; btn.textContent='发布中…';
