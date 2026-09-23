@@ -586,6 +586,20 @@ footer{
 .tool-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .tool-head .btn{padding:4px 10px;font-size:13px}
 .tp-hint,.tl-hint{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6}
+.share-bar{display:flex;gap:8px;margin:10px 0}
+.share-bar input{flex:1;min-width:0}
+.share-hint{font-size:12px;color:var(--muted);margin:0 0 10px;line-height:1.6}
+.share-item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--card)}
+.share-item:hover{border-color:var(--hover-line)}
+.share-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.share-nick{color:var(--accent);font-weight:600;font-size:14px}
+.share-time{font-size:12px;color:var(--faint);flex:1}
+.share-cat{display:inline-block;font-size:11px;padding:1px 8px;border-radius:8px;background:var(--accent-soft);color:var(--accent-deep);margin:2px 0 6px}
+.share-title{font-weight:600;margin-bottom:4px;font-size:14.5px}
+.share-content{font-size:13.5px;color:var(--ink-soft);white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.share-tags{margin-top:6px}
+.share-tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:8px;background:var(--tag-bg);border:1px solid var(--tag-border);color:var(--tag-ink);margin:0 6px 4px 0}
+.share-empty{color:var(--muted);text-align:center;padding:26px 0;font-size:13px;line-height:1.8}
 /* 伏笔 */
 .fs-inputs{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
 .fs-grid{display:flex;gap:8px}
@@ -877,6 +891,20 @@ footer{
       <div class="tool-head"><button type="button" class="btn ghost tool-back">← 返回</button></div>
       <div class="tl-hint">给卡片填上「时间标记」后会自动出现在这里（编辑卡片时可填，如：第3章 / 午后 / 某年某月）。</div>
       <div id="tl-list"></div>
+    </div>
+    <!-- 灵感广场（公开分享区） -->
+    <div class="tool-area" id="tool-share" hidden>
+      <div class="tool-head">
+        <button type="button" class="btn ghost tool-back">← 返回</button>
+        <button type="button" class="btn ghost" id="btn-share-nick">✏️ 昵称：<span id="share-nick-label"></span></button>
+      </div>
+      <div class="share-bar">
+        <input type="text" id="share-search" placeholder="搜索广场灵感…" maxlength="30">
+        <button type="button" class="btn ghost" id="btn-share-refresh">↻ 刷新</button>
+      </div>
+      <div class="share-hint">公开区域：大家自愿分享的灵感片段。发布前请确认是原创内容，发布后显示你的自定义昵称。</div>
+      <div id="share-list"></div>
+      <button type="button" class="btn ghost" id="btn-share-more" hidden style="width:100%;margin-top:2px">加载更多</button>
     </div>
     <div class="modal-actions">
       <button class="btn ghost" id="btn-tools-close">关闭</button>
@@ -1476,6 +1504,7 @@ function fmt(ts){
 function $(sel){ return document.querySelector(sel); }
 
 var cards = [];               // 启动引导里从 IndexedDB 镜像 / 旧数据迁移填充
+window.__findCard = function(id){ return findCard(id); };   // 供灵感广场等外部模块读取卡片
 var filter = { q:'', cat:'全部', tag:null };
 var editingId = null;
 var selectedCat = '情节';
@@ -1732,6 +1761,7 @@ function cardHtml(c,i){
     +   '<span class="card-actions">'
     +     '<button class="icon-btn act-pin" title="'+(c.pinned?'取消置顶':'置顶')+'">'+(c.pinned?'★':'☆')+'</button>'
     +     '<button class="icon-btn act-del" title="删除">✕</button>'
+    +     '<button class="icon-btn act-share" title="分享到灵感广场">↗</button>'
     +   '</span>'
     + '</div>'
     + (c.title?'<div class="card-title">'+hl(esc(c.title))+'</div>':'')
@@ -1836,6 +1866,7 @@ grid.addEventListener('click', function(e){
   var id = card.dataset.id;
   if (e.target.closest('.act-del')){ del(id); return; }
   if (e.target.closest('.act-pin')){ togglePin(id); return; }
+  if (e.target.closest('.act-share')){ if (window.shareCard) window.shareCard(id); return; }
   if (e.target.closest('.card-cover')){
     openLightbox(imgsOf(findCard(id)), 0); return;
   }
@@ -2411,7 +2442,8 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     {icon:'✒️', name:'随机起名器', desc:'按风格批量生成角色名：古风/西幻/现代/异世界。', run:openNames},
     {icon:'📋', name:'卡片模板', desc:'用人物/场景/世界观/冲突/情节模板快速起稿。', run:openTemplates},
     {icon:'🗑', name:'灵感回收站', desc:'误删的卡片在这里恢复，可永久删除或清空。', run:openTrash},
-    {icon:'⏱', name:'剧情时间线', desc:'按时间标记排列剧情卡片，防止时间线崩坏。', run:openTimeline}
+    {icon:'⏱', name:'剧情时间线', desc:'按时间标记排列剧情卡片，防止时间线崩坏。', run:openTimeline},
+    {icon:'🌍', name:'灵感广场', desc:'看看大家分享的灵感，或把卡片发布到公开广场（可自定义昵称、可删除）。', run:function(){ showArea('tool-share'); if (window.openShare) window.openShare(); }}
   ];
   function renderTools(){
     listEl.innerHTML='';
@@ -2424,7 +2456,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       listEl.appendChild(row);
     });
   }
-  var TOOL_AREAS=['tool-ocr','tool-result','tool-foreshadow','tool-relmap','tool-names','tool-templates','tool-trash','tool-timeline'];
+  var TOOL_AREAS=['tool-ocr','tool-result','tool-foreshadow','tool-relmap','tool-names','tool-templates','tool-trash','tool-timeline','tool-share'];
   function showArea(id){
     TOOL_AREAS.forEach(function(a){ var el=document.getElementById(a); if(el) el.hidden=(a!==id); });
     listEl.hidden=true;
@@ -3303,6 +3335,144 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
 
   var btn=document.getElementById('btn-sticky');
   if(btn) btn.addEventListener('click',function(){ addNote(); });
+})();
+
+/* ---------- 灵感广场（公开分享区 · Supabase） ---------- */
+(function(){
+  var SHARE_SERVER='https://yudhxvbrcpyudthhnjwv.supabase.co';
+  var SHARE_KEY='sb_publishable_LwYl9xvwuenEj3l5b9-30A_u-dC3b5i';
+  var DEV_KEY='novel-share-device', NICK_KEY='novel-share-nick', LAST_KEY='novel-share-last';
+  var deviceId=localStorage.getItem(DEV_KEY);
+  if(!deviceId){ deviceId='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,10); localStorage.setItem(DEV_KEY,deviceId); }
+  var nick=localStorage.getItem(NICK_KEY)||'';
+  if(!nick){ nick='墨友'+Math.floor(1000+Math.random()*9000); localStorage.setItem(NICK_KEY,nick); }
+  var area=document.getElementById('tool-share');
+  if(!area) return;
+  var listEl=document.getElementById('share-list');
+  var moreBtn=document.getElementById('btn-share-more');
+  var searchBox=document.getElementById('share-search');
+  var state={rows:[],page:0,pageSize:30,loading:false,q:''};
+
+  function toast(msg, withUndo){
+    var t=document.getElementById('toast'), txt=document.getElementById('toast-text'), act=document.getElementById('toast-act');
+    if(!t||!txt)return;
+    txt.textContent=msg;
+    if(act) act.hidden=!withUndo;
+    t.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t=setTimeout(function(){ t.classList.remove('show'); },4000);
+  }
+  function fetchT(url, opts, ms){
+    opts = opts || {};
+    if (typeof AbortController === 'undefined'){ return fetch(url, opts); }
+    var ctrl = new AbortController();
+    opts.signal = ctrl.signal;
+    var timer = setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, ms||20000);
+    return fetch(url, opts).then(function(r){ clearTimeout(timer); return r; },
+      function(e){ clearTimeout(timer); throw (e && e.name==='AbortError') ? new Error('timeout') : e; });
+  }
+  function hdr(extra){ return Object.assign({'apikey':SHARE_KEY,'authorization':'Bearer '+SHARE_KEY,'content-type':'application/json'},extra||{}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function fmt(t){ if(!t)return ''; var d=new Date(t),now=new Date(),diff=now-d; if(diff<60000)return '刚刚'; if(diff<3600000)return Math.floor(diff/60000)+' 分钟前'; if(diff<86400000)return Math.floor(diff/3600000)+' 小时前'; return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+  function buildUrl(page,q){
+    var u=SHARE_SERVER+'/rest/v1/public_shares?select=*&order=created_at.desc&limit='+state.pageSize+'&offset='+(page*state.pageSize);
+    if(q) u+='&or=('+encodeURIComponent('title.ilike.*'+q+'*,content.ilike.*'+q+'*,tags.ilike.*'+q+'*')+')';
+    return u;
+  }
+  function load(page,q){
+    if(state.loading)return;
+    state.loading=true;
+    fetchT(buildUrl(page,q||''),{headers:hdr()},20000).then(function(r){
+      if(r.status===401||r.status===403)throw new Error('权限不足');
+      if(!r.ok)throw new Error('连接失败（HTTP '+r.status+'）');
+      return r.json();
+    }).then(function(rows){
+      state.loading=false;
+      state.rows=(page===0)?(rows||[]):state.rows.concat(rows||[]);
+      state.page=page;
+      render();
+      moreBtn.hidden=!((rows||[]).length>=state.pageSize);
+    }).catch(function(e){
+      state.loading=false;
+      listEl.innerHTML='<div class="share-empty">广场暂时连不上：'+esc(e.message)+'<br>请确认 Supabase 项目里已创建 public_shares 表（SQL Editor 执行建表语句）。</div>';
+      moreBtn.hidden=true;
+    });
+  }
+  function render(){
+    listEl.innerHTML='';
+    if(!state.rows.length){ listEl.innerHTML='<div class="share-empty">广场还空着，来发第一条灵感吧 ✨</div>'; return; }
+    state.rows.forEach(function(rw){
+      var mine=rw.device_id===deviceId;
+      var tags=(rw.tags||'').split(',').filter(Boolean).map(function(t){return '<span class="share-tag">'+esc(t.trim())+'</span>';}).join('');
+      var d=document.createElement('div');
+      d.className='share-item';
+      d.innerHTML='<div class="share-top"><b class="share-nick">'+esc(rw.nick||'墨友')+'</b><span class="share-time">'+fmt(rw.created_at)+'</span>'+(mine?'<button type="button" class="icon-btn share-del" title="删除我的分享" data-id="'+rw.id+'">✕</button>':'')+'</div>'
+        +(rw.category?'<span class="share-cat">'+esc(rw.category)+'</span>':'')
+        +(rw.title?'<div class="share-title">'+esc(rw.title)+'</div>':'')
+        +'<div class="share-content">'+esc(rw.content||'').replace(/\\n/g,'<br>')+'</div>'
+        +(tags?'<div class="share-tags">'+tags+'</div>':'');
+      listEl.appendChild(d);
+    });
+  }
+  function publish(card,cb){
+    var last=Number(localStorage.getItem(LAST_KEY)||0);
+    if(Date.now()-last<30000){ toast('发布太频繁啦，30 秒后再试',false); return; }
+    var payload={device_id:deviceId,nick:nick,title:(card.title||'').slice(0,60),content:(card.content||'').slice(0,2000),tags:(card.tags||[]).join(',').slice(0,100),category:(card.category||'').slice(0,20)};
+    fetchT(SHARE_SERVER+'/rest/v1/public_shares',{method:'POST',headers:Object.assign(hdr(),{'prefer':'return=minimal'}),body:JSON.stringify(payload)},20000).then(function(r){
+      if(r.status===401||r.status===403)throw new Error('权限不足');
+      if(!r.ok)throw new Error('发布失败（HTTP '+r.status+'）');
+      localStorage.setItem(LAST_KEY,String(Date.now()));
+      cb(null);
+    }).catch(function(e){ cb(e); });
+  }
+  function shareCard(id){
+    var c=null;
+    if (window.__findCard) c = window.__findCard(id);
+    if(!c)return;
+    var preview=(c.title?('标题：'+c.title+'\\n'):'')+(c.content||'');
+    if(!confirm('将这张卡片公开分享到「灵感广场」？\\n\\n发布后任何人都能看到以下内容：\\n\\n'+preview+'\\n\\n展示昵称：'+nick+'（可在广场顶部修改）\\n\\n请只分享自己的原创内容。'))return;
+    toast('发布中…',true);
+    publish(c,function(err){
+      if(err){ toast('发布失败：'+err.message,false); return; }
+      toast('已分享到灵感广场 ✨',true);
+      if(!area.hidden){ state.page=0; state.q=''; searchBox.value=''; load(0,''); }
+    });
+  }
+  function editNick(){
+    var v=prompt('设置你的广场昵称（12 字以内，别人会看到这个名称）：',nick);
+    if(v===null)return;
+    v=v.trim().slice(0,12);
+    if(!v)return;
+    nick=v; localStorage.setItem(NICK_KEY,nick);
+    var lbl=document.getElementById('share-nick-label'); if(lbl)lbl.textContent=nick;
+    toast('昵称已更新为「'+nick+'」',true);
+  }
+  function delShare(id){
+    if(!confirm('删除这条分享？'))return;
+    fetchT(SHARE_SERVER+'/rest/v1/rpc/delete_share',{method:'POST',headers:hdr(),body:JSON.stringify({p_id:id,p_device:deviceId})},15000).then(function(r){
+      if(!r.ok)throw new Error('删除失败（HTTP '+r.status+'）');
+      return r.json().catch(function(){return null;});
+    }).then(function(){
+      toast('已删除',true);
+      state.page=0; load(0,state.q);
+    }).catch(function(e){ toast(e.message,false); });
+  }
+  function updateNick(){ var lbl=document.getElementById('share-nick-label'); if(lbl)lbl.textContent=nick; }
+  function openShare(){ updateNick(); state.page=0; state.q=''; searchBox.value=''; load(0,''); }
+  document.getElementById('btn-share-nick').addEventListener('click',editNick);
+  document.getElementById('btn-share-refresh').addEventListener('click',function(){ state.page=0; load(0,state.q); });
+  moreBtn.addEventListener('click',function(){ load(state.page+1,state.q); });
+  searchBox.addEventListener('input',function(){
+    var v=this.value.trim();
+    clearTimeout(searchBox._t);
+    searchBox._t=setTimeout(function(){ state.q=v; state.page=0; load(0,v); },400);
+  });
+  listEl.addEventListener('click',function(e){
+    var b=e.target.closest('.share-del'); if(!b)return;
+    delShare(Number(b.dataset.id));
+  });
+  window.shareCard=shareCard;
+  window.openShare=openShare;
 })();
 </script>
 <script>
