@@ -7,7 +7,7 @@
 
    发布提醒：改动本文件后必须把 CACHE 版本号 +1，浏览器才会安装新的 Service Worker。
    仅更换 index.html 时无需改动本文件（页面已经是网络优先）。 */
-const CACHE = 'moxia-v70';
+const CACHE = 'moxia-v78';
 const ASSETS = [
   './',
   './index.html',
