@@ -507,6 +507,9 @@ header{
 .brand h1{font-size:30px;letter-spacing:2px}
 .brand h1::before{content:"✍️";margin-right:10px}
 .brand p{color:var(--muted);font-size:13px;margin-top:6px;letter-spacing:1px}
+.header-actions .btn,.header-actions #streak-badge{cursor:grab;}
+.header-actions .btn:active,.header-actions #streak-badge:active{cursor:grabbing;}
+.header-actions .dragging{opacity:.4;outline:2px dashed var(--accent,#e67e22);}
 .header-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:relative}
 #btn-more,#fab,#ptr,#stats-modal{display:none}
 #stats-modal.show{display:flex}
@@ -705,6 +708,10 @@ header{
 .card-links{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
 .card-link{border:1px solid var(--tag-border);background:var(--tag-bg);color:var(--tag-ink);border-radius:7px;font-size:11px;padding:2px 8px;cursor:pointer;font-family:inherit;transition:.15s}
 .card-link:hover{border-color:var(--accent-line);color:var(--accent)}
+.card.starred{outline:1.5px solid #f5b942;}
+.star-btn.starred{color:#f5b942;}
+#streak-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:5px 10px;border-radius:999px;background:rgba(245,185,66,.12);color:#f5b942;cursor:pointer;border:1px solid rgba(245,185,66,.3);}
+#streak-badge:hover{background:rgba(245,185,66,.2);}
 .card.link-target{animation:link-blink 1.6s ease 2}
 @keyframes link-blink{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 4px var(--accent)}}
 .quick-modal .modal{max-width:420px}
@@ -835,7 +842,7 @@ body.bg-custom-img{background-image:var(--bg-img);background-size:cover;backgrou
 .sort-sel:focus{border-color:var(--accent)}
 body.view-list .grid{grid-template-columns:1fr;max-width:820px;margin:0 auto;gap:12px}
 body.view-list .card{flex-direction:row;align-items:center;gap:14px;min-height:86px}
-body.view-list .card.covered{padding:12px 16px}
+body.view-list .card.covered{padding:12px 16px;display:flex;gap:14px}
 body.view-list .card .card-cover{width:120px;height:76px;flex:none;margin:0}
 body.view-list .card .card-cover img{height:100%;object-fit:cover}
 body.view-list .card .card-body{flex:1;min-width:0}
@@ -1017,25 +1024,49 @@ footer{
 .search-hl{background:rgba(243,201,106,.55);border-radius:3px;padding:0 1px;color:inherit}
 .card{animation:card-in .34s ease both;animation-delay:calc(var(--i,0) * 22ms)}
 @keyframes card-in{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:none}}
-.card.covered{position:relative;padding:130px 16px 14px}
-.card.covered .card-cover{
-  position:absolute;top:0;left:0;right:0;height:118px;border:none;border-radius:9px 9px 0 0;overflow:hidden;
+.has-img-badge{
+  display:inline-flex;align-items:center;gap:3px;
+  background:var(--input-bg);color:var(--text-dim,#888);
+  font-size:11px;padding:1px 8px;border-radius:999px;
+  cursor:pointer;margin-left:4px;user-select:none;
 }
-.card.covered .card-cover img{width:100%;height:118px;object-fit:cover;display:block}
-.card.covered .card-top{position:absolute;top:7px;left:16px;right:16px;margin:0}
-.card.covered .card-cover::after{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(20,15,8,.28) 0%,rgba(20,15,8,0) 45%,rgba(0,0,0,.22) 100%);
+.has-img-badge:hover{color:var(--accent,#e67e22);}
+/* 卡片内图片覆盖层：点角标后图片盖住卡片，再点收回 */
+.card-img-view{
+  position:absolute;inset:0;z-index:20;display:none;
+  align-items:center;justify-content:center;
+  background:#1a1a1a;border-radius:inherit;overflow:hidden;
 }
-.card.covered .card-top{z-index:2;color:rgba(255,255,255,.94);text-shadow:0 1px 4px rgba(0,0,0,.5)}
-.card.covered .card-top .cat-dot{box-shadow:0 0 0 2px rgba(255,255,255,.5)}
-.card.covered .card-top .icon-btn{color:rgba(255,255,255,.9)}
-.card.covered .card-top .icon-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+.card-img-view img{width:100%;height:100%;object-fit:cover;display:block}
+.card.show-img{overflow:hidden}
+.card.show-img .card-img-view{display:flex}
+.card.show-img .has-img-badge{
+  position:absolute;top:8px;right:8px;z-index:21;
+  background:rgba(0,0,0,.55);color:#fff;
+}
+.card.show-img .has-img-badge:hover{color:#ffd;}
+.iv-counter{
+  position:absolute;bottom:8px;right:8px;z-index:21;
+  background:rgba(0,0,0,.55);color:#fff;font-size:11px;
+  padding:2px 10px;border-radius:999px;pointer-events:none;
+}
+/* 列表视图保持紧凑小图（不垫图） */
+body.view-list .card.covered .card-cover{
+  position:relative;inset:auto;width:120px;height:76px;flex:none;margin:0;border-radius:8px;box-shadow:none;z-index:0;
+}
+body.view-list .card.covered .card-cover img{position:static;width:100%;height:100%;object-fit:cover}
+body.view-list .card.covered .card-cover img:nth-child(n+2){display:none}
+body.view-list .card.covered.img-hover .card-cover{position:relative;inset:auto;bottom:auto;height:76px}
+body.view-list .card.covered:hover .card-top,body.view-list .card.covered:hover .card-title,
+body.view-list .card.covered:hover .card-content,body.view-list .card.covered:hover .card-tags,
+body.view-list .card.covered:hover .card-links,body.view-list .card.covered:hover .card-time,body.view-list .card.covered:hover .card-date{opacity:1;pointer-events:auto}
+body.view-list .card .card-cover::before,body.view-list .card .card-cover::after{content:none}
+body.view-list .card.covered::after{content:none}
+body.view-list .card.covered::before{content:none}
 .card.covered .card-top .cover-count{
   position:static;display:inline-block;margin-left:6px;background:rgba(0,0,0,.35);
   color:#fff;font-size:11px;padding:1px 8px;border-radius:999px;
 }
-.card.covered .cat-flag{display:none}
 /* 移动端 */
 @media (max-width:640px){
   header{padding:16px 14px 4px;align-items:center;gap:8px}
@@ -1051,10 +1082,6 @@ footer{
   .grid{grid-template-columns:1fr;gap:13px}
   .card{min-height:0}
   .card .card-cover img{height:172px}
-  .card.covered{padding:164px 14px 12px}
-  .card.covered .card-cover{height:152px}
-  .card.covered .card-cover img{height:152px}
-  .card.covered .card-top{left:14px;right:14px}
   #fab{
     display:flex;position:fixed;right:18px;bottom:26px;z-index:70;width:56px;height:56px;
     border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:26px;
@@ -1156,6 +1183,11 @@ footer{
 #editor .ed-resizer{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:5}
 #editor .ed-resizer:hover{background:rgba(201,111,66,.25)}
 .inspire-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+#editor .ed-inspire.folded{flex-basis:46px;min-width:46px;max-width:46px}
+#editor .ed-inspire.folded .inspire-list,#editor .ed-inspire.folded .ed-resizer,#editor .ed-inspire.folded #inspire-switch,#editor .ed-inspire.folded #btn-inspire-refresh{display:none}
+#editor .ed-inspire.folded .inspire-head{padding:12px 6px;justify-content:center;border-bottom:none}
+#editor .ed-inspire.folded .t{display:none}
+#editor .ed-inspire.folded #btn-inspire-fold{font-size:14px;padding:6px 8px}
 .inspire-head .t{font-weight:700;font-size:14px;flex:1}
 .switch{position:relative;width:40px;height:22px;border-radius:11px;background:var(--line2);transition:.2s;flex:none;cursor:pointer}
 .switch::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
@@ -1281,18 +1313,12 @@ footer{
   <div class="dock-body">
     <div class="header-actions">
       <button class="btn ghost" id="btn-theme" title="主题皮肤（13 款，按风格分类）">🎨 主题</button>
-      <button class="btn ghost" id="btn-books" title="书册管理：把灵感按作品分册">📚 书册</button>
       <button class="btn primary" id="btn-new" data-primary-action>✚ 新建灵感</button>
       <button class="btn ghost" id="btn-draw">🎲 随机抽一张</button>
-      <button class="btn ghost m-off" id="btn-sync" title="同步状态，点击设置"><span class="dot-led"></span><span id="sync-label">本地模式</span></button>
-      <button class="btn ghost" id="btn-pause" hidden title="暂停/恢复后台自动同步">⏸ 暂停</button>
-      <button class="btn ghost desk-only" id="btn-export">导出备份</button>
-      <button class="btn ghost desk-only" id="btn-import">导入</button>
-      <button class="btn ghost" id="btn-sticky" title="添加便签贴纸">🗒 便签</button>
-      <button class="btn ghost" id="btn-cats-edit" title="自定义分类颜色/形状/名称">🏷 分类</button>
-      <button class="btn ghost" id="btn-tools" title="功能工具箱：识别图片文字等，后续新功能都加在这里">🧩 功能</button>
-      <button class="btn ghost" id="btn-tl-toggle" title="打开/收起剧情时间线">⏱ 时间线</button>
-      <button class="btn ghost" id="btn-more" title="更多功能">⋯</button>
+      <button class="btn ghost m-off" id="btn-sync" title="云端同步 / 备份导出 / 数据导入"><span class="dot-led"></span><span>🏮 墨匣云阁</span></button>
+      <button id="streak-badge" title="点我看创作日历">🔥 0 天</button>
+                  <button class="btn ghost" id="btn-tools" title="功能工具箱：识别图片文字等，后续新功能都加在这里">🧩 功能</button>
+            <button class="btn ghost" id="btn-more" title="更多功能">⋯</button>
       <div class="more-menu" id="more-menu" hidden>
         <button id="m-draw">🎲 随机抽一张</button>
         <button id="m-export">💾 导出备份</button>
@@ -1419,8 +1445,20 @@ footer{
 </div></div>
 <div id="cal-modal" class="overlay"><div class="modal"><h3 class="serif">📅 创作日历</h3><div id="cal-body"></div><div class="modal-actions"><button class="btn primary" id="btn-cal-close">关闭</button></div></div></div>
 <div id="ai-modal" class="overlay"><div class="modal"><h3 class="serif">✨ AI 设置</h3>
-  <p class="hint" style="margin:6px 0 10px">接入 DeepSeek 大模型，在编辑灵感时一键「续写 / 扩写 / 润色」。密钥只保存在本机浏览器，请求直连 DeepSeek 官方接口，不走任何第三方。</p>
-  <input type="password" id="ai-key" placeholder="DeepSeek API Key（sk- 开头）" autocomplete="off">
+  <p class="hint" style="margin:6px 0 10px">密钥只保存在本机浏览器，请求直连官方接口，不走任何第三方。</p>
+  <label style="display:block;font-size:12px;margin:8px 0 4px">AI 服务商</label>
+  <select id="ai-provider" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);">
+    <option value="deepseek">DeepSeek（默认，便宜好用）</option>
+    <option value="doubao">豆包 / 火山引擎（中文写作 + 看图）</option>
+  </select>
+  <label style="display:block;font-size:12px;margin:10px 0 4px">API Key</label>
+  <input type="password" id="ai-key" placeholder="sk-...（DeepSeek）或 ark-...（豆包）" autocomplete="off">
+  <div id="ai-doubao-fields" style="display:none">
+    <label style="display:block;font-size:12px;margin:10px 0 4px">推理接入点 ID（ep-xxx）——文本补完用</label>
+    <input type="text" id="ai-endpoint-text" placeholder="ep-2025xxxx-xxxxx" autocomplete="off">
+    <label style="display:block;font-size:12px;margin:10px 0 4px">视觉模型接入点 ID（看图写卡用，可选）</label>
+    <input type="text" id="ai-endpoint-vision" placeholder="ep-2025xxxx-xxxxx（doubao-vision 模型）" autocomplete="off">
+  </div>
   <div class="modal-actions">
     <button class="btn ghost" id="btn-ai-close">关闭</button>
     <button class="btn primary" id="btn-ai-save">保存</button>
@@ -1510,6 +1548,7 @@ footer{
     <span class="hint">日期可选：时间线按「日期」分组排序，同一天内再按时间标记排列。</span>
     <div class="ai-row" id="ai-row">
       <span class="ai-label">✨ AI 助手</span>
+      <button type="button" class="btn ghost" id="ai-complete" title="参考你过去写过的卡片，按你的风格补完这张">🎯 按我的习惯补完</button>
       <button type="button" class="btn ghost" id="ai-continue">续写</button>
       <button type="button" class="btn ghost" id="ai-expand">扩写</button>
       <button type="button" class="btn ghost" id="ai-polish">润色</button>
@@ -1525,6 +1564,7 @@ footer{
       <div class="ed-resizer" id="ed-resizer"></div>
       <div class="inspire-head">
         <span class="t">💡 灵感推荐</span>
+        <button type="button" class="btn ghost" id="btn-inspire-fold" title="收起/展开灵感推荐" style="padding:2px 8px;font-size:12px">⟫</button>
         <div class="switch on" id="inspire-switch" title="开关：写作时推荐相似灵感"></div>
         <button type="button" class="btn ghost" id="btn-inspire-refresh" style="padding:2px 10px;font-size:12px">↻</button>
       </div>
@@ -1563,7 +1603,10 @@ footer{
     <input type="text" id="s-token" placeholder="同步口令（可留空=明文；设置则加密，设备间必须一致）">
     <div class="srv-line" id="s-usage" hidden></div>
     <div class="hint" id="s-stat"></div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="flex-wrap:wrap">
+      <button class="btn ghost" id="btn-export" title="导出全部卡片为 JSON 备份文件">📤 导出备份</button>
+      <button class="btn ghost" id="btn-import" title="从 JSON 备份文件导入">📥 导入备份</button>
+      <button class="btn ghost" id="btn-sync-pause" title="暂停后改动先攒在本机，恢复后再一起同步">⏸ 暂停同步</button>
       <button class="btn ghost" id="btn-sync-repush" title="把本机所有卡片重新上传一次">强制重传本机全部</button>
       <button class="btn ghost" id="btn-purge" hidden title="清除云端 90 天前的删除记录">清理云端</button>
       <button class="btn ghost" id="btn-sync-off">断开同步</button>
@@ -2216,7 +2259,7 @@ function cloudPush(){
 function setMode(m){
   var b = $('#btn-sync'); if (!b) return;
   b.className = 'btn ghost m-'+m;
-  $('#sync-label').textContent = { off:'本地模式', sync:'同步中…', ok:'云端已同步', err:'云端异常', pause:'已暂停' }[m] || '';
+  // label 固定为「☁️ 上传云端」，只靠 dot-led 颜色表示状态
 }
 function scheduleSync(delay){
   if (!cfg()){ setMode('off'); return; }
@@ -2508,7 +2551,8 @@ function visible(){
   var q = filter.q.trim().toLowerCase();
   return cards.filter(function(c){
     if (bookOf(c)!==curBookId()) return false;
-    if (filter.cat!=='全部' && c.category!==filter.cat) return false;
+    if (filter.cat==='⭐ 收藏' && !c.starred) return false;
+    if (filter.cat!=='全部' && filter.cat!=='⭐ 收藏' && c.category!==filter.cat) return false;
     if (filter.tag && (c.tags||[]).indexOf(filter.tag)<0) return false;
     if (q){
       var t = ((c.title||'')+' '+(c.content||'')+' '+(c.tags||[]).join(' ')).toLowerCase();
@@ -2524,6 +2568,7 @@ function visible(){
   });
 }
 
+/* 图片条悬停触发（只有光标碰到图片才展开，卡片其他区域仅编辑） */
 /* ---------- 渲染 ---------- */
 function cardHtml(c,i){
   var color = catColor(c.category);
@@ -2531,22 +2576,26 @@ function cardHtml(c,i){
     return '<span class="tag" data-tag="'+esc(t)+'">#'+esc(t)+'</span>';
   }).join('');
   var imgs = imgsOf(c);
-  var cover = imgs.length
-    ? '<div class="card-cover" data-cover="1">'
-      + '<img src="'+esc(imgs[0])+'" alt="封面配图" loading="lazy">'
-      + '</div>'
+  var coverBadge = imgs.length
+    ? '<span class="has-img-badge" data-cover="1" title="有 '+imgs.length+' 张配图，点击看图，再点收回">🖼 '+imgs.length+'</span>'
     : '';
-  var cls = 'card' + (c.pinned?' pinned':'') + (imgs.length?' covered':'') + (!c.title&&c.content?' card-no-title':'');
+  var imgView = imgs.length
+    ? '<div class="card-img-view">'+imgs.slice(0,9).map(function(u,k){
+        return '<img src="'+esc(u)+'" alt="配图'+(k+1)+'" class="iv-img" data-idx="'+k+'" style="'+(k===0?'':'display:none')+'">';
+      }).join('')+'<span class="iv-counter">1/'+imgs.length+'</span></div>'
+    : '';
+  var cls = 'card' + (c.pinned?' pinned':'') + (c.starred?' starred':'') + (!c.title&&c.content?' card-no-title':'');
   var idx = Math.min(i||0, 12);
   return '<div class="'+cls+'" data-id="'+c.id+'" draggable="true" title="按住可拖动到时间线" style="--cat:'+color+';--i:'+idx+'">'
-    + cover
+    + imgView
     + '<div class="card-top">'
     +   '<span class="cat-dot shape-'+catShape(c.category||'其他')+'" style="background:'+color+'"></span>'
     +   '<span class="cat-flag">'+esc(c.category||'其他')+'</span>'
+    +   coverBadge
     +   (c.pinned?'<span class="pin-flag">★ 已置顶</span>':'')
-    +   (imgs.length>1?'<span class="cover-count">🖼 '+imgs.length+'</span>':'')
     +   '<span class="card-actions">'
     +     '<button class="icon-btn act-pin" title="'+(c.pinned?'取消置顶':'置顶')+'">'+(c.pinned?'★':'☆')+'</button>'
+    +     '<button class="icon-btn act-star'+(c.starred?' starred':'')+'" title="'+(c.starred?'取消收藏':'收藏为重要灵感')+'">'+(c.starred?'⭐':'☆')+'</button>'
     +     '<button class="icon-btn act-del" title="删除">✕</button>'
     +     '<button class="icon-btn act-share" title="分享到灵感广场">↗</button>'
     +     '<button class="icon-btn act-img" title="导出为图片">🖼</button>'
@@ -2575,7 +2624,7 @@ function hl(s){
 }
 
 function renderCats(){
-  var names = ['全部'].concat(CATS.map(function(c){ return c.name; }));
+  var names = ['全部','⭐ 收藏'].concat(CATS.map(function(c){ return c.name; }));
   $('#cat-bar').innerHTML = names.map(function(n){
     return '<button class="chip'+(filter.cat===n?' active':'')+'" data-cat="'+n+'">'+n+'</button>';
   }).join('');
@@ -2599,6 +2648,51 @@ function renderTags(){
 }
 
 function filterSig(){ return filter.q + '|' + filter.cat + '|' + (filter.tag||''); }
+/* 工具栏按钮拖动排序 */
+var DOCK_ORDER_KEY='moxia-dock-order';
+function dockOrder(){ try{ return JSON.parse(localStorage.getItem(DOCK_ORDER_KEY)||'[]'); }catch(e){ return []; } }
+function saveDockOrder(){
+  var ids=[].slice.call(document.querySelectorAll('.header-actions > button[id]')).map(function(b){return b.id;});
+  try{ localStorage.setItem(DOCK_ORDER_KEY, JSON.stringify(ids)); }catch(e){}
+}
+function applyDockOrder(){
+  var order=dockOrder();
+  if(!order.length) return;
+  var wrap=document.querySelector('.header-actions');
+  if(!wrap) return;
+  var btns=order.map(function(id){ return document.getElementById(id); }).filter(Boolean);
+  // 把存过的按钮按顺序插到最前面
+  btns.forEach(function(b){ wrap.appendChild(b); });
+}
+function initDockDrag(){
+  var wrap=document.querySelector('.header-actions');
+  if(!wrap) return;
+  var dragEl=null;
+  [].slice.call(wrap.querySelectorAll('button[id]')).forEach(function(b){
+    b.draggable=true;
+    b.addEventListener('dragstart', function(e){
+      dragEl=b; b.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      try{ e.dataTransfer.setData('text/plain', b.id); }catch(err){}
+    });
+    b.addEventListener('dragend', function(){
+      b.classList.remove('dragging'); dragEl=null; saveDockOrder();
+    });
+    b.addEventListener('dragover', function(e){
+      e.preventDefault(); e.dataTransfer.dropEffect='move';
+      if(!dragEl || dragEl===b) return;
+      var rect=b.getBoundingClientRect();
+      var after=(e.clientX-rect.left) > rect.width/2;
+      wrap.insertBefore(dragEl, after ? b.nextSibling : b);
+    });
+  });
+}
+function updateStreakBadge(){
+  var m=calGet(); var streak=0;
+  for(var d=new Date(); (m[calDayKey(d)]||0)>0; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-1)){ streak++; if(streak>365) break; }
+  var el=document.getElementById('streak-badge');
+  if(el) el.textContent='🔥 '+streak+' 天';
+}
 function render(force){
   var sig = cardsSig() + '##' + filterSig();
   if (!force && sig === lastSig) return;   // 数据和筛选都没变：跳过重建，消除周期闪屏
@@ -2665,10 +2759,27 @@ grid.addEventListener('click', function(e){
   if (e.target.closest('.act-link')){ openLinkPicker(id); return; }
   if (e.target.closest('.act-del')){ del(id); return; }
   if (e.target.closest('.act-pin')){ togglePin(id); return; }
+  if (e.target.closest('.act-star')){
+    var sc=findCard(id); if(sc){ sc.starred=!sc.starred; sc.updatedAt=nowStamp(); persist(); render(); syncNow&&syncNow(); }
+    return;
+  }
   if (e.target.closest('.act-share')){ if (window.shareCard) window.shareCard(id); return; }
   if (e.target.closest('.act-img')){ exportCardImg(id); return; }
-  if (e.target.closest('.card-cover')){
-    openLightbox(imgsOf(findCard(id)), 0); return;
+  if (e.target.closest('.has-img-badge')){
+    var cardEl = e.target.closest('.card');
+    cardEl.classList.toggle('show-img');
+    return;
+  }
+  if (e.target.closest('.card-img-view')){
+    var cv = e.target.closest('.card-img-view');
+    var imgs = cv.querySelectorAll('.iv-img');
+    var cur = 0;
+    imgs.forEach(function(im,i){ if(im.style.display!=='none') cur=i; });
+    var next = (cur+1) % imgs.length;
+    imgs.forEach(function(im,i){ im.style.display = i===next?'':'none'; });
+    var ct = cv.querySelector('.iv-counter');
+    if(ct) ct.textContent = (next+1)+'/'+imgs.length;
+    return;
   }
   openEditor(id);
 });
@@ -2724,6 +2835,11 @@ function openEditor(id){
   renderStrip();
   selectCat(useDraft ? (draft.category||'其他') : (c ? (c.category||'其他') : selectedCat));
   $('#editor').classList.add('show');
+  (function(){ var side=$('#ed-inspire'); if(!side) return;
+    var f=false; try{ f=localStorage.getItem('moxia-insp-fold')==='1'; }catch(e){}
+    side.classList.toggle('folded', f);
+    var fb=document.getElementById('btn-inspire-fold'); if(fb) fb.textContent=f?'⟪':'⟫';
+  })();
   if (useDraft) showToast('已恢复上次未保存的草稿', false);
   setTimeout(function(){ $('#f-content').focus(); }, 50);
 }
@@ -2910,6 +3026,20 @@ $('#file-import').addEventListener('change', function(){
 
 /* ---------- 快捷键 ---------- */
 document.addEventListener('keydown', function(e){
+  // Ctrl+K 聚焦搜索
+  if ((e.ctrlKey||e.metaKey) && (e.key==='k'||e.key==='K')){
+    e.preventDefault();
+    var sb=document.getElementById('search'); if(sb){ sb.focus(); sb.select(); }
+    return;
+  }
+  // N 新建（不在编辑器/输入框时）
+  if (e.key==='n' || e.key==='N'){
+    var tag=(document.activeElement||{}).tagName;
+    var editing=$('#editor').classList.contains('show');
+    if(!editing && tag!=='INPUT' && tag!=='TEXTAREA' && !e.ctrlKey && !e.metaKey && !e.altKey){
+      e.preventDefault(); openEditor(null);
+    }
+  }
   if (e.key==='Escape'){
     if ($('#lightbox').classList.contains('show')){ closeLightbox(); return; }
     if ($('#drawer').classList.contains('show')){ $('#drawer').classList.remove('show'); return; }
@@ -2926,6 +3056,9 @@ document.addEventListener('keydown', function(e){
 
 buildCatPicker();
 render();
+updateStreakBadge();
+applyDockOrder();
+initDockDrag();
 checkBackupHint();
 
 /* ---------- 启动：镜像加载 / 旧数据迁移 / 自动同步 ---------- */
@@ -3242,9 +3375,9 @@ function delBook(id){
   showToast('已删除书册「'+b.name+'」，卡片移回默认册', false);
 }
 var booksPanel=$('#books-panel'), booksBtn=$('#btn-books');
-function closeBooksPanel(){ booksPanel.hidden=true; booksBtn.classList.remove('active'); }
+function closeBooksPanel(){ if(booksPanel) booksPanel.hidden=true; if(booksBtn) booksBtn.classList.remove('active'); }
 window.closeBooksPanel=closeBooksPanel;
-booksBtn.addEventListener('click', function(e){
+if(booksBtn) booksBtn.addEventListener('click', function(e){
   e.stopPropagation();
   var show=booksPanel.hidden;
   if(show){
@@ -3270,30 +3403,63 @@ renderBooksPanel(); renderBookBtn();
 
 /* ---------- AI 续写 / 扩写 / 润色（DeepSeek） ---------- */
 var AI_KEY='moxia-ai-key';
+var AI_PROVIDER='moxia-ai-provider';
+var AI_EP_TEXT='moxia-ai-ep-text';
+var AI_EP_VISION='moxia-ai-ep-vision';
 function aiKey(){ try{ return localStorage.getItem(AI_KEY)||''; }catch(e){ return ''; } }
 function setAiKey(k){ try{ k ? localStorage.setItem(AI_KEY, k) : localStorage.removeItem(AI_KEY); }catch(e){} }
+function aiProvider(){ try{ return localStorage.getItem(AI_PROVIDER)||'deepseek'; }catch(e){ return 'deepseek'; } }
+function aiEpText(){ try{ return localStorage.getItem(AI_EP_TEXT)||''; }catch(e){ return ''; } }
+function aiEpVision(){ try{ return localStorage.getItem(AI_EP_VISION)||''; }catch(e){ return ''; } }
 var aiModal=$('#ai-modal');
-function openAiModal(){ $('#ai-key').value=aiKey(); aiModal.classList.add('show'); setTimeout(function(){ $('#ai-key').focus(); },50); }
+function openAiModal(){
+  $('#ai-provider').value=aiProvider();
+  $('#ai-key').value=aiKey();
+  $('#ai-endpoint-text').value=aiEpText();
+  $('#ai-endpoint-vision').value=aiEpVision();
+  toggleDoubaoFields();
+  aiModal.classList.add('show');
+  setTimeout(function(){ $('#ai-key').focus(); },50);
+}
+function toggleDoubaoFields(){
+  var p=$('#ai-provider').value;
+  document.getElementById('ai-doubao-fields').style.display = p==='doubao' ? 'block' : 'none';
+}
+$('#ai-provider').addEventListener('change', toggleDoubaoFields);
 $('#btn-ai-close').addEventListener('click', function(){ aiModal.classList.remove('show'); });
 $('#btn-ai-save').addEventListener('click', function(){
   var k=$('#ai-key').value.trim();
+  var p=$('#ai-provider').value;
   setAiKey(k);
+  try{
+    localStorage.setItem(AI_PROVIDER, p);
+    localStorage.setItem(AI_EP_TEXT, $('#ai-endpoint-text').value.trim());
+    localStorage.setItem(AI_EP_VISION, $('#ai-endpoint-vision').value.trim());
+  }catch(e){}
   aiModal.classList.remove('show');
-  showToast(k ? 'AI 密钥已保存（仅存本机）' : '已清除 AI 密钥', false);
+  showToast('AI 设置已保存（仅存本机）', false);
 });
 var aiBusy=false;
 function aiStatus(msg, err){ var el=$('#ai-status'); if(!el) return; if(!msg){ el.hidden=true; return; } el.hidden=false; el.textContent=msg; el.classList.toggle('err', !!err); }
-function callAI(messages){
+function aiEndpoint(){
+  if(aiProvider()==='doubao') return 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+  return 'https://api.deepseek.com/chat/completions';
+}
+function aiModelName(){
+  if(aiProvider()==='doubao') return aiEpText() || 'doubao-pro-32k';
+  return 'deepseek-chat';
+}
+function callAI(messages, maxTok){
   var key=aiKey();
-  if(!key){ openAiModal(); showToast('请先在 ⋯ → ✨ AI 设置 里填入 DeepSeek API Key', false); return Promise.reject('no-key'); }
-  return fetch('https://api.deepseek.com/chat/completions', {
+  if(!key){ openAiModal(); showToast('请先在 ⋯ → ✨ AI 设置 里填入 API Key', false); return Promise.reject('no-key'); }
+  return fetch(aiEndpoint(), {
     method:'POST',
     headers:{ 'content-type':'application/json', 'authorization':'Bearer '+key },
     body: JSON.stringify({
-      model:'deepseek-chat',
+      model: aiModelName(),
       messages: messages,
       temperature: 0.85,
-      max_tokens: 1200,
+      max_tokens: maxTok||1200,
       stream: false
     })
   }).then(function(r){
@@ -3339,6 +3505,44 @@ function aiAction(kind){
 $('#ai-continue').addEventListener('click', function(){ aiAction('continue'); });
 $('#ai-expand').addEventListener('click', function(){ aiAction('expand'); });
 $('#ai-polish').addEventListener('click', function(){ aiAction('polish'); });
+
+/* AI 按我的习惯补完：拿历史卡片当风格样本 */
+function aiComplete(){
+  if(aiBusy) return;
+  var curTitle=$('#f-title').value.trim();
+  var curContent=$('#f-content').value.trim();
+  if(!curTitle && !curContent){ showToast('先写点标题或开头，AI 才知道往哪补', false); $('#f-title').focus(); return; }
+  // 收集历史样本（排除当前编辑的卡）
+  var samples = (typeof cards!=='undefined'?cards:[]).filter(function(c){ return c.id !== editingId; })
+    .filter(function(c){ return c.content || c.title; })
+    .slice(-10);
+  if(!samples.length){ showToast('还没有历史卡片可以学习，先写几张吧', false); return; }
+  var sampleText = samples.map(function(c,i){
+    return '【样本'+(i+1)+'】分类:'+(c.category||'其他')+' 标题:'+(c.title||'(无)')+'\n正文:'+(c.content||'(空)');
+  }).join('\n\n');
+  var sys='你在帮用户补完他的小说灵感卡片。下面是他过去写过的卡片样本，仔细学习他的写作风格、语气、段落长短、用词习惯、喜欢写什么题材。然后严格模仿他的风格，补完他正在写的卡片。只输出最终卡片，不要解释。';
+  var user='=== 用户过去写的卡片（学习风格）===\n'+sampleText+
+    '\n\n=== 用户现在正在写的卡片（请补完）===\n';
+  if(curTitle) user+='已有标题：'+curTitle+'\n';
+  if(curContent) user+='已有正文：'+curContent+'\n';
+  user+='\n请按用户的风格补完这张卡片。严格按以下格式输出（不要加额外解释）：\n标题：xxx\n正文：xxx\n标签：xxx,xxx';
+  aiBusy=true;
+  aiStatus('学习你的风格中…');
+  callAI([{role:'system',content:sys},{role:'user',content:user}], 1500).then(function(txt){
+    var mT=txt.match(/标题[：:]\s*([^\n]+)/);
+    var mC=txt.match(/正文[：:]\s*([\s\S]+?)(?=\n标签[：:]|$)/);
+    var mG=txt.match(/标签[：:]\s*([^\n]+)/);
+    if(mT) $('#f-title').value=mT[1].trim();
+    if(mC) $('#f-content').value=mC[1].trim();
+    if(mG) $('#f-tags').value=mG[1].trim();
+    scheduleDraft();
+    aiStatus('✓ 已按你的习惯补完');
+    setTimeout(function(){ aiStatus(''); }, 2600);
+  }).catch(function(e){
+    if(e!=='no-key'){ aiStatus('出错了：'+(e&&e.message?e.message:e), true); setTimeout(function(){ aiStatus(''); }, 4500); }
+  }).then(function(){ aiBusy=false; });
+}
+$('#ai-complete').addEventListener('click', aiComplete);
 
 /* ---------- 视图切换 / 排序 ---------- */
 var VIEW_KEY='moxia-view', SORT_KEY='moxia-sort';
@@ -3404,6 +3608,7 @@ function openCal(){
   calModal.classList.add('show');
 }
 $('#btn-cal-close').addEventListener('click', function(){ calModal.classList.remove('show'); });
+var _sb=document.getElementById('streak-badge'); if(_sb) _sb.addEventListener('click', openCal);
 
 /* ---------- 单卡导出图片 ---------- */
 function wrapLines(ctx, text, px, maxW){
@@ -3738,6 +3943,7 @@ function openSyncModal(){
   $('#s-stat').textContent = c
     ? ('当前：云端同步 · ' + c.server + (lastErr ? ' · ' + lastErr : ' · 正常'))
     : '当前：本地模式（数据只存在这台设备上）';
+  var pb=$('#btn-sync-pause'); if(pb){ pb.textContent=isPaused()?'▶ 恢复同步':'⏸ 暂停同步'; }
   syncModal.classList.add('show');
   loadCloudUsage();
   setTimeout(function(){ $('#s-server').focus(); }, 50);
@@ -3774,21 +3980,13 @@ $('#btn-sync-off').addEventListener('click', function(){
   setCfg(null); setMode('off');
   syncModal.classList.remove('show');
 });
-$('#btn-pause').addEventListener('click', function(){
-  var c = cfg(); if (!c){ alert('还没配置同步，无需暂停'); return; }
-  if (!c.paused){
-    if (syncTimer) { clearTimeout(syncTimer); syncTimer = null; }
-    c.paused = true; setCfg(c);
-    if (syncing){ setMode('sync'); }      // 正在飞的这一次会自然收尾，之后不再自动同步
-    else { setMode('pause'); saveMirror(); }
-    showToast('已暂停自动同步，改动会攒在本机', false);
-  } else {
-    c.paused = false; c.lastFull = 0;     // 恢复时强制一次全量对账，把暂停期间的差异补齐
-    setCfg(c);
-    showToast('已恢复，正在补同步…', false);
-    runSync();
-  }
-  renderPauseBtn();
+$('#btn-sync-pause').addEventListener('click', function(){
+  var c = cfg(); if(!c){ showToast('先开启云端同步再暂停', false); return; }
+  setCfg(Object.assign({}, c, {paused: !c.paused}));
+  updateSyncBtn();
+  this.textContent = c.paused ? '▶ 恢复同步' : '⏸ 暂停同步';
+  showToast(c.paused ? '已恢复同步' : '已暂停同步（改动先攒本机）', false);
+  if(!c.paused && typeof syncNow==='function') syncNow();
 });
 $('#btn-sync-repush').addEventListener('click', function(){
   if (!cfg()){ alert('请先保存同步配置'); return; }
@@ -3823,7 +4021,6 @@ $('#m-draw').addEventListener('click', function(){ moreMenu.hidden = true; drawO
 $('#m-export').addEventListener('click', function(){ moreMenu.hidden = true; $('#btn-export').click(); });
 $('#m-import').addEventListener('click', function(){ moreMenu.hidden = true; $('#btn-import').click(); });
 $('#m-stats').addEventListener('click', function(){ moreMenu.hidden = true; openStats(); });
-$('#m-pause').addEventListener('click', function(){ moreMenu.hidden = true; $('#btn-pause').click(); });
 $('#m-ai').addEventListener('click', function(){ moreMenu.hidden = true; openAiModal(); });
 $('#m-cal').addEventListener('click', function(){ moreMenu.hidden = true; openCal(); });
 
@@ -3955,6 +4152,10 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   var ocrText=document.getElementById('ocr-text');
   var lastOcrText='';
   var TOOLS=[
+    {icon:'📚', name:'书册管理', desc:'把灵感按作品分册，切换后只看当前册的卡片。', run:function(){ closeTools(); setTimeout(function(){ document.getElementById('btn-books').click(); }, 100); }},
+    {icon:'🗒', name:'便签贴纸', desc:'在桌面上贴一张便签，写临时备忘。', run:function(){ closeTools(); setTimeout(function(){ document.getElementById('btn-sticky').click(); }, 100); }},
+    {icon:'🏷', name:'分类设置', desc:'自定义分类名称、颜色和形状。', run:function(){ closeTools(); setTimeout(function(){ document.getElementById('btn-cats-edit').click(); }, 100); }},
+    {icon:'⏱', name:'剧情时间线', desc:'把卡片拖进时间线，按顺序整理剧情。', run:function(){ closeTools(); setTimeout(function(){ document.getElementById('btn-tl-toggle').click(); }, 100); }},
     {icon:'📷', name:'识别图片文字', desc:'提取图片中的文字（OCR）。首次使用需联网下载识别引擎，中文包约 20MB。', run:startOcrPick},
     {icon:'📖', name:'朗读卡片', desc:'语音朗读全部卡片的标题和正文，检查语感。再点一次停止。', run:toggleReadAll},
     {icon:'💡', name:'灵感触发器', desc:'随机组合 人物×场景×冲突，卡文时摇一摇找灵感。', run:triggerIdea},
@@ -4088,6 +4289,14 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       localStorage.setItem('novel-inspire-on', inspireOn?'1':'0');
       sw.classList.toggle('on', inspireOn);
       if(inspireOn) refreshInspire(); else { var list=$('#inspire-list'); if(list) list.innerHTML='<div class="insp-empty">灵感推荐已关闭<br>打开开关后，写作时自动推荐相似灵感</div>'; }
+      return;
+    }
+    var foldBtn=e.target.closest('#btn-inspire-fold');
+    if(foldBtn){
+      var side=$('#ed-inspire'); if(!side) return;
+      var f=side.classList.toggle('folded');
+      try{ localStorage.setItem('moxia-insp-fold', f?'1':'0'); }catch(e){}
+      foldBtn.textContent=f?'⟪':'⟫';
       return;
     }
     var ref=e.target.closest('#btn-inspire-refresh');
