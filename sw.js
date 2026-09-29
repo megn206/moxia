@@ -1,4 +1,4 @@
-/* 墨匣 · PWA Service Worker
+﻿/* 墨匣 · PWA Service Worker
    策略：
    - 页面请求（HTML）→ 网络优先，断网才回退缓存。这样换 index.html 就能立刻到达用户，
      不会像旧的「纯缓存优先」那样把老版本永久钉在缓存里。
@@ -7,7 +7,7 @@
 
    发布提醒：改动本文件后必须把 CACHE 版本号 +1，浏览器才会安装新的 Service Worker。
    仅更换 index.html 时无需改动本文件（页面已经是网络优先）。 */
-const CACHE = 'moxia-v69';
+const CACHE = 'moxia-v70';
 const ASSETS = [
   './',
   './index.html',
@@ -77,3 +77,4 @@ self.addEventListener('fetch', function (e) {
     })
   );
 });
+

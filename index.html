@@ -2165,24 +2165,32 @@ function needCrypto(){ if (!window.IdeaCrypto) throw new Error('缺少加密组�
 function cloudMergeRows(rows){
   var c = cfg(), d = jget(DIRTY_KEY), map = {}, mx = Number(c.cursor)||0, dataFails = 0, dataGot = 0, delGot = 0;
   cards.forEach(function(x){ map[x.id] = x; });
-  (rows||[]).forEach(function(row){
-    mx = Math.max(mx, Number(row.updated)||0);
-    if (Number(row.updated) > cloudMax) cloudMax = Number(row.updated);   // 记录云端已知最新时间，供保存时抬高本机时间戳
-    if (d[row.id]===1) return;                       // 本地待推的以本地为准
-    if (Number(row.deleted)===1){ if (map[row.id]){ delete map[row.id]; delGot++; } return; }
-    try {
-      var card = JSON.parse(IdeaCrypto.decStr(row.data, c.token));
-      if (card && card.id===row.id){
-        var ex = map[card.id];
-        if (ex && (Number(ex.updatedAt)||0) >= (Number(card.updatedAt)||0)) return;  // 本地已有相同或更新版本，跳过
-        map[card.id] = card; dataGot++;
-      }
-      else dataFails++;
-    } catch(e){ dataFails++; }
-  });
-  cards = Object.keys(map).map(function(k){ return map[k]; });
-  var c2 = cfg(); if (c2){ c2.cursor = Math.max(Number(c2.cursor)||0, mx); setCfg(c2); }
-  return { got: dataGot, fails: dataFails, del: delGot };
+  var i = 0, list = rows||[];
+  // 分批解密，每 8 张让出一次主线程，避免卡片多时页面卡死
+  function nextBatch(){
+    var end = Math.min(i + 8, list.length);
+    for (; i < end; i++){
+      var row = list[i];
+      mx = Math.max(mx, Number(row.updated)||0);
+      if (Number(row.updated) > cloudMax) cloudMax = Number(row.updated);
+      if (d[row.id]===1) continue;                       // 本地待推的以本地为准
+      if (Number(row.deleted)===1){ if (map[row.id]){ delete map[row.id]; delGot++; } continue; }
+      try {
+        var card = JSON.parse(IdeaCrypto.decStr(row.data, c.token));
+        if (card && card.id===row.id){
+          var ex = map[card.id];
+          if (ex && (Number(ex.updatedAt)||0) >= (Number(card.updatedAt)||0)) continue;
+          map[card.id] = card; dataGot++;
+        }
+        else dataFails++;
+      } catch(e){ dataFails++; }
+    }
+    if (i < list.length) return new Promise(function(resolve){ setTimeout(resolve, 0); }).then(nextBatch);
+    cards = Object.keys(map).map(function(k){ return map[k]; });
+    var c2 = cfg(); if (c2){ c2.cursor = Math.max(Number(c2.cursor)||0, mx); setCfg(c2); }
+    return { got: dataGot, fails: dataFails, del: delGot };
+  }
+  return nextBatch();
 }
 function cloudPull(){
   needCrypto();
@@ -2201,13 +2209,14 @@ function cloudPull(){
       return r.json();
     }).then(function(rows){
       var before = Number(cfg().cursor)||0;
-      var s = cloudMergeRows(rows);
+      return Promise.resolve(cloudMergeRows(rows)).then(function(s){
       stat.got += s.got; stat.fails += s.fails; stat.del += s.del;
       var after = Number(cfg().cursor)||0;
-      if ((rows||[]).length>=500 && after>before) return page();   // 游标必须前进才继续翻页
-      if (stat.fails>0 && stat.got===0) throw new Error('auth');   // 一条都解不开 = 口令不对
+      if ((rows||[]).length>=500 && after>before) return page();
+      if (stat.fails>0 && stat.got===0) throw new Error('auth');
       var c3 = cfg(); if (c3 && full){ c3.lastFull = Date.now(); setCfg(c3); }
       return stat;
+      });
     });
   }
   return page();
@@ -2280,9 +2289,7 @@ function runSync(auto){
       diffDirty();
       return cloudPush();
     }).then(function(pushed){
-      if (pushed){                                   // 推上去过东西 → 强制全量回拉，校准到对端更新的版本
-        var cc = cfg(); if (cc){ cc.lastFull = 0; setCfg(cc); }
-      }
+      // 推完只做增量回拉，不再强制全量，避免每次保存都重新解密全部卡片
       return cloudPull().then(function(st){
         if (st){ finalStat.got += st.got; finalStat.del += st.del; }
       });
