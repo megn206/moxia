@@ -2907,11 +2907,12 @@ function metaSnap(){
     notes: (function(){ try{ return JSON.parse(localStorage.getItem('novel-sticky-notes')||'null'); }catch(e){ return null; } })() };
   return s;
 }
-/* 同步前对比本地基线：设置变了就标记待推 */
+/* 同步前对比本地基线：设置变了就标记待推（首次无基线时只初始化，不立即推送，
+   让拉取阶段先应用云端设置，避免新设备用默认设置覆盖云端） */
 function diffMeta(){
   var base = metaBase();
   var snap = metaSnap();
-  if (!base){ setMetaDirty(true); setMetaBase(snap, Date.now()); return; }
+  if (!base){ setMetaBase(snap, Date.now()); return; }
   if (JSON.stringify(base.data) !== JSON.stringify(snap)){
     setMetaDirty(true);
     setMetaBase(snap, Date.now());
@@ -2974,7 +2975,8 @@ function cloudMergeRows(rows){
           try{
             var ms = JSON.parse(IdeaCrypto.decStr(row.data, c.token));
             var mb = metaBase() || {data:null, updatedAt:0};
-            if (ms && (Number(row.updated) > Number(mb.updatedAt))){
+            // 云端内容确实不同且时间戳更新时才应用；相同内容（仅时间戳变化）跳过，避免反复重建便签/重刷界面
+            if (ms && (Number(row.updated) > Number(mb.updatedAt)) && JSON.stringify(ms)!==JSON.stringify(mb.data||null)){
               metaApply(ms, Number(row.updated));
               setMetaBase(ms, Number(row.updated));
               dataGot++;
@@ -3047,14 +3049,15 @@ function cloudPush(){
   Object.keys(m).forEach(function(id){
     rows.push({ id:id, data:null, updated:Number(m[id])||Date.now(), deleted:1 });
   });
-  // 分类/设置行：本地有改动未推时一起上传
+  // 分类/设置行：本地有改动未推时一起上传（时间戳用 nowStamp，保证严格大于云端已知最新，
+  // 避免设置行被其他设备的增量游标跳过而永远同步不过去）
   var pushedMetaSnap = null;
   if (metaDirty()){
     try{
       pushedMetaSnap = metaSnap();
       rows.push({ id:META_ID,
         data: IdeaCrypto.encStr(JSON.stringify(pushedMetaSnap), c.token),
-        updated: Date.now(), deleted: 0 });
+        updated: nowStamp(), deleted: 0 });
     }catch(e){ pushedMetaSnap = null; }
   }
   if (!rows.length) return Promise.resolve(false);
@@ -8618,7 +8621,13 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   window.NovelSticky = window.NovelSticky || {};
   window.NovelSticky.apply = function(arr){
     try{
-      NOTES = Array.isArray(arr) ? arr : [];
+      NOTES = (Array.isArray(arr) ? arr : []).map(function(n){
+        var m = Object.assign({}, n);
+        var vw = window.innerWidth, vh = window.innerHeight;
+        if (typeof m.x!=='number' || isNaN(m.x) || m.x<0 || m.x>vw-120) m.x = Math.max(8, Math.min(vw-240, 100));
+        if (typeof m.y!=='number' || isNaN(m.y) || m.y<0 || m.y>vh-100) m.y = Math.max(8, Math.min(vh-180, 140));
+        return m;
+      });
       localStorage.setItem(KEY, JSON.stringify(NOTES));
     }catch(e){}
     document.querySelectorAll('.sticky-note').forEach(function(el){ el.remove(); });
