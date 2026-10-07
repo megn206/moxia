@@ -2323,8 +2323,9 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     <div class="srv-line" id="s-usage" hidden></div>
     <div class="hint" id="s-stat"></div>
     <div class="modal-actions" style="flex-wrap:wrap">
-      <button class="btn ghost" id="btn-export" title="导出全部卡片为 JSON 备份文件">📤 导出备份</button>
-      <button class="btn ghost" id="btn-import" title="从 JSON 备份文件导入">📥 导入备份</button>
+      <button class="btn ghost" id="btn-open-web" hidden title="打开线上版：浏览器允许网页直连云端，才能正常云同步">🌐 打开线上版</button>
+      <button class="btn ghost" id="btn-export" title="导出全部卡片（含分类/便签/主题设置）为 JSON 备份文件">📤 导出备份</button>
+      <button class="btn ghost" id="btn-import" title="从 JSON 备份文件导入（v2 备份会连设置一起恢复）">📥 导入备份</button>
       <button class="btn ghost" id="btn-sync-pause" title="暂停后改动先攒在本机，恢复后再一起同步">⏸ 暂停同步</button>
       <button class="btn ghost" id="btn-sync-repush" title="把本机所有卡片重新上传一次">强制重传本机全部</button>
       <button class="btn ghost" id="btn-purge" hidden title="清除云端 90 天前的删除记录">清理云端</button>
@@ -4251,11 +4252,17 @@ $('#btn-draw-close').addEventListener('click', function(){ $('#drawer').classLis
 $('#drawer').addEventListener('click', function(e){ if (e.target===this) this.classList.remove('show'); });
 
 /* ---------- 导出 / 导入 ---------- */
+$('#btn-open-web').addEventListener('click', function(){
+  try{ window.open('https://megn206.github.io/moxia/','_blank'); }
+  catch(e){ alert('请手动打开线上版：\nhttps://megn206.github.io/moxia/'); }
+});
 $('#btn-export').addEventListener('click', function(){
   if (cards.length===0){ alert('还没有卡片可以导出'); return; }
   var d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
   var name = '小说灵感卡片_' + d.getFullYear() + p(d.getMonth()+1) + p(d.getDate()) + '.json';
-  var blob = new Blob([JSON.stringify(cards,null,2)], {type:'application/json'});
+  // v2 备份：卡片 + 设置（分类/便签/主题/书册/功能区），迁移设备一次到位
+  var out = { version:2, type:'moxia-backup', exportedAt: Date.now(), cards: cards, meta: (typeof metaSnap==='function') ? metaSnap() : null };
+  var blob = new Blob([JSON.stringify(out,null,2)], {type:'application/json'});
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = name;
@@ -4270,11 +4277,16 @@ $('#file-import').addEventListener('change', function(){
   if (!file) return;
   var reader = new FileReader();
   reader.onload = function(){
-    var data;
+    var data, importedMeta = null;
     try { data = JSON.parse(reader.result); }
     catch(e){ alert('导入失败：文件格式不正确'); return; }
-    if (!Array.isArray(data)){ alert('导入失败：文件格式不正确'); return; }
-    var incoming = data.filter(function(x){ return x && (x.content||x.title||(x.images&&x.images.length)); })
+    var raw = data;
+    if (raw && raw.version===2 && Array.isArray(raw.cards)){          // v2 备份：卡片 + 设置
+      importedMeta = (raw.meta && typeof raw.meta==='object') ? raw.meta : null;
+      raw = raw.cards;
+    }
+    if (!Array.isArray(raw)){ alert('导入失败：文件格式不正确'); return; }
+    var incoming = raw.filter(function(x){ return x && (x.content||x.title||(x.images&&x.images.length)); })
       .map(function(x){
         var src = Array.isArray(x.images) ? x.images : (x.image ? [x.image] : []);
         return {
@@ -4302,9 +4314,13 @@ $('#file-import').addEventListener('change', function(){
       map[c.id]=c;
     });
     cards = Object.keys(map).map(function(k){ return map[k]; });
+    if (importedMeta && typeof metaApply==='function' && typeof setMetaBase==='function'){
+      metaApply(importedMeta, Date.now());       // 恢复分类/便签/主题/书册/功能区设置
+      setMetaBase(importedMeta, Date.now());
+    }
     persist(); render();
     checkBackupHint();
-    alert('导入完成，现在共有 ' + cards.length + ' 张卡片');
+    alert('导入完成，现在共有 ' + cards.length + ' 张卡片' + (importedMeta ? '，设置（分类/便签/主题/书册）也已恢复' : ''));
   };
   reader.readAsText(file, 'utf-8');
 });
@@ -5724,6 +5740,7 @@ function openSyncModal(){
     : '当前：本地模式（数据只存在这台设备上）';
   if (c && isFileMode()) stat += '　⚠ 当前是本地文件模式，浏览器禁止本地页面直连云端，云同步请用线上版 https://megn206.github.io/moxia/（本地数据先「导出备份」再导入线上版）';
   $('#s-stat').textContent = stat;
+  var ow=$('#btn-open-web'); if (ow) ow.hidden = !isFileMode();
   var pb=$('#btn-sync-pause'); if(pb){ pb.textContent=isPaused()?'▶ 恢复同步':'⏸ 暂停同步'; }
   syncModal.classList.add('show');
   setTimeout(function(){ loadCloudUsage(); }, 300);   // 查询延后：弹窗先渲染，不等云端
