@@ -887,7 +887,20 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 .th-custom-status button:hover{border-color:var(--accent-line)}
 body.bg-custom-img{background-image:var(--bg-img);background-size:cover;background-position:center;background-attachment:fixed}
 #bg-video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+/* Wallpaper 壁纸库 */
+.wp-modal{max-width:780px;width:92vw}
+.wp-hint{color:var(--muted);font-size:12px;margin-bottom:10px;line-height:1.6}
+.wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-height:58vh;overflow:auto;padding:2px}
+.wp-item{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;background:var(--input-bg);aspect-ratio:16/9;transition:.18s}
+.wp-item:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 18px var(--shadow-hover)}
+.wp-item img,.wp-item video{width:100%;height:100%;object-fit:cover;display:block}
+.wp-name{position:absolute;left:0;right:0;bottom:0;padding:4px 8px;font-size:11px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.72));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bg-shade{position:fixed;inset:0;z-index:-1;background:rgba(10,14,20,.35);pointer-events:none}
+/* 性能：有自定义图片/视频背景时关闭毛玻璃，减少每帧模糊合成开销 */
+body.bg-custom-video .search-wrap input,
+body.bg-custom-video #hot-btn,
+body.bg-custom-img .search-wrap input,
+body.bg-custom-img #hot-btn{backdrop-filter:none}
 .hot-tabs{
   display:flex;gap:4px;padding:10px 10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap;
 }
@@ -1237,7 +1250,7 @@ footer{
   font-family:"Noto Serif SC","STSong","SimSun",serif;color:var(--accent-deep);
 }
 .search-hl{background:rgba(243,201,106,.55);border-radius:3px;padding:0 1px;color:inherit}
-.card{animation:card-in .34s ease both;animation-delay:calc(var(--i,0) * 22ms)}
+.card{animation:card-in .34s ease both;animation-delay:calc(min(var(--i,0),12) * 22ms)}
 @keyframes card-in{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:none}}
 .has-img-badge{
   display:inline-flex;align-items:center;gap:3px;
@@ -1754,6 +1767,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     <div class="th-list">
       <button class="th-opt th-upload" id="btn-bg-image" type="button" title="上传图片作背景"><span class="th-swatch">🖼</span>背景图</button>
       <button class="th-opt th-upload" id="btn-bg-video" type="button" title="上传视频作背景（自动循环播放）"><span class="th-swatch">🎞</span>背景视频</button>
+      <button class="th-opt th-upload" id="btn-bg-wallpaper" type="button" title="浏览 Wallpaper Engine 的壁纸（视频/图片）并设为背景"><span class="th-swatch">🖼</span>Wallpaper 壁纸</button>
     </div>
     <div class="th-custom-status" id="th-custom-status" hidden><span id="th-custom-label">自定义背景已启用</span><button id="btn-bg-remove" type="button">✕ 移除</button></div>
   </div>
@@ -1766,6 +1780,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
 </div>
 <input type="file" id="file-bg-image" accept="image/*" hidden>
 <input type="file" id="file-bg-video" accept="video/*" hidden>
+<input type="file" id="file-bg-wallpaper" webkitdirectory multiple hidden>
 <div id="stats-modal" class="overlay"><div class="modal"><h3 class="serif">📊 灵感统计</h3><div id="stats-body"></div><div class="modal-actions"><button class="btn primary" id="btn-stats-close">关闭</button></div></div></div>
 <div id="link-modal" class="overlay"><div class="modal"><h3 class="serif">🔗 剧情串链</h3>
   <p class="hint" style="margin:4px 0 2px">选择一张卡片建立双向关联（A↔B），点卡片上的 🔗 标签可跳转。</p>
@@ -1781,6 +1796,12 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
   </div>
 </div></div>
 <div id="cal-modal" class="overlay"><div class="modal"><h3 class="serif">📅 创作日历</h3><div id="cal-body"></div><div class="modal-actions"><button class="btn primary" id="btn-cal-close">关闭</button></div></div></div>
+<div id="wallpaper-panel" class="overlay"><div class="modal wp-modal"><h3 class="serif">🎞 Wallpaper 壁纸库</h3>
+  <div class="wp-hint">点下方按钮选择 Wallpaper Engine 的创意工坊目录（通常为 <code>Steam\steamapps\workshop\content\431960</code>）。找到后墨匣会列出里面的视频/图片壁纸，点击一张即设为背景（不复制文件、不占空间）。刷新页面后需重新选择一次目录。</div>
+  <button class="btn ghost" id="btn-wp-pick" type="button" style="margin-bottom:10px">📂 选择 Wallpaper 目录…</button>
+  <div class="wp-grid" id="wp-grid"></div>
+  <div class="modal-actions"><button class="btn primary" id="btn-wp-close">关闭</button></div>
+</div></div>
 <div id="ai-modal" class="overlay"><div class="modal"><h3 class="serif">✨ AI 设置</h3>
   <p class="hint" style="margin:6px 0 10px">密钥只保存在本机浏览器，请求直连官方接口，不走任何第三方。</p>
   <label style="display:block;font-size:12px;margin:8px 0 4px">AI 服务商</label>
@@ -2794,9 +2815,11 @@ function setMode(m){
   b.className = 'btn ghost m-'+m;
   // label 固定为「☁️ 上传云端」，只靠 dot-led 颜色表示状态
 }
+var lastSyncAt = 0, idleHits = 0, sleeping = false;   // 智能同步：连续无更新自动暂停，有改动立即唤醒
 function scheduleSync(delay){
   if (!cfg()){ setMode('off'); return; }
   if (isPaused()){ setMode('pause'); saveMirror(); return; }   // 暂停中：改动攒在本机，不发任何请求
+  sleeping = false; idleHits = 0;                              // 有本地改动：唤醒智能同步
   if (syncTimer) clearTimeout(syncTimer);
   syncTimer = setTimeout(function(){ runSync(true); }, delay==null ? 1200 : delay);
 }
@@ -2806,6 +2829,7 @@ function runSync(auto){
   syncing = true; setMode('sync');
   var chain;
   var finalStat = { got:0, fails:0, del:0 };
+  var pushedAny = false;
   try {
     diffDirty();
     diffMeta();
@@ -2814,6 +2838,7 @@ function runSync(auto){
       diffDirty();
       return cloudPush();
     }).then(function(pushed){
+      if (pushed) pushedAny = true;
       // 推完只做增量回拉，不再强制全量，避免每次保存都重新解密全部卡片
       return cloudPull().then(function(st){
         if (st){ finalStat.got += st.got; finalStat.del += st.del; }
@@ -2823,8 +2848,14 @@ function runSync(auto){
     chain = Promise.reject(syncErr);   // 同步期抛错也要走复位，避免永久卡"同步中"
   }
   return chain.then(function(){
-    takeSnap(); diffDirty(); saveMirror();   // 先对齐基线再算增量，避免全量重推
-    lastErr = ''; setMode('ok'); render(); checkBackupHint();
+    takeSnap(); diffDirty();                 // 先对齐基线再算增量，避免全量重推
+    setTimeout(function(){ saveMirror(); }, 0);    // 整库写入延后：不占点击事件的主线程
+    lastErr = ''; lastSyncAt = Date.now(); setMode('ok');
+    requestAnimationFrame(function(){ render(); checkBackupHint(); });
+    // 智能暂停：本次既没拉到也没推到 → 连续 2 次后自动休眠（停止 12 秒轮询，只留 10 分钟心跳）
+    if (finalStat && finalStat.got===0 && finalStat.del===0 && !pushedAny){ idleHits++; }
+    else { idleHits = 0; sleeping = false; }
+    if (idleHits >= 2) sleeping = true;
     if (finalStat && (finalStat.got > 0 || finalStat.del > 0)){
       var bits = [];
       if (finalStat.got > 0) bits.push('更新 ' + finalStat.got + ' 张');
@@ -4405,9 +4436,22 @@ openDB().then(function(){ return load(); }).then(function(mirror){
   renderPauseBtn();
   if (cfg()) {
     if (isPaused()){ setMode('pause'); }
-    else { runSync(true); }
+    else { setTimeout(function(){ runSync(true); }, 800); }   // 启动后先让界面可交互，再静默全量对账
   }
-  setInterval(function(){ if (!document.hidden && cfg() && !syncing) runSync(true); }, 12000);
+  setInterval(function(){
+    if (document.hidden || !cfg() || syncing || sleeping) return;   // 智能休眠中：交给心跳
+    var d = jget(DIRTY_KEY), m = jget(DEL_KEY);
+    var hasLocal = false;
+    for (var k in d){ if (d[k]===1){ hasLocal = true; break; } }
+    if (!hasLocal){ for (var k2 in m){ if (m[k2]){ hasLocal = true; break; } } }
+    if (!hasLocal && !metaDirty() && Date.now()-lastSyncAt < 25000) return;  // 无改动且刚同步过：跳过
+    runSync(true);
+  }, 12000);
+  // 智能休眠心跳：每 10 分钟只轻量拉一次云端，检测他端有没有新数据（有则自动唤醒）
+  setInterval(function(){
+    if (document.hidden || !cfg() || syncing || !sleeping) return;
+    runSync(true);
+  }, 600000);
   document.addEventListener('visibilitychange', function(){
     if (!document.hidden && cfg() && !syncing) runSync(true);
   });
@@ -5205,6 +5249,37 @@ function removeCustomBg(){
   var st=document.getElementById('th-custom-status'); if(st) st.hidden=true;
   bgDel().then(function(){ if(typeof showToast==='function') showToast('已恢复主题背景'); }).catch(function(){});
 }
+/* Wallpaper 壁纸库：选目录 → 浏览壁纸 → 点击即设为背景（不复制文件，刷新后失效） */
+var wpObjUrl=null, wpActive=false;
+function clearWallpaperBg(){
+  if(wpObjUrl){ try{ URL.revokeObjectURL(wpObjUrl); }catch(e){} wpObjUrl=null; }
+  wpActive=false;
+  clearBgVideo();
+  document.body.style.removeProperty('--bg-img');
+  var st=document.getElementById('th-custom-status'); if(st) st.hidden=true;
+}
+function applyWallpaperBg(file, type, name){
+  if(wpObjUrl){ try{ URL.revokeObjectURL(wpObjUrl); }catch(e){} wpObjUrl=null; }
+  clearBgVideo();
+  document.body.style.removeProperty('--bg-img');
+  wpObjUrl=URL.createObjectURL(file);
+  wpActive=true;
+  if(type==='video'){
+    document.body.classList.add('bg-custom-video');
+    bgVideoEl=document.createElement('video');
+    bgVideoEl.id='bg-video'; bgVideoEl.autoplay=true; bgVideoEl.muted=true; bgVideoEl.loop=true; bgVideoEl.playsInline=true;
+    bgVideoEl.src=wpObjUrl;
+    document.body.appendChild(bgVideoEl);
+    bgShadeEl=document.createElement('div'); bgShadeEl.className='bg-shade'; document.body.appendChild(bgShadeEl);
+    var p=bgVideoEl.play(); if(p&&p.catch) p.catch(function(){});
+  } else {
+    document.body.style.setProperty('--bg-img','url("'+wpObjUrl+'")');
+    document.body.classList.add('bg-custom-img');
+  }
+  var st=document.getElementById('th-custom-status');
+  if(st){ st.hidden=false; var lb=document.getElementById('th-custom-label'); if(lb) lb.textContent='Wallpaper 壁纸：'+(name||'已启用'); }
+  if(typeof showToast==='function') showToast('Wallpaper 壁纸已启用');
+}
 function restoreCustomBg(){
   var meta=null;
   try{ meta=JSON.parse(localStorage.getItem(CUSTOM_BG_META)||'null'); }catch(e){}
@@ -5260,8 +5335,56 @@ function restoreCustomBg(){
     this.value='';
   });
   var btnRm=document.getElementById('btn-bg-remove');
-  if(btnRm) btnRm.addEventListener('click',function(e){ e.stopPropagation(); removeCustomBg(); });
+  if(btnRm) btnRm.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(wpActive){ clearWallpaperBg(); restoreCustomBg(); if(typeof showToast==='function') showToast('已移除 Wallpaper 壁纸'); return; }
+    removeCustomBg();
+  });
   restoreCustomBg();
+})();
+/* Wallpaper 壁纸库：目录选择与面板 */
+(function(){
+  var btn=document.getElementById('btn-bg-wallpaper');
+  var inp=document.getElementById('file-bg-wallpaper');
+  var pick=document.getElementById('btn-wp-pick');
+  var panel=document.getElementById('wallpaper-panel');
+  var grid=document.getElementById('wp-grid');
+  var cls=document.getElementById('btn-wp-close');
+  if(!btn||!inp||!panel||!grid) return;
+  function openPick(){ if(inp) inp.click(); }
+  if(btn) btn.addEventListener('click',function(e){ e.stopPropagation(); openPick(); });
+  if(pick) pick.addEventListener('click',function(e){ e.stopPropagation(); openPick(); });
+  function closeWp(){
+    panel.classList.remove('show');
+    if(grid){ var ms=grid.querySelectorAll('img,video'); ms.forEach(function(m){ try{ URL.revokeObjectURL(m.src); }catch(e){} }); grid.innerHTML=''; }
+  }
+  if(cls) cls.addEventListener('click',function(){ closeWp(); });
+  panel.addEventListener('click',function(e){ if(e.target===panel) closeWp(); });
+  inp.addEventListener('change',function(){
+    var files=Array.prototype.slice.call(this.files||[]);
+    var items=files.filter(function(f){ return /\.(mp4|webm|mov|m4v|jpg|jpeg|png|webp)$/i.test(f.name); });
+    if(!items.length){ if(typeof showToast==='function') showToast('这个文件夹里没找到视频/图片壁纸'); this.value=''; return; }
+    grid.innerHTML='';
+    items.forEach(function(f){
+      var isVid=/\.(mp4|webm|mov|m4v)$/i.test(f.name);
+      var it=document.createElement('div'); it.className='wp-item';
+      var name=f.name.replace(/\.[^.]+$/,'');
+      it.title=f.name;
+      var med;
+      if(isVid){ med=document.createElement('video'); med.muted=true; med.loop=true; med.playsInline=true; med.preload='metadata'; }
+      else { med=document.createElement('img'); }
+      try{ med.src=URL.createObjectURL(f); }catch(e){ return; }
+      var nm=document.createElement('div'); nm.className='wp-name'; nm.textContent=name;
+      it.appendChild(med); it.appendChild(nm);
+      it.addEventListener('click',function(){
+        applyWallpaperBg(f, isVid?'video':'image', name);
+        closeWp();
+      });
+      grid.appendChild(it);
+    });
+    panel.classList.add('show');
+    this.value='';
+  });
 })();
 
 /* ---------- 同步设置弹窗 ---------- */
@@ -5308,7 +5431,7 @@ function openSyncModal(){
     : '当前：本地模式（数据只存在这台设备上）';
   var pb=$('#btn-sync-pause'); if(pb){ pb.textContent=isPaused()?'▶ 恢复同步':'⏸ 暂停同步'; }
   syncModal.classList.add('show');
-  loadCloudUsage();
+  setTimeout(function(){ loadCloudUsage(); }, 300);   // 查询延后：弹窗先渲染，不等云端
   setTimeout(function(){ $('#s-server').focus(); }, 50);
 }
 $('#btn-sync').addEventListener('click', openSyncModal);
