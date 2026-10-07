@@ -2871,6 +2871,14 @@ function diffDirty(){
 function takeSnap(){ snapshot = {}; cards.forEach(function(c){ snapshot[c.id] = Number(c.updatedAt) || 0; }); idbSet('snap', snapshot); }
 
 function srvUrl(){ var c = cfg(); return String(c.server).replace(/\/+$/,''); }
+/* 本地 file:// 模式：浏览器禁止本地页面直连云端（CORS 安全限制），提示改用线上版 */
+function isFileMode(){ try{ return location.protocol==='file:'; }catch(e){ return false; } }
+function fileSyncHintShown(){ try{ return localStorage.getItem('moxia-file-sync-hint')==='1'; }catch(e){ return false; } }
+function showFileSyncHint(){
+  if (fileSyncHintShown()) return;
+  try{ localStorage.setItem('moxia-file-sync-hint','1'); }catch(e){}
+  showToast('当前是本地文件模式，浏览器禁止本地页面直连云端（安全限制）。云同步请打开线上版 https://megn206.github.io/moxia/；本地卡片请先「导出备份」，再到线上版「导入备份」。', false);
+}
 /* 带超时的 fetch：防止某次请求挂起导致同步永久卡死 */
 function fetchT(url, opts, ms){
   opts = opts || {};
@@ -3108,6 +3116,7 @@ function scheduleSync(delay){
 function runSync(auto){
   if (auto && isPaused()) return Promise.resolve();   // 暂停状态拦截一切自动触发
   if (syncing || BOOTING || !cfg()) return Promise.resolve();
+  if (isFileMode()){ setMode('err'); showFileSyncHint(); return Promise.resolve(); }   // 本地文件模式不发起任何云端请求
   syncing = true; setMode('sync');
   var chain;
   var finalStat = { got:0, fails:0, del:0 };
@@ -3149,7 +3158,9 @@ function runSync(auto){
     lastErr = msg==='auth' ? '云端密钥或同步口令不对，点右上角「同步」检查'
       : (msg.indexOf('数据不是本工具加密')===0 ? '云端数据与本机口令不一致，请核对同步口令'
       : '连不上云端，稍后自动重试');
-    setMode('err'); showToast(lastErr, false); scheduleSync(15000);
+    setMode('err');
+    if (!auto) showToast(lastErr, false);   // 自动同步失败静默，只亮状态灯；手动操作才弹提示，避免反复打扰
+    scheduleSync(15000);
   }).then(function(){ syncing = false; });
 }
 function imgsOf(c){
@@ -4721,7 +4732,7 @@ openDB().then(function(){ return load(); }).then(function(mirror){
     else { setTimeout(function(){ runSync(true); }, 800); }   // 启动后先让界面可交互，再静默全量对账
   }
   setInterval(function(){
-    if (document.hidden || !cfg() || syncing || sleeping) return;   // 智能休眠中：交给心跳
+    if (document.hidden || !cfg() || syncing || sleeping || isFileMode()) return;   // 智能休眠中：交给心跳
     var d = jget(DIRTY_KEY), m = jget(DEL_KEY);
     var hasLocal = false;
     for (var k in d){ if (d[k]===1){ hasLocal = true; break; } }
@@ -4731,7 +4742,7 @@ openDB().then(function(){ return load(); }).then(function(mirror){
   }, 12000);
   // 智能休眠心跳：每 10 分钟只轻量拉一次云端，检测他端有没有新数据（有则自动唤醒）
   setInterval(function(){
-    if (document.hidden || !cfg() || syncing || !sleeping) return;
+    if (document.hidden || !cfg() || syncing || !sleeping || isFileMode()) return;
     runSync(true);
   }, 600000);
   document.addEventListener('visibilitychange', function(){
@@ -5708,9 +5719,11 @@ function openSyncModal(){
   $('#s-key').value = c ? (c.key||'') : '';
   $('#s-room').value = c ? (c.room||'') : '';
   $('#s-token').value = c ? (c.token||'') : '';
-  $('#s-stat').textContent = c
+  var stat = c
     ? ('当前：云端同步 · ' + c.server + (lastErr ? ' · ' + lastErr : ' · 正常'))
     : '当前：本地模式（数据只存在这台设备上）';
+  if (c && isFileMode()) stat += '　⚠ 当前是本地文件模式，浏览器禁止本地页面直连云端，云同步请用线上版 https://megn206.github.io/moxia/（本地数据先「导出备份」再导入线上版）';
+  $('#s-stat').textContent = stat;
   var pb=$('#btn-sync-pause'); if(pb){ pb.textContent=isPaused()?'▶ 恢复同步':'⏸ 暂停同步'; }
   syncModal.classList.add('show');
   setTimeout(function(){ loadCloudUsage(); }, 300);   // 查询延后：弹窗先渲染，不等云端
