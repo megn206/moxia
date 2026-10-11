@@ -2322,12 +2322,15 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     <input type="text" id="s-token" placeholder="同步口令（可留空=明文；设置则加密，设备间必须一致）">
     <div class="srv-line" id="s-usage" hidden></div>
     <div class="hint" id="s-stat"></div>
+    <div class="hint" id="s-synclog" style="white-space:pre-wrap;line-height:1.7;margin-top:4px" hidden></div>
     <div class="modal-actions" style="flex-wrap:wrap">
       <button class="btn ghost" id="btn-open-web" hidden title="打开线上版：浏览器允许网页直连云端，才能正常云同步">🌐 打开线上版</button>
       <button class="btn ghost" id="btn-export" title="导出全部卡片（含分类/便签/主题设置）为 JSON 备份文件">📤 导出备份</button>
       <button class="btn ghost" id="btn-import" title="从 JSON 备份文件导入（v2 备份会连设置一起恢复）">📥 导入备份</button>
       <button class="btn ghost" id="btn-diag" title="查看卡片数据存储状态，定位显示异常/丢失原因">🩺 数据诊断</button>
       <button class="btn ghost" id="btn-restore-mirror" title="从本机备份（IndexedDB 镜像/localStorage）恢复卡片并重置书册筛选显示全部">♻️ 恢复数据</button>
+      <button class="btn ghost" id="btn-cloud-backup" title="把当前全部卡片+设置（分类/便签/主题/书册）加密快照保存到云端，覆盖上一次备份">💾 云端备份</button>
+      <button class="btn ghost" id="btn-cloud-restore" title="从云端备份快照恢复（会覆盖当前全部卡片与设置）">⏪ 云端恢复</button>
       <button class="btn ghost" id="btn-sync-pause" title="暂停后改动先攒在本机，恢复后再一起同步">⏸ 暂停同步</button>
       <button class="btn ghost" id="btn-sync-repush" title="把本机所有卡片重新上传一次">强制重传本机全部</button>
       <button class="btn ghost" id="btn-purge" hidden title="清除云端 90 天前的删除记录">清理云端</button>
@@ -2971,7 +2974,7 @@ function metaApply(snap, rowUpdated){
 }
 function needCrypto(){ if (!window.IdeaCrypto) throw new Error('缺少加密组件'); }
 function cloudMergeRows(rows){
-  var c = cfg(), d = jget(DIRTY_KEY), map = {}, mx = Number(c.cursor)||0, dataFails = 0, dataGot = 0, delGot = 0;
+  var c = cfg(), d = jget(DIRTY_KEY), map = {}, mx = Number(c.cursor)||0, dataFails = 0, dataGot = 0, delGot = 0, addGot = 0, updGot = 0;
   cards.forEach(function(x){ map[x.id] = x; });
   var i = 0, list = rows||[];
   // 分批解密，每 8 张让出一次主线程，避免卡片多时页面卡死
@@ -2990,12 +2993,13 @@ function cloudMergeRows(rows){
             if (ms && (Number(row.updated) > Number(mb.updatedAt)) && JSON.stringify(ms)!==JSON.stringify(mb.data||null)){
               metaApply(ms, Number(row.updated));
               setMetaBase(ms, Number(row.updated));
-              dataGot++;
+              dataGot++; updGot++;
             }
           }catch(e){ dataFails++; }
         }
         continue;
       }
+      if (row.id && String(row.id).indexOf('__backup__')===0) continue;   // 云端备份快照行：跳过，不当作卡片
       if (d[row.id]===1) continue;                       // 本地待推的以本地为准
       if (Number(row.deleted)===1){ if (map[row.id]){ delete map[row.id]; delGot++; } continue; }
       try {
@@ -3004,6 +3008,7 @@ function cloudMergeRows(rows){
           var ex = map[card.id];
           if (ex && (Number(ex.updatedAt)||0) >= (Number(card.updatedAt)||0)) continue;
           map[card.id] = card; dataGot++;
+          if (ex) updGot++; else addGot++;
         }
         else dataFails++;
       } catch(e){ dataFails++; }
@@ -3011,7 +3016,7 @@ function cloudMergeRows(rows){
     if (i < list.length) return new Promise(function(resolve){ setTimeout(resolve, 0); }).then(nextBatch);
     cards = Object.keys(map).map(function(k){ return map[k]; });
     var c2 = cfg(); if (c2){ c2.cursor = Math.max(Number(c2.cursor)||0, mx); setCfg(c2); }
-    return { got: dataGot, fails: dataFails, del: delGot };
+    return { add: addGot, upd: updGot, del: delGot, fails: dataFails, got: dataGot };
   }
   return nextBatch();
 }
@@ -3020,7 +3025,7 @@ function cloudPull(){
   var c = cfg();
   var full = !c.lastFull || (Date.now() - Number(c.lastFull) > 300000);   // 每 5 分钟全量对账一次
   var base = srvUrl()+'/rest/v1/idea_cards?select=id,data,updated,deleted&room=eq.'+encodeURIComponent(c.room)+'&order=updated.asc&limit=500';
-  var stat = { got:0, fails:0, del:0 };
+  var stat = { got:0, fails:0, del:0, add:0, upd:0 };
   var firstPage = true;
   function page(){
     var cur = Number(cfg().cursor)||0;
@@ -3033,7 +3038,7 @@ function cloudPull(){
     }).then(function(rows){
       var before = Number(cfg().cursor)||0;
       return Promise.resolve(cloudMergeRows(rows)).then(function(s){
-      stat.got += s.got; stat.fails += s.fails; stat.del += s.del;
+      stat.got += s.got; stat.fails += s.fails; stat.del += s.del; stat.add += s.add; stat.upd += s.upd;
       var after = Number(cfg().cursor)||0;
       if ((rows||[]).length>=500 && after>before) return page();
       if (stat.fails>0 && stat.got===0) throw new Error('auth');
@@ -3071,7 +3076,7 @@ function cloudPush(){
         updated: nowStamp(), deleted: 0 });
     }catch(e){ pushedMetaSnap = null; }
   }
-  if (!rows.length) return Promise.resolve(false);
+  if (!rows.length) return Promise.resolve({ any:false, n:0, delN:0 });
   var batches=[], cur=[], sz=2;
   rows.forEach(function(r){
     var s = JSON.stringify(r).length;
@@ -3079,6 +3084,7 @@ function cloudPush(){
     cur.push(r); sz+=s;
   });
   if (cur.length) batches.push(cur);
+  var delN = rows.filter(function(r){ return Number(r.deleted)===1; }).length;
   var p = Promise.resolve();
   batches.forEach(function(b){
     p = p.then(function(){
@@ -3100,7 +3106,7 @@ function cloudPush(){
       });
     });
   });
-  return p.then(function(){ return lastPushed; });
+  return p.then(function(){ return { any: lastPushed, n: rows.length, delN: delN }; });
 }
 
 function setMode(m){
@@ -3122,20 +3128,21 @@ function runSync(auto){
   if (isFileMode()){ setMode('err'); showFileSyncHint(); return Promise.resolve(); }   // 本地文件模式不发起任何云端请求
   syncing = true; setMode('sync');
   var chain;
-  var finalStat = { got:0, fails:0, del:0 };
-  var pushedAny = false;
+  var finalStat = { got:0, fails:0, del:0, add:0, upd:0 };
+  var pushedAny = false, pushedN = 0;
   try {
     diffDirty();
     diffMeta();
     chain = cloudPull().then(function(st1){
-      if (st1){ finalStat.got += st1.got; finalStat.del += st1.del; }
+      if (st1){ finalStat.got += st1.got; finalStat.del += st1.del; finalStat.add += st1.add; finalStat.upd += st1.upd; }
       diffDirty();
       return cloudPush();
-    }).then(function(pushed){
-      if (pushed) pushedAny = true;
+    }).then(function(pr){
+      if (pr && pr.any) pushedAny = true;
+      if (pr && pr.n) pushedN = pr.n;
       // 推完只做增量回拉，不再强制全量，避免每次保存都重新解密全部卡片
       return cloudPull().then(function(st){
-        if (st){ finalStat.got += st.got; finalStat.del += st.del; }
+        if (st){ finalStat.got += st.got; finalStat.del += st.del; finalStat.add += st.add; finalStat.upd += st.upd; }
       });
     });
   } catch (syncErr) {
@@ -3146,13 +3153,15 @@ function runSync(auto){
     setTimeout(function(){ saveMirror(); }, 0);    // 整库写入延后：不占点击事件的主线程
     lastErr = ''; lastSyncAt = Date.now(); setMode('ok');
     requestAnimationFrame(function(){ render(); checkBackupHint(); });
+    logSync({ t: Date.now(), ok:true, add: finalStat.add||0, upd: finalStat.upd||0, del: finalStat.del||0, up: pushedN||0 });
     // 智能暂停：本次既没拉到也没推到 → 连续 2 次后自动休眠（停止 12 秒轮询，只留 10 分钟心跳）
     if (finalStat && finalStat.got===0 && finalStat.del===0 && !pushedAny){ idleHits++; }
     else { idleHits = 0; sleeping = false; }
     if (idleHits >= 2) sleeping = true;
     if (finalStat && (finalStat.got > 0 || finalStat.del > 0)){
       var bits = [];
-      if (finalStat.got > 0) bits.push('更新 ' + finalStat.got + ' 张');
+      if (finalStat.add > 0) bits.push('新增 ' + finalStat.add + ' 张');
+      if (finalStat.upd > 0) bits.push('更新 ' + finalStat.upd + ' 张');
       if (finalStat.del > 0) bits.push('他端删除 ' + finalStat.del + ' 张');
       showToast('☁ 已同步：' + bits.join('，'), false);
     }
@@ -3162,6 +3171,7 @@ function runSync(auto){
       : (msg.indexOf('数据不是本工具加密')===0 ? '云端数据与本机口令不一致，请核对同步口令'
       : '连不上云端，稍后自动重试');
     setMode('err');
+    logSync({ t: Date.now(), ok:false, err: lastErr });
     if (!auto) showToast(lastErr, false);   // 自动同步失败静默，只亮状态灯；手动操作才弹提示，避免反复打扰
     scheduleSync(15000);
   }).then(function(){ syncing = false; });
@@ -4254,6 +4264,84 @@ $('#btn-draw-close').addEventListener('click', function(){ $('#drawer').classLis
 $('#drawer').addEventListener('click', function(e){ if (e.target===this) this.classList.remove('show'); });
 
 /* ---------- 导出 / 导入 ---------- */
+/* ---------- 同步记录日志（本次新增/更新/删除/上传）+ 云端备份 ---------- */
+var SYNCLOG_KEY = KEY + '-synclog';
+function logSync(entry){
+  var arr = [];
+  try{ arr = JSON.parse(localStorage.getItem(SYNCLOG_KEY)||'[]'); }catch(e){}
+  if (!Array.isArray(arr)) arr = [];
+  arr.push(entry); if (arr.length > 20) arr = arr.slice(-20);
+  try{ localStorage.setItem(SYNCLOG_KEY, JSON.stringify(arr)); }catch(e){}
+  var box = document.getElementById('s-synclog');
+  if (box && !box.hidden) renderSyncLog();
+}
+function renderSyncLog(){
+  var box = document.getElementById('s-synclog'); if (!box) return;
+  var arr = [];
+  try{ arr = JSON.parse(localStorage.getItem(SYNCLOG_KEY)||'[]'); }catch(e){}
+  if (!Array.isArray(arr) || !arr.length){ box.hidden = true; return; }
+  var lines = ['📡 最近同步记录'];
+  arr.slice(-8).forEach(function(e){
+    var ts = new Date(e.t||Date.now());
+    var hm = String(ts.getHours()).padStart(2,'0') + ':' + String(ts.getMinutes()).padStart(2,'0');
+    if (e.ok){
+      var bits = [];
+      if (e.add) bits.push('新增'+e.add); if (e.upd) bits.push('更新'+e.upd); if (e.del) bits.push('删除'+e.del);
+      if (e.up) bits.push('上传'+e.up);
+      lines.push('✓ ' + hm + ' · ' + (bits.length ? bits.join('  ') : '无变化'));
+    } else {
+      lines.push('✗ ' + hm + ' · ' + (e.err||'失败'));
+    }
+  });
+  box.hidden = false; box.textContent = lines.join('\n');
+}
+/* 云端备份：把全部卡片+设置加密快照存到云端（idea_cards 内 id='__backup__' 槽位，同步引擎已跳过该行） */
+$('#btn-cloud-backup').addEventListener('click', function(){
+  var c = cfg(); if (!c){ alert('请先在「🏮 墨匣云阁」配置云端同步'); return; }
+  if (isFileMode()){ showFileSyncHint(); return; }
+  try{ needCrypto(); }catch(e){ alert('缺少加密组件'); return; }
+  if (!cards.length){ alert('还没有卡片，无需备份'); return; }
+  var snap = { v:1, t:Date.now(), cards: cards, meta: (typeof metaSnap==='function') ? metaSnap() : null };
+  var enc;
+  try{ enc = IdeaCrypto.encStr(JSON.stringify(snap), c.token); }
+  catch(e){ alert('备份加密失败：' + e.message); return; }
+  if (!confirm('把当前 ' + cards.length + ' 张卡片 + 设置（分类/便签/主题/书册）作为云端备份快照保存？将覆盖上一次云端备份。')) return;
+  fetchT(srvUrl()+'/rest/v1/rpc/idea_sync', { method:'POST', headers: head(),
+    body: JSON.stringify({ p_room: c.room, p_rows: [{ id:'__backup__', data:enc, updated:Date.now(), deleted:0 }] }) }, 30000)
+  .then(function(r){ if (r.status===401||r.status===403) throw new Error('auth'); if (!r.ok) throw new Error('http '+r.status); return r.json(); })
+  .then(function(res){
+    if (!res || res.ok!==true) throw new Error('云端返回异常');
+    try{ localStorage.setItem('moxia-last-backup', String(Date.now())); }catch(e){}
+    showToast('💾 云端备份已保存（'+cards.length+' 张卡片 + 设置）', false);
+  })
+  .catch(function(e){ showToast('备份失败：' + ((e&&e.message)||''), false); });
+});
+/* 从云端备份恢复（覆盖当前全部卡片与设置） */
+$('#btn-cloud-restore').addEventListener('click', function(){
+  var c = cfg(); if (!c){ alert('请先在「🏮 墨匣云阁」配置云端同步'); return; }
+  if (isFileMode()){ showFileSyncHint(); return; }
+  try{ needCrypto(); }catch(e){ alert('缺少加密组件'); return; }
+  if (!confirm('从云端备份恢复会覆盖当前全部卡片与设置。确定继续吗？')) return;
+  fetchT(srvUrl()+'/rest/v1/idea_cards?select=id,data&room=eq.'+encodeURIComponent(c.room)+'&id=eq.__backup__', { headers: head() }, 20000)
+  .then(function(r){ if (r.status===401||r.status===403) throw new Error('auth'); if (!r.ok) throw new Error('http '+r.status); return r.json(); })
+  .then(function(rows){
+    if (!rows || !rows.length){ alert('云端还没有备份快照。请先点「💾 云端备份」创建一次。'); return; }
+    var snap;
+    try{ snap = JSON.parse(IdeaCrypto.decStr(rows[0].data, c.token)); }
+    catch(e){ alert('备份解密失败：同步口令不一致或数据损坏'); return; }
+    if (!snap || !Array.isArray(snap.cards)){ alert('备份内容不完整'); return; }
+    cards = snap.cards;
+    try{ localStorage.removeItem(CUR_BOOK_KEY); }catch(e){}
+    filter.cat='全部'; filter.tag=null; filter.q='';
+    if (snap.meta && typeof metaApply==='function' && typeof setMetaBase==='function'){
+      metaApply(snap.meta, Date.now()); setMetaBase(snap.meta, Date.now());
+    }
+    persist(); render();
+    alert('已从云端备份恢复 ' + cards.length + ' 张卡片与设置');
+  })
+  .catch(function(e){ showToast('恢复失败：' + ((e&&e.message)||''), false); });
+});
+
 $('#btn-open-web').addEventListener('click', function(){
   try{ window.open('https://megn206.github.io/moxia/','_blank'); }
   catch(e){ alert('请手动打开线上版：\nhttps://megn206.github.io/moxia/'); }
@@ -5775,6 +5863,12 @@ function openSyncModal(){
   if (c && isFileMode()) stat += '　⚠ 当前是本地文件模式，浏览器禁止本地页面直连云端，云同步请用线上版 https://megn206.github.io/moxia/（本地数据先「导出备份」再导入线上版）';
   $('#s-stat').textContent = stat;
   var ow=$('#btn-open-web'); if (ow) ow.hidden = !isFileMode();
+  var lastBak = null; try{ lastBak = localStorage.getItem('moxia-last-backup'); }catch(e){}
+  if (c && lastBak && !isFileMode()){
+    var bakLine = $('#s-stat').textContent;
+    $('#s-stat').textContent = bakLine + '　💾 上次云端备份：' + new Date(Number(lastBak)).toLocaleString();
+  }
+  renderSyncLog();
   var pb=$('#btn-sync-pause'); if(pb){ pb.textContent=isPaused()?'▶ 恢复同步':'⏸ 暂停同步'; }
   syncModal.classList.add('show');
   setTimeout(function(){ loadCloudUsage(); }, 300);   // 查询延后：弹窗先渲染，不等云端
