@@ -2326,6 +2326,8 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
       <button class="btn ghost" id="btn-open-web" hidden title="打开线上版：浏览器允许网页直连云端，才能正常云同步">🌐 打开线上版</button>
       <button class="btn ghost" id="btn-export" title="导出全部卡片（含分类/便签/主题设置）为 JSON 备份文件">📤 导出备份</button>
       <button class="btn ghost" id="btn-import" title="从 JSON 备份文件导入（v2 备份会连设置一起恢复）">📥 导入备份</button>
+      <button class="btn ghost" id="btn-diag" title="查看卡片数据存储状态，定位显示异常/丢失原因">🩺 数据诊断</button>
+      <button class="btn ghost" id="btn-restore-mirror" title="从本机备份（IndexedDB 镜像/localStorage）恢复卡片并重置书册筛选显示全部">♻️ 恢复数据</button>
       <button class="btn ghost" id="btn-sync-pause" title="暂停后改动先攒在本机，恢复后再一起同步">⏸ 暂停同步</button>
       <button class="btn ghost" id="btn-sync-repush" title="把本机所有卡片重新上传一次">强制重传本机全部</button>
       <button class="btn ghost" id="btn-purge" hidden title="清除云端 90 天前的删除记录">清理云端</button>
@@ -4255,6 +4257,38 @@ $('#drawer').addEventListener('click', function(e){ if (e.target===this) this.cl
 $('#btn-open-web').addEventListener('click', function(){
   try{ window.open('https://megn206.github.io/moxia/','_blank'); }
   catch(e){ alert('请手动打开线上版：\nhttps://megn206.github.io/moxia/'); }
+});
+/* 数据诊断：定位卡片显示为空/丢失的真实原因 */
+$('#btn-diag').addEventListener('click', function(){
+  var info = {};
+  info['界面当前卡片'] = cards.length;
+  info['书册数量'] = (function(){ try{ return (typeof loadBooks==='function'?loadBooks():[]).length; }catch(e){ return -1; } })();
+  info['当前书册'] = (function(){ try{ return typeof curBookId==='function'?curBookId():'?'; }catch(e){ return '?'; } })();
+  info['localStorage卡片'] = (function(){ try{ var o=JSON.parse(localStorage.getItem(KEY)||'null'); return Array.isArray(o)?o.length:-1; }catch(e){ return -1; } })();
+  info['当前筛选'] = filter.cat + (filter.tag?' / 标签:'+filter.tag:'') + (filter.q?' / 搜索:'+filter.q:'');
+  idbGet('cards').then(function(m){
+    info['IndexedDB镜像卡片'] = Array.isArray(m) ? m.length : (m ? '异常' : '无');
+    var lines = Object.keys(info).map(function(k){ return k + '：' + info[k]; });
+    alert('📊 墨匣数据诊断\n\n' + lines.join('\n') +
+      '\n\n提示：\n· 界面=0 但 localStorage 或镜像>0 → 点「♻️ 恢复数据」\n· 书册数量正常但界面=0 → 可能切到了空书册，恢复数据会重置为显示全部\n· 全部为 0 → 本机存储被清空，只能靠云端/备份文件找回');
+  });
+});
+/* 从本机备份恢复卡片（IndexedDB 镜像优先，localStorage 兜底）并重置书册/筛选 */
+$('#btn-restore-mirror').addEventListener('click', function(){
+  idbGet('cards').then(function(m){
+    var mirrorOk = Array.isArray(m) && m.length;
+    var ls = (function(){ try{ var o=JSON.parse(localStorage.getItem(KEY)||'null'); return Array.isArray(o)?o:[]; }catch(e){ return []; } })();
+    var src = null;
+    if (mirrorOk && (!ls.length || m.length >= ls.length)) src = m;
+    else if (ls.length) src = ls;
+    if (!src || !src.length){ alert('没有找到可恢复的数据（localStorage 与 IndexedDB 镜像均为空）。\n若之前配置过云同步，可到云端（新/旧项目）找回；或使用之前导出的备份 JSON 文件导入。'); return; }
+    if (!confirm('将从本机备份恢复 ' + src.length + ' 张卡片，并重置书册/筛选显示全部。当前界面有 ' + cards.length + ' 张，确定覆盖恢复吗？')) return;
+    cards = src;
+    try{ localStorage.removeItem(CUR_BOOK_KEY); }catch(e){}
+    filter.cat='全部'; filter.tag=null; filter.q='';
+    persist(); render();
+    alert('已恢复 ' + cards.length + ' 张卡片，现在显示全部内容');
+  });
 });
 $('#btn-export').addEventListener('click', function(){
   if (cards.length===0){ alert('还没有卡片可以导出'); return; }
