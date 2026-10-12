@@ -1108,6 +1108,16 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 .cal-stat span{font-size:11px;color:var(--muted)}
 .cal-legend{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);margin-top:8px}
 .cal-legend .cal-cell{width:14px;height:14px;aspect-ratio:auto;border:none}
+.cal-review{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.cal-rv-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:10px;letter-spacing:.03em}
+.cal-rv-sub{font-size:12px;color:var(--muted);margin:10px 0 6px;font-weight:600}
+.rv-bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11.5px}
+.rv-label{width:52px;flex:none;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-track{flex:1;height:8px;border-radius:4px;background:var(--input-bg);overflow:hidden}
+.rv-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--accent));opacity:.85}
+.rv-num{width:30px;flex:none;text-align:right;color:var(--ink)}
+.rv-tags{display:flex;flex-wrap:wrap;gap:6px}
+.rv-tag{font-size:11.5px;padding:3px 8px;border-radius:12px;background:var(--input-bg);color:var(--ink);border:1px solid var(--line)}
 .card-links{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
 .card-link{border:1px solid var(--tag-border);background:var(--tag-bg);color:var(--tag-ink);border-radius:7px;font-size:11px;padding:2px 8px;cursor:pointer;font-family:inherit;transition:.15s}
 .card-link:hover{border-color:var(--accent-line);color:var(--accent)}
@@ -1279,13 +1289,18 @@ main{max-width:1100px;margin:0 auto;padding:16px 20px 70px}
   display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;
 }
 .card{
-  background:var(--card);border:1px solid var(--line);border-top:4px solid var(--cat,#8a8578);
+  position:relative;background:var(--card);border:1px solid var(--line);border-top:4px solid var(--cat,#8a8578);
   border-radius:10px;padding:14px 16px;cursor:pointer;
   display:flex;flex-direction:column;gap:8px;min-height:130px;
   box-shadow:0 1px 3px var(--shadow);transition:background-color .3s,border-color .3s,box-shadow .15s,transform .15s;
   animation:card-in .3s ease;
 }
 @keyframes card-in{from{opacity:0}to{opacity:1}}
+.card-grad{position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;pointer-events:none;background:var(--grad,transparent);z-index:0}
+.card>*:not(.card-grad){position:relative;z-index:1}
+/* 卡片通透：背景色由伪元素承载，透明度只影响背景，文字/边框保持清晰 */
+.card{background:transparent}
+.card::before{content:"";position:absolute;left:0;top:0;right:0;bottom:0;border-radius:inherit;background:var(--card);opacity:var(--op,1);z-index:0;pointer-events:none}
 .card:hover{box-shadow:0 6px 18px var(--shadow-hover);transform:translateY(-2px)}
 .card-top{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
 .cat-dot{width:9px;height:9px;flex:none;border-radius:50%}
@@ -1508,7 +1523,8 @@ footer{
   font-size:2.1em;font-weight:700;float:left;line-height:1.05;margin:2px 5px 0 0;
   font-family:"Noto Serif SC","STSong","SimSun",serif;color:var(--accent-deep);
 }
-.search-hl{background:rgba(243,201,106,.55);border-radius:3px;padding:0 1px;color:inherit}
+.search-hl{background:linear-gradient(135deg,rgba(243,201,106,.62),rgba(243,201,106,.3) 60%,rgba(255,180,90,.45));border-radius:5px 9px 5px 9px;padding:0 3px;color:inherit;font-weight:700;box-shadow:0 0 0 1px rgba(243,201,106,.5),0 1px 10px rgba(243,201,106,.28);text-shadow:0 0 10px rgba(243,201,106,.35);animation:hl-pop .28s ease}
+@keyframes hl-pop{0%{background-color:rgba(255,215,130,.85);transform:scale(1.08)}100%{transform:scale(1)}}
 .card{animation:card-in .34s ease both;animation-delay:calc(min(var(--i,0),12) * 22ms)}
 @keyframes card-in{from{opacity:0;transform:translateY(7px) scale(.985)}to{opacity:1;transform:none}}
 .has-img-badge{
@@ -1688,6 +1704,7 @@ body.view-list .card.covered::before{content:none}
 .switch.on{background:var(--accent)}
 .switch.on::after{left:20px}
 .inspire-list{flex:1;overflow-y:auto;padding:10px 12px}
+.insp-group{font-size:11.5px;color:var(--accent);font-weight:600;margin:8px 0 6px;letter-spacing:.03em}
 .insp-item{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:.15s;background:var(--card)}
 .insp-item:hover{border-color:var(--accent)}
 .insp-item .n{font-size:11.5px;color:var(--accent-deep);margin-bottom:3px;display:flex;gap:6px;align-items:center}
@@ -1920,7 +1937,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
         <button type="button" id="mode-rel2">🕸 脉络</button>
       </div>
       <button class="btn ghost" id="btn-books" title="书册管理：把灵感按作品分册">📚 书册</button>
-      <button class="btn ghost" id="btn-theme" title="主题皮肤（13 款，按风格分类）">🎨 主题</button>
+      <button class="btn ghost" id="btn-theme" title="妆阁：主题皮肤 / 自定义调色 / 卡片美化">🎨 妆阁</button>
       <button class="btn ghost dock-mode-idea" id="btn-outline" title="章节目录：按卷→章查看书册结构">📖 目录</button>
       <button class="btn ghost dock-mode-idea" id="btn-cats-edit" title="分类设置：自定义分类名称、颜色和形状">🏷 分类</button>
       <button class="btn primary" id="btn-new" data-primary-action>✚ 新建灵感</button>
@@ -1949,7 +1966,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
   <div class="hot-list" id="hot-list"></div>
 </div>
 <div class="theme-panel" id="theme-panel" hidden>
-  <div class="th-head"><span>🎨 主题皮肤</span><button id="th-close" type="button" title="关闭">×</button></div>
+  <div class="th-head"><span>🎨 墨闸·妆阁</span><button id="th-close" type="button" title="关闭">×</button></div>
   <div class="th-group collapsed"><div class="th-gtitle">基础</div><div class="th-list">
     <button class="th-opt" data-theme="auto" style="--c1:#f6f1e7;--c2:#191714"><span class="th-swatch"></span>跟随系统</button>
     <button class="th-opt" data-theme="paper" style="--c1:#b4552d;--c2:#f5efdf"><span class="th-swatch"></span>纸墨</button>
@@ -2019,6 +2036,14 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
       <div class="ct-row"><label>图案透明度</label>
         <input type="range" id="ct-alpha" min="0" max="100" value="22">
         <span class="ct-val" id="ct-alpha-val">22%</span>
+      </div>
+      <div class="ct-row"><label>卡片光晕</label>
+        <input type="range" id="ct-grad" min="0" max="100" value="30">
+        <span class="ct-val" id="ct-grad-val">30%</span>
+      </div>
+      <div class="ct-row" title="100% 实心，越低越通透，背景图案会透出来"><label>卡片透明</label>
+        <input type="range" id="ct-op" min="0" max="100" value="100">
+        <span class="ct-val" id="ct-op-val">100%</span>
       </div>
       <div class="ct-actions">
         <button class="btn primary" id="ct-apply" type="button">应用此主题</button>
@@ -2129,6 +2154,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
       <option value="new">最新优先</option>
       <option value="old">最早优先</option>
       <option value="title">标题排序</option>
+      <option value="rand">🎲 随机排序</option>
     </select>
   </div>
 </div>
@@ -2268,6 +2294,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
       <span class="ai-label">✨ AI 助手</span>
       <button type="button" class="btn ghost" id="ai-complete" title="参考你过去写过的卡片，按你的风格补完这张">🎯 按我的习惯补完</button>
       <button type="button" class="btn ghost" id="ai-continue">续写</button>
+      <button type="button" class="btn ghost" id="ai-jielong" title="顺着这段灵感生成一张新的接龙卡片">🔗 接龙</button>
       <button type="button" class="btn ghost" id="ai-expand">扩写</button>
       <button type="button" class="btn ghost" id="ai-polish">润色</button>
       <span class="ai-status" id="ai-status" hidden></span>
@@ -2816,7 +2843,19 @@ function idbSet(k,v){
   });
 }
 function cfg(){
-  try { var c = JSON.parse(localStorage.getItem(CFG_KEY)); return (c && c.server && c.mode==='cloud') ? c : null; }
+  try {
+    var c = JSON.parse(localStorage.getItem(CFG_KEY));
+    if (c && c.server && c.mode==='cloud'){
+      // 旧云端项目已被删除：自动迁移到新项目（房间/口令保留原值，地址与公钥换新）
+      if (String(c.server).indexOf('yudhxvbrcpyudthhnjwv') >= 0){
+        c.server = 'https://zmpvcrymeixwnzazukav.supabase.co';
+        c.key = 'sb_publishable_b4piSfBmufG06vsuYFLL7Q_cofttU4A';
+        try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch(e){}
+      }
+      return c;
+    }
+    return null;
+  }
   catch(e){ return null; }   // 历史局域网配置自动失效，回到本地模式
 }
 function setCfg(c){
@@ -3125,7 +3164,6 @@ function scheduleSync(delay){
 function runSync(auto){
   if (auto && isPaused()) return Promise.resolve();   // 暂停状态拦截一切自动触发
   if (syncing || BOOTING || !cfg()) return Promise.resolve();
-  if (isFileMode()){ setMode('err'); showFileSyncHint(); return Promise.resolve(); }   // 本地文件模式不发起任何云端请求
   syncing = true; setMode('sync');
   var chain;
   var finalStat = { got:0, fails:0, del:0, add:0, upd:0 };
@@ -3435,16 +3473,35 @@ function visible(){
     var so = viewSort();
     if (so==='old') return (Number(a.createdAt)||0)-(Number(b.createdAt)||0);
     if (so==='title') return String(a.title||'').localeCompare(String(b.title||''),'zh');
+    if (so==='rand') return Math.random()-0.5;
     return (Number(b.createdAt)||0)-(Number(a.createdAt)||0);
   });
 }
 
 /* 图片条悬停触发（只有光标碰到图片才展开，卡片其他区域仅编辑） */
+function hexA(hex, a){
+  try{
+    var h=String(hex||'#8a8578').replace('#','');
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    var n=parseInt(h,16); if(isNaN(n)) return 'rgba(138,133,120,'+a+')';
+    return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';
+  }catch(e){ return 'rgba(138,133,120,'+a+')'; }
+}
+/* 卡片光晕强度（0-100，存本地，对所有主题生效） */
+function gradLevel(){
+  var v=Number(localStorage.getItem('moxia-grad'));
+  return isNaN(v)?30:Math.max(0,Math.min(100,v));
+}
+/* 卡片通透度（0-100=不透明度，存本地，下限 20 保护可读性） */
+function opLevel(){
+  var v=Number(localStorage.getItem('moxia-op'));
+  return isNaN(v)?100:Math.max(20,Math.min(100,v));
+}
 /* ---------- 渲染 ---------- */
 function cardHtml(c,i){
   var color = catColor(c.category);
   var tags = (c.tags||[]).map(function(t){
-    return '<span class="tag" data-tag="'+esc(t)+'">#'+esc(t)+'</span>';
+    return '<span class="tag" data-tag="'+esc(t)+'">'+hl('#'+esc(t))+'</span>';
   }).join('');
   var imgs = imgsOf(c);
   var coverBadge = imgs.length
@@ -3472,7 +3529,9 @@ function cardHtml(c,i){
         return '<div class="fs-strip"><span class="fs-type" data-t="'+esc(ft)+'">🔮 '+esc(ft)+'</span><span class="fs-state'+(done?' done':'')+'">'+(done?'✅ 已回收':'⏳ 未回收')+'</span></div>';
       })()
     : '';
-  return '<div class="'+cls+'" data-id="'+c.id+'" draggable="true" title="按住可拖动到时间线" style="--cat:'+color+';--i:'+idx+'">'
+  var grad = 'linear-gradient(120deg,'+hexA(color, gradLevel()/100*0.32)+',transparent 52%)';
+  return '<div class="'+cls+'" data-id="'+c.id+'" draggable="true" title="按住可拖动到时间线" style="--cat:'+color+';--grad:'+grad+';--op:'+(opLevel()/100)+';--i:'+idx+'">'
+    + '<div class="card-grad"></div>'
     + imgView
     + personaHead
     + fsStrip
@@ -4298,7 +4357,6 @@ function renderSyncLog(){
 /* 云端备份：把全部卡片+设置加密快照存到云端（idea_cards 内 id='__backup__' 槽位，同步引擎已跳过该行） */
 $('#btn-cloud-backup').addEventListener('click', function(){
   var c = cfg(); if (!c){ alert('请先在「🏮 墨匣云阁」配置云端同步'); return; }
-  if (isFileMode()){ showFileSyncHint(); return; }
   try{ needCrypto(); }catch(e){ alert('缺少加密组件'); return; }
   if (!cards.length){ alert('还没有卡片，无需备份'); return; }
   var snap = { v:1, t:Date.now(), cards: cards, meta: (typeof metaSnap==='function') ? metaSnap() : null };
@@ -4319,7 +4377,6 @@ $('#btn-cloud-backup').addEventListener('click', function(){
 /* 从云端备份恢复（覆盖当前全部卡片与设置） */
 $('#btn-cloud-restore').addEventListener('click', function(){
   var c = cfg(); if (!c){ alert('请先在「🏮 墨匣云阁」配置云端同步'); return; }
-  if (isFileMode()){ showFileSyncHint(); return; }
   try{ needCrypto(); }catch(e){ alert('缺少加密组件'); return; }
   if (!confirm('从云端备份恢复会覆盖当前全部卡片与设置。确定继续吗？')) return;
   fetchT(srvUrl()+'/rest/v1/idea_cards?select=id,data&room=eq.'+encodeURIComponent(c.room)+'&id=eq.__backup__', { headers: head() }, 20000)
@@ -4870,7 +4927,7 @@ openDB().then(function(){ return load(); }).then(function(mirror){
     else { setTimeout(function(){ runSync(true); }, 800); }   // 启动后先让界面可交互，再静默全量对账
   }
   setInterval(function(){
-    if (document.hidden || !cfg() || syncing || sleeping || isFileMode()) return;   // 智能休眠中：交给心跳
+    if (document.hidden || !cfg() || syncing || sleeping) return;   // 智能休眠中：交给心跳
     var d = jget(DIRTY_KEY), m = jget(DEL_KEY);
     var hasLocal = false;
     for (var k in d){ if (d[k]===1){ hasLocal = true; break; } }
@@ -4880,7 +4937,7 @@ openDB().then(function(){ return load(); }).then(function(mirror){
   }, 12000);
   // 智能休眠心跳：每 10 分钟只轻量拉一次云端，检测他端有没有新数据（有则自动唤醒）
   setInterval(function(){
-    if (document.hidden || !cfg() || syncing || !sleeping || isFileMode()) return;
+    if (document.hidden || !cfg() || syncing || !sleeping) return;
     runSync(true);
   }, 600000);
   document.addEventListener('visibilitychange', function(){
@@ -4977,6 +5034,8 @@ function refreshCustomUI(cfg){
   $('#ct-bg').value=c.bg; $('#ct-card').value=c.card;
   $('#ct-ink').value=c.ink; $('#ct-accent').value=c.accent;
   $('#ct-alpha').value=c.alpha||22; $('#ct-alpha-val').textContent=(c.alpha||22)+'%';
+  var g=gradLevel(); var gs=document.getElementById('ct-grad'); if(gs){ gs.value=g; $('#ct-grad-val').textContent=g+'%'; }
+  var o=opLevel(); var os=document.getElementById('ct-op'); if(os){ os.value=o; $('#ct-op-val').textContent=o+'%'; }
   document.querySelectorAll('#ct-patterns .ct-p').forEach(function(b){ b.classList.toggle('on', b.dataset.p===c.pattern); });
   renderCustomList();
 }
@@ -5070,6 +5129,30 @@ $('#ct-patterns').addEventListener('click', function(e){
   document.querySelectorAll('#ct-patterns .ct-p').forEach(function(x){ x.classList.toggle('on', x===b); });
 });
 $('#ct-alpha').addEventListener('input', function(){ $('#ct-alpha-val').textContent=this.value+'%'; });
+/* 卡片光晕：实时调浓度，全局生效 */
+function bindGradSlider(){
+  var s=$('#ct-grad'); if(!s) return;
+  s.value=gradLevel(); $('#ct-grad-val').textContent=gradLevel()+'%';
+  s.addEventListener('input', function(){
+    var v=Math.max(0,Math.min(100,Number(this.value)||0));
+    $('#ct-grad-val').textContent=v+'%';
+    localStorage.setItem('moxia-grad', String(v));
+    try{ if(typeof render==='function') render(true); }catch(e){}
+  });
+}
+bindGradSlider();
+/* 卡片透明：实时调通透度，全局生效 */
+function bindOpSlider(){
+  var s=$('#ct-op'); if(!s) return;
+  s.value=opLevel(); $('#ct-op-val').textContent=opLevel()+'%';
+  s.addEventListener('input', function(){
+    var v=Math.max(20,Math.min(100,Number(this.value)||100));
+    $('#ct-op-val').textContent=v+'%';
+    localStorage.setItem('moxia-op', String(v));
+    try{ if(typeof render==='function') render(true); }catch(e){}
+  });
+}
+bindOpSlider();
 $('#ct-preset-list').addEventListener('click', function(e){ pickCustom(e); });
 $('#ct-saved-list').addEventListener('click', function(e){ pickCustom(e); });
 try {
@@ -5341,6 +5424,31 @@ function aiAction(kind){
   }).then(function(){ aiBusy=false; });
 }
 $('#ai-continue').addEventListener('click', function(){ aiAction('continue'); });
+function aiJielong(){
+  if(aiBusy) return;
+  var title=$('#f-title').value.trim(), content=$('#f-content').value.trim();
+  if(!content && !title){ showToast('先写点内容，再接龙', false); $('#f-content').focus(); return; }
+  var sys='你是资深小说创作助手，擅长顺着灵感写出承接的新情节。只输出正文内容，不要解释、不要加标题、不要用引号包裹全文。';
+  aiBusy=true; aiStatus('接龙生成中…');
+  callAI([{role:'system',content:sys},{role:'user',content:'请以「'+(title||'这段灵感')+'」为起点，写出一段承接的新情节（120~220字），顺势打开新的故事可能，保持文风和人物一致：\n\n'+content}])
+    .then(function(txt){
+      try{ if(typeof saveDraftNow==='function') saveDraftNow(); }catch(e){}   // 先保住当前编辑
+      openEditor(null);                                                       // 打开一张新卡片
+      $('#f-title').value = '接龙 · '+(title||'新灵感');
+      $('#f-content').value = txt;
+      draftDirty=false;
+      renderStrip();
+      setTimeout(function(){ var fc=$('#f-content'); if(fc) fc.focus(); }, 80);
+      aiStatus('✓ 已生成接龙卡片，检查后可保存');
+      setTimeout(function(){ aiStatus(''); }, 3200);
+    })
+    .catch(function(e){
+      if(e==='no-key'){ aiStatus('', false); showToast('先到 ✨AI 设置 里配置密钥', false); }
+      else { aiStatus('出错了：'+(e&&e.message?e.message:e), true); setTimeout(function(){ aiStatus(''); }, 4000); }
+    })
+    .then(function(){ aiBusy=false; });
+}
+$('#ai-jielong').addEventListener('click', aiJielong);
 $('#ai-expand').addEventListener('click', function(){ aiAction('expand'); });
 $('#ai-polish').addEventListener('click', function(){ aiAction('polish'); });
 
@@ -5417,6 +5525,59 @@ function calAdd(n){
   try{ localStorage.setItem(CAL_KEY, JSON.stringify(m)); }catch(e){}
 }
 var calModal=$('#cal-modal');
+/* 创作回顾：总览卡片数/字数/分类分布/月度热度/热词 */
+function calReview(){
+  var cs=cards.filter(function(x){ return x.scope!=='write' && x.scope!=='rel'; });
+  var total=cs.length, words=0;
+  cs.forEach(function(x){ words+=String(x.title||'').length+String(x.content||'').length; });
+  var cat={}; cs.forEach(function(x){ var k=x.category||'其他'; cat[k]=(cat[k]||0)+1; });
+  var catArr=Object.keys(cat).map(function(k){ return [k,cat[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+  var catMax=catArr.length?catArr[0][1]:1;
+  var months=[], now=new Date();
+  for(var i=11;i>=0;i--){
+    var d=new Date(now.getFullYear(), now.getMonth()-i, 1);
+    var mk=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
+    months.push({key:mk,label:mk.slice(2),n:0});
+  }
+  cs.forEach(function(x){
+    var cAt=Number(x.createdAt)||0; if(!cAt) return;
+    var d=new Date(cAt), key=d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2);
+    for(var i=0;i<months.length;i++) if(months[i].key===key){ months[i].n++; break; }
+  });
+  var mMax=1; months.forEach(function(m){ if(m.n>mMax) mMax=m.n; });
+  var stop={'我们':1,'一个':1,'这个':1,'就是':1,'因为':1,'可以':1,'什么':1,'自己':1,'没有':1,'还是':1,'但是':1,'如果':1,'他们':1,'你们':1,'时候':1,'现在':1,'已经':1};
+  var wd={};
+  cs.forEach(function(x){
+    var segs=(String(x.title||'')+String(x.content||'')).match(/[\u4e00-\u9fa5]{2,}/g)||[];
+    segs.forEach(function(seg){
+      for(var i=0;i<=seg.length-2;i++){ var w=seg.slice(i,i+2); if(!stop[w]) wd[w]=(wd[w]||0)+1; }
+    });
+  });
+  var wArr=Object.keys(wd).map(function(k){ return [k,wd[k]]; }).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+  var h='<div class="cal-review"><div class="cal-rv-title">📖 创作回顾</div>'
+    +'<div class="cal-stats">'
+    +'<div class="cal-stat"><b>'+total+'</b><span>灵感卡片</span></div>'
+    +'<div class="cal-stat"><b>'+words+'</b><span>累计字数</span></div>'
+    +'<div class="cal-stat"><b>'+Object.keys(cat).length+'</b><span>分类数量</span></div>'
+    +'</div>';
+  if(catArr.length){
+    h+='<div class="cal-rv-sub">🏷 分类分布</div>';
+    catArr.forEach(function(p){
+      h+='<div class="rv-bar"><span class="rv-label">'+p[0]+'</span><div class="rv-track"><div class="rv-fill" style="width:'+Math.round(p[1]/catMax*100)+'%"></div></div><span class="rv-num">'+p[1]+'</span></div>';
+    });
+  }
+  if(wArr.length){
+    h+='<div class="cal-rv-sub">🔥 高频词</div><div class="rv-tags">'
+      +wArr.map(function(p){ return '<span class="rv-tag">'+p[0]+' ×'+p[1]+'</span>'; }).join('')
+      +'</div>';
+  }
+  h+='<div class="cal-rv-sub">📈 近 12 个月新建</div>';
+  months.forEach(function(m){
+    h+='<div class="rv-bar"><span class="rv-label">'+m.label+'</span><div class="rv-track"><div class="rv-fill" style="width:'+(m.n?Math.max(6,Math.round(m.n/mMax*100)):2)+'%"></div></div><span class="rv-num">'+m.n+'</span></div>';
+  });
+  h+='</div>';
+  return h;
+}
 function openCal(){
   var m=calGet();
   // 70 天热力图
@@ -5442,7 +5603,8 @@ function openCal(){
     +'</div>'
     +'<div class="cal-grid">'+cells.join('')+'</div>'
     +'<div class="cal-legend">少<span class="cal-cell d1"></span><span class="cal-cell d2"></span><span class="cal-cell d3"></span><span class="cal-cell d4"></span><span class="cal-cell d5"></span>多</div>'
-    +'<p class="hint">每保存一次灵感，新增的字数会累计到今天（删除不扣减）。</p>';
+    +'<p class="hint">每保存一次灵感，新增的字数会累计到今天（删除不扣减）。</p>'
+    + calReview();
   calModal.classList.add('show');
 }
 $('#btn-cal-close').addEventListener('click', function(){ calModal.classList.remove('show'); });
@@ -5860,7 +6022,7 @@ function openSyncModal(){
   var stat = c
     ? ('当前：云端同步 · ' + c.server + (lastErr ? ' · ' + lastErr : ' · 正常'))
     : '当前：本地模式（数据只存在这台设备上）';
-  if (c && isFileMode()) stat += '　⚠ 当前是本地文件模式，浏览器禁止本地页面直连云端，云同步请用线上版 https://megn206.github.io/moxia/（本地数据先「导出备份」再导入线上版）';
+  if (c && isFileMode()) stat += '　ℹ 当前是本地文件模式：云端同步已支持直连，若个别浏览器拦截请改用线上版 https://megn206.github.io/moxia/';
   $('#s-stat').textContent = stat;
   var ow=$('#btn-open-web'); if (ow) ow.hidden = !isFileMode();
   var lastBak = null; try{ lastBak = localStorage.getItem('moxia-last-backup'); }catch(e){}
@@ -6239,27 +6401,55 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var wordKeys=Object.keys(words);
     if(!wordKeys.length){ list.innerHTML='<div class="insp-empty">再多写几个字，推荐会更准 ✨</div>'; return; }
     list.innerHTML='<div class="insp-empty">正在寻找相似灵感…</div>';
+    // 本地关键词联想：从自己的卡片里按词频找相似（不依赖网络，秒出）
+    var localHits=[];
+    try{
+      cards.forEach(function(x){
+        if(x.scope==='write'||x.scope==='rel') return;
+        if(bookOf(x)!==curBookId()) return;
+        if(x.id===editingId) return;
+        var sc=scoreShare({title:x.title,content:x.content,tags:(x.tags||[]).join(',')},words);
+        if(sc.s>0) localHits.push({x:x,sc:sc});
+      });
+      localHits.sort(function(a,b){ return b.sc.s-a.sc.s; });
+      localHits=localHits.slice(0,5);
+    }catch(e){ localHits=[]; }
     pullAll().then(function(rows){
       if(mySeq!==seq) return;
       var scored=rows.map(function(r){ var sc=scoreShare(r,words); return {r:r,sc:sc}; })
         .filter(function(x){ return x.sc.s>0; })
         .sort(function(a,b){ return b.sc.s-a.sc.s; })
         .slice(0,6);
-      if(!scored.length){
-        list.innerHTML='<div class="insp-empty">暂时没找到相似的灵感<br>换个角度写写，或先去广场逛逛</div>';
+      var html='', rowsArr=[];
+      if(localHits.length){
+        html+='<div class="insp-group">🔗 关键词联想 · 本地 '+localHits.length+' 条</div>';
+        localHits.forEach(function(x,i){
+          var idx=rowsArr.length;
+          rowsArr.push({kind:'local',x:x.x});
+          html+='<div class="insp-item" data-i="'+idx+'">'
+            +'<div class="n">'+esc(x.x.title||'（无标题）')+'<span class="sc">· 联想 '+Math.min(99,Math.round(x.sc.s/3))+'%</span></div>'
+            +'<div class="c">'+esc(String(x.x.content||'').slice(0,60))+'</div>'
+            +'</div>';
+        });
+      }
+      if(scored.length){
+        html+='<div class="insp-group">💡 广场灵感推荐</div>';
+        scored.forEach(function(x){
+          var idx=rowsArr.length;
+          rowsArr.push({kind:'share',r:x.r});
+          html+='<div class="insp-item" data-i="'+idx+'">'
+            +'<div class="n">'+(x.r.nick||'墨友')+'<span class="sc">· 相似度 '+Math.min(99,Math.round(x.sc.s/3))+'%</span></div>'
+            +(x.r.title?'<div style="font-weight:600;font-size:13px;margin:2px 0 3px">'+esc(x.r.title)+'</div>':'')
+            +'<div class="c">'+esc(x.r.content)+'</div>'
+            +'</div>';
+        });
+      }
+      if(!html){
+        list.innerHTML='<div class="insp-empty">本地和广场暂时都没找到相似的<br>换个角度写写，或先去广场逛逛</div>';
         return;
       }
-      var html='';
-      scored.forEach(function(x,i){
-        var r=x.r;
-        html+='<div class="insp-item" data-i="'+i+'">'
-          +'<div class="n">'+(r.nick||'墨友')+'<span class="sc">· 相似度 '+Math.min(99,Math.round(x.sc.s/3))+'%</span></div>'
-          +(r.title?'<div style="font-weight:600;font-size:13px;margin:2px 0 3px">'+esc(r.title)+'</div>':'')
-          +'<div class="c">'+esc(r.content)+'</div>'
-          +'</div>';
-      });
       list.innerHTML=html;
-      list._rows=scored;
+      list._rows=rowsArr;
     });
   }
 
@@ -6295,6 +6485,12 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     if(item && $('#inspire-list')._rows){
       var x=$('#inspire-list')._rows[+item.dataset.i];
       if(!x) return;
+      if(x.kind==='local'){
+        // 本地联想：先保存当前草稿，再跳到那张卡片编辑
+        try{ if(typeof saveDraftNow==='function') saveDraftNow(); }catch(e){}
+        if(typeof openEditor==='function') openEditor(x.x.id);
+        return;
+      }
       $('#iv-title').textContent=x.r.title||'（无标题灵感）';
       $('#iv-body').textContent=x.r.content;
       $('#iv-meta').textContent='来自 '+(x.r.nick||'墨友')+(x.r.category?' · '+x.r.category:'')+(x.r.tags?' · '+(x.r.tags||'').split(',').filter(Boolean).join(' #'):'');
