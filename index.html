@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -312,7 +312,7 @@
   --tag-bg:#1a2a2b; --tag-border:#314846; --tag-ink:#a9c2bb; --tag-hover:#223635;
   --input-bg:#111d1f; --overlay:rgba(4,9,10,.64);
   --shadow:rgba(0,0,0,.36); --shadow-hover:rgba(0,0,0,.52); --modal-shadow:rgba(0,0,0,.56);
-  --toast-bg:#13302e; --toast-ink:#eefaf8; --gold:#d9c66a;
+  --toast-bg:#13302e; --toast-ink:#eefaf8; --gold:#d9c66a; --bg-img:url('bg-qinglv.jpg');
 }
 /* 唐风 · 鎏金（新） */
 [data-theme="gufeng-jinxiu"]{
@@ -322,7 +322,7 @@
   --tag-bg:#f6ecd6; --tag-border:#e8dab8; --tag-ink:#7c6a49; --tag-hover:#f0e3c6;
   --input-bg:#fffdf8; --overlay:rgba(74,58,36,.42);
   --shadow:rgba(120,90,40,.08); --shadow-hover:rgba(120,90,40,.16); --modal-shadow:rgba(90,60,25,.30);
-  --toast-bg:#96581b; --toast-ink:#fdf7ec; --gold:#d4a02a;
+  --toast-bg:#96581b; --toast-ink:#fdf7ec; --gold:#d4a02a; --bg-img:url('bg-gufeng.jpg');
 }
 /* 胭脂 · 红妆（新） */
 [data-theme="gufeng-yanzhi"]{
@@ -332,7 +332,7 @@
   --tag-bg:#2e1c25; --tag-border:#4d2e3b; --tag-ink:#d9a4ae; --tag-hover:#3a2330;
   --input-bg:#1e1018; --overlay:rgba(10,4,7,.62);
   --shadow:rgba(0,0,0,.4); --shadow-hover:rgba(0,0,0,.55); --modal-shadow:rgba(0,0,0,.58);
-  --toast-bg:#3c1824; --toast-ink:#fff0f2; --gold:#e8c66a;
+  --toast-bg:#3c1824; --toast-ink:#fff0f2; --gold:#e8c66a; --bg-img:url('bg-lotus.jpg');
 }
 /* 月白 · 清霜（新） */
 [data-theme="gufeng-yuebai"]{
@@ -342,7 +342,7 @@
   --tag-bg:#eef3f9; --tag-border:#d9e4f0; --tag-ink:#64798f; --tag-hover:#e3ecf5;
   --input-bg:#ffffff; --overlay:rgba(51,58,68,.34);
   --shadow:rgba(50,70,90,.08); --shadow-hover:rgba(50,70,90,.16); --modal-shadow:rgba(40,55,75,.28);
-  --toast-bg:#3d5d80; --toast-ink:#f2f7fc; --gold:#c2a13e;
+  --toast-bg:#3d5d80; --toast-ink:#f2f7fc; --gold:#c2a13e; --bg-img:url('bg-cloud.jpg');
 }
 /* 松烟 · 墨绿（新） */
 [data-theme="gufeng-songyan"]{
@@ -352,7 +352,7 @@
   --tag-bg:#18281d; --tag-border:#2f4a35; --tag-ink:#a9c29a; --tag-hover:#1f3325;
   --input-bg:#0f1b15; --overlay:rgba(4,9,6,.62);
   --shadow:rgba(0,0,0,.36); --shadow-hover:rgba(0,0,0,.52); --modal-shadow:rgba(0,0,0,.56);
-  --toast-bg:#1a2e1c; --toast-ink:#f0f7e8; --gold:#e8c66a;
+  --toast-bg:#1a2e1c; --toast-ink:#f0f7e8; --gold:#e8c66a; --bg-img:url('bg-bamboo.jpg');
 }
 /* 绛紫 · 暮云（新） */
 [data-theme="gufeng-jiangzi"]{
@@ -362,7 +362,7 @@
   --tag-bg:#261b2e; --tag-border:#41324e; --tag-ink:#c5a8c9; --tag-hover:#31243b;
   --input-bg:#191121; --overlay:rgba(8,4,12,.62);
   --shadow:rgba(0,0,0,.4); --shadow-hover:rgba(0,0,0,.55); --modal-shadow:rgba(0,0,0,.58);
-  --toast-bg:#2a1b38; --toast-ink:#f5eef7; --gold:#d9c66a;
+  --toast-bg:#2a1b38; --toast-ink:#f5eef7; --gold:#d9c66a; --bg-img:url('bg-star.jpg');
 }
 /* 极光 · 脉冲（新） */
 [data-theme="aurora-pulse"]{
@@ -620,7 +620,7 @@ body{
   background-image:
     linear-gradient(rgba(10,18,17,.40),rgba(6,12,12,.60)),
     radial-gradient(#2d4946 1px,transparent 1.6px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxwYXRoIGQ9Ik0wIDQ3MCBDMTIwIDM5MCAyMzAgNDY1IDM1MCA0MjAgQzQ3MCAzNzggNTcwIDQ2MiA2OTAgNDE4IEM4MTAgMzc2IDkyMCA0NjIgMTA1MCA0MjAgQzExMzAgMzk2IDExNjUgNDUyIDEyMDAgNDMyIEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzI3NDEzZiIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTAgNTYwIEMxNzAgNDgwIDMwMCA1NTUgNDYwIDUxNSBDNjIwIDQ3NiA3NTAgNTYyIDg5MCA1MjIgQzEwMTAgNDkwIDExMzAgNTQ4IDEyMDAgNTM1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzFlMzMzMSIgb3BhY2l0eT0iMC42NSIvPjxlbGxpcHNlIGN4PSI1NjAiIGN5PSI0NzAiIHJ4PSI3NjAiIHJ5PSI3MiIgZmlsbD0iI2U5ZjRlZiIgb3BhY2l0eT0iMC4yIi8+PHBhdGggZD0iTTAgNjQwIEMxMzAgNTcwIDI2MCA2NDggNDAwIDU5NiBDNTQwIDU0NiA2NjAgNjU1IDgxMCA2MDYgQzk1MCA1NjIgMTA5MCA2NDYgMTIwMCA2MTUgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMTcyYTI5IiBvcGFjaXR5PSIwLjc4Ii8+PHBhdGggZD0iTTAgNjQwIEMyMDAgNjQ2IDQwMCA2NDAgNjAwIDY0MiBDODAwIDY0NCAxMDAwIDY0MCAxMjAwIDY0MiBMMTIwMCA4MDAgTDAgODAwIFoiIGZpbGw9IiMxMDFmMWYiIG9wYWNpdHk9IjAuNiIvPjxwYXRoIGQ9Ik0wIDcxMiBDMjAwIDY0OCAzODAgNzM2IDU2MCA2ODggQzc0MCA2NDIgOTEwIDcyOCAxMjAwIDY5MCBMMTIwMCA4MDAgTDAgODAwIFoiIGZpbGw9IiMwZjFlMWMiIG9wYWNpdHk9IjAuOSIvPjxlbGxpcHNlIGN4PSI4MDAiIGN5PSI2MjAiIHJ4PSI1MjAiIHJ5PSI0NiIgZmlsbD0iI2U5ZjRlZiIgb3BhY2l0eT0iMC4xNCIvPjxjaXJjbGUgY3g9Ijk2MCIgY3k9IjE1MCIgcj0iNDYiIGZpbGw9IiNkOWVmZTgiIG9wYWNpdHk9IjAuOTIiLz48Y2lyY2xlIGN4PSI5NjAiIGN5PSIxNTAiIHI9IjExMCIgZmlsbD0iI2Q5ZWZlOCIgb3BhY2l0eT0iMC4xNiIvPjxwYXRoIGQ9Ik0xODAgMjUwIHE5IC05IDIyIDAgcTExIC0xMSAyNiAwIiBmaWxsPSJub25lIiBzdHJva2U9IiM5ZmM5YzAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTIyNiAyNjggcTkgLTkgMjIgMCBxMTEgLTExIDI2IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzlmYzljMCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjcyIDI1MCBxOSAtOSAyMiAwIHExMSAtMTEgMjYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOWZjOWMwIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yODAgNzAwIHEyOCAtMTAgNjIgMCBxLTMwIDEwIC02MiAwIFoiIGZpbGw9IiMwZDFhMTkiIG9wYWNpdHk9IjAuOSIvPjxwYXRoIGQ9Ik0zMDQgNjk0IGwwIC00MiBsMjQgMjAgbC0yNCAyMiBaIiBmaWxsPSIjMGQxYTE5IiBvcGFjaXR5PSIwLjg1Ii8+PC9zdmc+");
+    var(--bg-img);
   background-size:100% 100%,110px 110px,cover;
   background-position:center,center,center;
   background-attachment:fixed,fixed,fixed;
@@ -630,7 +630,7 @@ body{
   background-image:
     linear-gradient(rgba(255,251,240,.46),rgba(252,247,232,.60)),
     radial-gradient(#c9a25e 1px,transparent 1.6px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxwYXRoIGQ9Ik0wIDQ3MCBDMTIwIDM5MCAyMzAgNDY1IDM1MCA0MjAgQzQ3MCAzNzggNTcwIDQ2MiA2OTAgNDE4IEM4MTAgMzc2IDkyMCA0NjIgMTA1MCA0MjAgQzExMzAgMzk2IDExNjUgNDUyIDEyMDAgNDMyIEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iI2Q4YzRhMCIgb3BhY2l0eT0iMC40MiIvPjxwYXRoIGQ9Ik0wIDU2MCBDMTcwIDQ4MCAzMDAgNTU1IDQ2MCA1MTUgQzYyMCA0NzYgNzUwIDU2MiA4OTAgNTIyIEMxMDEwIDQ5MCAxMTMwIDU0OCAxMjAwIDUzNSBMMTIwMCA4MDAgTDAgODAwIFoiIGZpbGw9IiNjNWE5N2UiIG9wYWNpdHk9IjAuNSIvPjxlbGxpcHNlIGN4PSI2MDAiIGN5PSI0ODAiIHJ4PSI3ODAiIHJ5PSI2OCIgZmlsbD0iI2ZmZjllYyIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTAgNjQwIEMxMzAgNTcwIDI2MCA2NDggNDAwIDU5NiBDNTQwIDU0NiA2NjAgNjU1IDgxMCA2MDYgQzk1MCA1NjIgMTA5MCA2NDYgMTIwMCA2MTUgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjYWQ4YjVmIiBvcGFjaXR5PSIwLjYyIi8+PHBhdGggZD0iTTAgNjQwIEMyMDAgNjQ2IDQwMCA2NDAgNjAwIDY0MiBDODAwIDY0NCAxMDAwIDY0MCAxMjAwIDY0MiBMMTIwMCA4MDAgTDAgODAwIFoiIGZpbGw9IiNhOTgyNWEiIG9wYWNpdHk9IjAuMzUiLz48cGF0aCBkPSJNMCA3MTIgQzIwMCA2NDggMzgwIDczNiA1NjAgNjg4IEM3NDAgNjQyIDkxMCA3MjggMTIwMCA2OTAgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjOTY3NDQ3IiBvcGFjaXR5PSIwLjcyIi8+PGNpcmNsZSBjeD0iMTAxMCIgY3k9IjE4MCIgcj0iNTQiIGZpbGw9IiNjOTYwMmYiIG9wYWNpdHk9IjAuODUiLz48Y2lyY2xlIGN4PSIxMDEwIiBjeT0iMTgwIiByPSIxMTgiIGZpbGw9IiNjOTYwMmYiIG9wYWNpdHk9IjAuMTIiLz48cGF0aCBkPSJNMjAwIDIzMCBxOSAtOSAyMiAwIHExMSAtMTEgMjYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGE2ZjQ1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yNDYgMjQ4IHE5IC05IDIyIDAgcTExIC0xMSAyNiAwIiBmaWxsPSJub25lIiBzdHJva2U9IiM4YTZmNDUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI5MiAyMzAgcTkgLTkgMjIgMCBxMTEgLTExIDI2IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhhNmY0NSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjYwIDcwNiBxMjggLTEwIDYyIDAgcS0zMCAxMCAtNjIgMCBaIiBmaWxsPSIjN2M1ZDM3IiBvcGFjaXR5PSIwLjkiLz48cGF0aCBkPSJNMjg0IDcwMCBsMCAtNDIgbDI0IDIwIGwtMjQgMjIgWiIgZmlsbD0iIzdjNWQzNyIgb3BhY2l0eT0iMC44NSIvPjwvc3ZnPg==");
+    var(--bg-img);
   background-size:100% 100%,100px 100px,cover;
   background-position:center,center,center;
   background-attachment:fixed,fixed,fixed;
@@ -640,7 +640,7 @@ body{
   background-image:
     linear-gradient(rgba(24,10,16,.42),rgba(14,6,10,.62)),
     radial-gradient(#4a2330 1px,transparent 1.6px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxwYXRoIGQ9Ik0wIDQ3MCBDMTIwIDM5MCAyMzAgNDY1IDM1MCA0MjAgQzQ3MCAzNzggNTcwIDQ2MiA2OTAgNDE4IEM4MTAgMzc2IDkyMCA0NjIgMTA1MCA0MjAgQzExMzAgMzk2IDExNjUgNDUyIDEyMDAgNDMyIEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzU0MmIzNiIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTAgNTYwIEMxNzAgNDgwIDMwMCA1NTUgNDYwIDUxNSBDNjIwIDQ3NiA3NTAgNTYyIDg5MCA1MjIgQzEwMTAgNDkwIDExMzAgNTQ4IDEyMDAgNTM1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzQ2MjIyYyIgb3BhY2l0eT0iMC42NCIvPjxlbGxpcHNlIGN4PSI1ODAiIGN5PSI0NzAiIHJ4PSI3NjAiIHJ5PSI3MCIgZmlsbD0iI2ZmZTllZCIgb3BhY2l0eT0iMC4xNiIvPjxwYXRoIGQ9Ik0wIDY0MCBDMTMwIDU3MCAyNjAgNjQ4IDQwMCA1OTYgQzU0MCA1NDYgNjYwIDY1NSA4MTAgNjA2IEM5NTAgNTYyIDEwOTAgNjQ2IDEyMDAgNjE1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzM4MWEyNCIgb3BhY2l0eT0iMC43OCIvPjxwYXRoIGQ9Ik0wIDY0MCBDMjAwIDY0NiA0MDAgNjQwIDYwMCA2NDIgQzgwMCA2NDQgMTAwMCA2NDAgMTIwMCA2NDIgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMmExMjIwIiBvcGFjaXR5PSIwLjYiLz48cGF0aCBkPSJNMCA3MTIgQzIwMCA2NDggMzgwIDczNiA1NjAgNjg4IEM3NDAgNjQyIDkxMCA3MjggMTIwMCA2OTAgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMjUwZDE5IiBvcGFjaXR5PSIwLjkiLz48Y2lyY2xlIGN4PSI5MzAiIGN5PSIxNjAiIHI9IjQ2IiBmaWxsPSIjZjRhOWIzIiBvcGFjaXR5PSIwLjkyIi8+PGNpcmNsZSBjeD0iOTMwIiBjeT0iMTYwIiByPSIxMTAiIGZpbGw9IiNmNGE5YjMiIG9wYWNpdHk9IjAuMTYiLz48cGF0aCBkPSJNMjIwIDI2MCBxOSAtOSAyMiAwIHExMSAtMTEgMjYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDg5YWE0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yNjYgMjc4IHE5IC05IDIyIDAgcTExIC0xMSAyNiAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNkODlhYTQiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTMxMiAyNjAgcTkgLTkgMjIgMCBxMTEgLTExIDI2IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2Q4OWFhNCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMzAwIDcwMiBxMjggLTEwIDYyIDAgcS0zMCAxMCAtNjIgMCBaIiBmaWxsPSIjMWQwYTEzIiBvcGFjaXR5PSIwLjkiLz48cGF0aCBkPSJNMzI0IDY5NiBsMCAtNDIgbDI0IDIwIGwtMjQgMjIgWiIgZmlsbD0iIzFkMGExMyIgb3BhY2l0eT0iMC44NSIvPjwvc3ZnPg==");
+    var(--bg-img);
   background-size:100% 100%,100px 100px,cover;
   background-position:center,center,center;
   background-attachment:fixed,fixed,fixed;
@@ -650,7 +650,7 @@ body{
   background-image:
     linear-gradient(rgba(252,254,255,.42),rgba(248,251,254,.58)),
     radial-gradient(#9db4c8 1px,transparent 1.6px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxwYXRoIGQ9Ik0wIDQ3MCBDMTIwIDM5MCAyMzAgNDY1IDM1MCA0MjAgQzQ3MCAzNzggNTcwIDQ2MiA2OTAgNDE4IEM4MTAgMzc2IDkyMCA0NjIgMTA1MCA0MjAgQzExMzAgMzk2IDExNjUgNDUyIDEyMDAgNDMyIEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iI2M4ZDRlMCIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTAgNTYwIEMxNzAgNDgwIDMwMCA1NTUgNDYwIDUxNSBDNjIwIDQ3NiA3NTAgNTYyIDg5MCA1MjIgQzEwMTAgNDkwIDExMzAgNTQ4IDEyMDAgNTM1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iI2IwYzJkMiIgb3BhY2l0eT0iMC41NSIvPjxlbGxpcHNlIGN4PSI2MDAiIGN5PSI0NzAiIHJ4PSI4MDAiIHJ5PSI2NiIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC41NSIvPjxwYXRoIGQ9Ik0wIDY0MCBDMTMwIDU3MCAyNjAgNjQ4IDQwMCA1OTYgQzU0MCA1NDYgNjYwIDY1NSA4MTAgNjA2IEM5NTAgNTYyIDEwOTAgNjQ2IDEyMDAgNjE1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzkzYWJiZiIgb3BhY2l0eT0iMC42NiIvPjxwYXRoIGQ9Ik0wIDY0MCBDMjAwIDY0NiA0MDAgNjQwIDYwMCA2NDIgQzgwMCA2NDQgMTAwMCA2NDAgMTIwMCA2NDIgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjN2U5YWIyIiBvcGFjaXR5PSIwLjQiLz48cGF0aCBkPSJNMCA3MTIgQzIwMCA2NDggMzgwIDczNiA1NjAgNjg4IEM3NDAgNjQyIDkxMCA3MjggMTIwMCA2OTAgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjNjQ3Zjk4IiBvcGFjaXR5PSIwLjcyIi8+PGNpcmNsZSBjeD0iOTUwIiBjeT0iMTYwIiByPSI1MCIgZmlsbD0iI2Y3ZmJmZiIgb3BhY2l0eT0iMC45MiIvPjxjaXJjbGUgY3g9Ijk1MCIgY3k9IjE2MCIgcj0iMTIwIiBmaWxsPSIjZjdmYmZmIiBvcGFjaXR5PSIwLjE2Ii8+PHBhdGggZD0iTTE5MCAyNDAgcTkgLTkgMjIgMCBxMTEgLTExIDI2IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzViNzQ5MCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjM2IDI1OCBxOSAtOSAyMiAwIHExMSAtMTEgMjYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNWI3NDkwIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yODIgMjQwIHE5IC05IDIyIDAgcTExIC0xMSAyNiAwIiBmaWxsPSJub25lIiBzdHJva2U9IiM1Yjc0OTAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI2MCA3MDYgcTI4IC0xMCA2MiAwIHEtMzAgMTAgLTYyIDAgWiIgZmlsbD0iIzUyNjk3ZiIgb3BhY2l0eT0iMC45Ii8+PHBhdGggZD0iTTI4NCA3MDAgbDAgLTQyIGwyNCAyMCBsLTI0IDIyIFoiIGZpbGw9IiM1MjY5N2YiIG9wYWNpdHk9IjAuODUiLz48L3N2Zz4=");
+    var(--bg-img);
   background-size:100% 100%,100px 100px,cover;
   background-position:center,center,center;
   background-attachment:fixed,fixed,fixed;
@@ -660,7 +660,7 @@ body{
   background-image:
     linear-gradient(rgba(10,18,13,.42),rgba(6,12,9,.60)),
     radial-gradient(#2c4436 1px,transparent 1.6px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxwYXRoIGQ9Ik0wIDQ3MCBDMTIwIDM5MCAyMzAgNDY1IDM1MCA0MjAgQzQ3MCAzNzggNTcwIDQ2MiA2OTAgNDE4IEM4MTAgMzc2IDkyMCA0NjIgMTA1MCA0MjAgQzExMzAgMzk2IDExNjUgNDUyIDEyMDAgNDMyIEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzJjNDYzYSIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTAgNTYwIEMxNzAgNDgwIDMwMCA1NTUgNDYwIDUxNSBDNjIwIDQ3NiA3NTAgNTYyIDg5MCA1MjIgQzEwMTAgNDkwIDExMzAgNTQ4IDEyMDAgNTM1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzIyMzgyZCIgb3BhY2l0eT0iMC42NCIvPjxlbGxpcHNlIGN4PSI1NjAiIGN5PSI0NzAiIHJ4PSI3NjAiIHJ5PSI3MCIgZmlsbD0iI2VlZjJkZSIgb3BhY2l0eT0iMC4xOCIvPjxwYXRoIGQ9Ik0wIDY0MCBDMTMwIDU3MCAyNjAgNjQ4IDQwMCA1OTYgQzU0MCA1NDYgNjYwIDY1NSA4MTAgNjA2IEM5NTAgNTYyIDEwOTAgNjQ2IDEyMDAgNjE1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzE5MmIyMiIgb3BhY2l0eT0iMC43OCIvPjxwYXRoIGQ9Ik0wIDY0MCBDMjAwIDY0NiA0MDAgNjQwIDYwMCA2NDIgQzgwMCA2NDQgMTAwMCA2NDAgMTIwMCA2NDIgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMTIyMzFiIiBvcGFjaXR5PSIwLjYiLz48cGF0aCBkPSJNMCA3MTIgQzIwMCA2NDggMzgwIDczNiA1NjAgNjg4IEM3NDAgNjQyIDkxMCA3MjggMTIwMCA2OTAgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMGUxZTE3IiBvcGFjaXR5PSIwLjkiLz48cGF0aCBkPSJNNjQwIDU2MCBMNjYwIDUwMCBMNjgwIDU2MCBMNjY2IDU0OCBaIE03MDAgNTQwIEw3MjAgNDgwIEw3NDAgNTQwIEw3MjYgNTI4IFogTTU5MCA1ODAgTDYwOCA1MjIgTDYyNiA1ODAgTDYxMyA1NjggWiIgZmlsbD0iIzE2MjgxZiIgb3BhY2l0eT0iMC44Ii8+PGNpcmNsZSBjeD0iOTQwIiBjeT0iMTUwIiByPSI0NCIgZmlsbD0iI2U5ZTdjOCIgb3BhY2l0eT0iMC45MiIvPjxjaXJjbGUgY3g9Ijk0MCIgY3k9IjE1MCIgcj0iMTA1IiBmaWxsPSIjZTllN2M4IiBvcGFjaXR5PSIwLjE2Ii8+PHBhdGggZD0iTTIwMCAyNDAgcTkgLTkgMjIgMCBxMTEgLTExIDI2IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2E5YzI5YSIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjQ2IDI1OCBxOSAtOSAyMiAwIHExMSAtMTEgMjYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYTljMjlhIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yOTIgMjQwIHE5IC05IDIyIDAgcTExIC0xMSAyNiAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNhOWMyOWEiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI5MCA3MDQgcTI4IC0xMCA2MiAwIHEtMzAgMTAgLTYyIDAgWiIgZmlsbD0iIzBiMTkxNCIgb3BhY2l0eT0iMC45Ii8+PHBhdGggZD0iTTMxNCA2OTggbDAgLTQyIGwyNCAyMCBsLTI0IDIyIFoiIGZpbGw9IiMwYjE5MTQiIG9wYWNpdHk9IjAuODUiLz48L3N2Zz4=");
+    var(--bg-img);
   background-size:100% 100%,110px 110px,cover;
   background-position:center,center,center;
   background-attachment:fixed,fixed,fixed;
@@ -670,7 +670,7 @@ body{
   background-image:
     linear-gradient(rgba(20,12,26,.42),rgba(11,7,16,.62)),
     radial-gradient(#453055 1px,transparent 1.6px),
-    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgcHJlc2VydmVBc3BlY3RSYXRpbz0ieE1pZFlNaWQgc2xpY2UiPjxwYXRoIGQ9Ik0wIDQ3MCBDMTIwIDM5MCAyMzAgNDY1IDM1MCA0MjAgQzQ3MCAzNzggNTcwIDQ2MiA2OTAgNDE4IEM4MTAgMzc2IDkyMCA0NjIgMTA1MCA0MjAgQzExMzAgMzk2IDExNjUgNDUyIDEyMDAgNDMyIEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzUzNDA2YSIgb3BhY2l0eT0iMC41Ii8+PHBhdGggZD0iTTAgNTYwIEMxNzAgNDgwIDMwMCA1NTUgNDYwIDUxNSBDNjIwIDQ3NiA3NTAgNTYyIDg5MCA1MjIgQzEwMTAgNDkwIDExMzAgNTQ4IDEyMDAgNTM1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzQ0MzM1OCIgb3BhY2l0eT0iMC42NCIvPjxlbGxpcHNlIGN4PSI2MDAiIGN5PSI0NzAiIHJ4PSI3ODAiIHJ5PSI3MCIgZmlsbD0iI2YzZTlmNiIgb3BhY2l0eT0iMC4xNiIvPjxwYXRoIGQ9Ik0wIDY0MCBDMTMwIDU3MCAyNjAgNjQ4IDQwMCA1OTYgQzU0MCA1NDYgNjYwIDY1NSA4MTAgNjA2IEM5NTAgNTYyIDEwOTAgNjQ2IDEyMDAgNjE1IEwxMjAwIDgwMCBMMCA4MDAgWiIgZmlsbD0iIzM1MjY0OCIgb3BhY2l0eT0iMC43OCIvPjxwYXRoIGQ9Ik0wIDY0MCBDMjAwIDY0NiA0MDAgNjQwIDYwMCA2NDIgQzgwMCA2NDQgMTAwMCA2NDAgMTIwMCA2NDIgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMjcxYTM4IiBvcGFjaXR5PSIwLjYiLz48cGF0aCBkPSJNMCA3MTIgQzIwMCA2NDggMzgwIDczNiA1NjAgNjg4IEM3NDAgNjQyIDkxMCA3MjggMTIwMCA2OTAgTDEyMDAgODAwIEwwIDgwMCBaIiBmaWxsPSIjMWYxMjMwIiBvcGFjaXR5PSIwLjkiLz48Y2lyY2xlIGN4PSI5ODAiIGN5PSIyMDAiIHI9IjUwIiBmaWxsPSIjZDlhMDZiIiBvcGFjaXR5PSIwLjg4Ii8+PGNpcmNsZSBjeD0iOTgwIiBjeT0iMjAwIiByPSIxMTAiIGZpbGw9IiNkOWEwNmIiIG9wYWNpdHk9IjAuMTMiLz48cGF0aCBkPSJNMTgwIDI1MCBxOSAtOSAyMiAwIHExMSAtMTEgMjYgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjYzlhNGQwIiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxwYXRoIGQ9Ik0yMjYgMjY4IHE5IC05IDIyIDAgcTExIC0xMSAyNiAwIiBmaWxsPSJub25lIiBzdHJva2U9IiNjOWE0ZDAiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PHBhdGggZD0iTTI3MiAyNTAgcTkgLTkgMjIgMCBxMTEgLTExIDI2IDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2M5YTRkMCIgc3Ryb2tlLXdpZHRoPSIzIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48cGF0aCBkPSJNMjYwIDcwMiBxMjggLTEwIDYyIDAgcS0zMCAxMCAtNjIgMCBaIiBmaWxsPSIjMTcwYzI2IiBvcGFjaXR5PSIwLjkiLz48cGF0aCBkPSJNMjg0IDY5NiBsMCAtNDIgbDI0IDIwIGwtMjQgMjIgWiIgZmlsbD0iIzE3MGMyNiIgb3BhY2l0eT0iMC44NSIvPjwvc3ZnPg==");
+    var(--bg-img);
   background-size:100% 100%,100px 100px,cover;
   background-position:center,center,center;
   background-attachment:fixed,fixed,fixed;
@@ -744,6 +744,14 @@ body{
   background-size:100% 100%,100% 100%,90px 90px;
   background-attachment:fixed,fixed,fixed;
   background-color:var(--bg);
+}
+/* 非水墨系列 · 氛围光晕层（accent 色系） */
+[data-theme="auto"] body::before,[data-theme="paper"] body::before,[data-theme="night"] body::before,[data-theme="ink"] body::before,[data-theme="celadon"] body::before,[data-theme="daybreak"] body::before,[data-theme="sky-clear"] body::before,[data-theme="creamy"] body::before,[data-theme="daylight"] body::before,[data-theme="scifi-nexus"] body::before,[data-theme="cyber-neon"] body::before,[data-theme="vapor-wave"] body::before,[data-theme="aurora-pulse"] body::before,[data-theme="tokyo-rain"] body::before,[data-theme="steampunk-brass"] body::before,[data-theme="forest-moss"] body::before,[data-theme="ocean-abyss"] body::before,[data-theme="snowfield"] body::before,[data-theme="glacier-ice"] body::before,[data-theme="sakura-wa"] body::before,[data-theme="nebula-violet"] body::before,[data-theme="dusk-amber"] body::before,[data-theme="gothic-gold"] body::before,[data-theme="mint-summer"] body::before,[data-theme="milky-galaxy"] body::before,[data-theme="candy-pop"] body::before,[data-theme="storybook"] body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(ellipse 90% 42% at 12% -6%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 58%),
+    radial-gradient(ellipse 80% 38% at 88% 2%,color-mix(in srgb,var(--accent-hover) 16%,transparent),transparent 58%),
+    radial-gradient(ellipse 75% 40% at 50% 112%,color-mix(in srgb,var(--accent-deep,var(--accent)) 13%,transparent),transparent 55%);
 }
 .we-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin:10px 0}
 .we-thumb{position:relative;border-radius:8px;overflow:hidden;border:2px solid var(--line);cursor:pointer;aspect-ratio:1/1;background:var(--card);padding:0;font:inherit;display:block}
@@ -915,6 +923,112 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 #write-hist-list .wh-item .wh-act{margin-top:6px;display:flex;gap:6px}
 
 #write-saved{margin-left:auto}
+
+/* ===== 写作台（写作工作台） ===== */
+.wa-hidden{display:none!important}
+#write-app{position:fixed;inset:0;z-index:1150;background-color:var(--bg);background-image:linear-gradient(color-mix(in srgb,var(--bg) 46%,transparent),color-mix(in srgb,var(--bg) 32%,transparent)),radial-gradient(var(--dot) 1px,transparent 1px),var(--bg-img);background-size:100% 100%,26px 26px,cover;background-position:center;background-attachment:fixed,fixed,fixed;display:flex;flex-direction:column;font-size:14px;color:var(--ink)}
+#write-app.wa-hidden{display:none}
+#wa-topbar{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--card);background:color-mix(in srgb,var(--card) 92%,transparent);border-bottom:1px solid var(--line);z-index:2;flex-wrap:wrap}
+#wa-topbar .wa-logo{font-size:15px;font-weight:700;letter-spacing:1px;color:var(--accent,#e67e22)}
+#wa-topbar select{background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-family:inherit;font-size:13px;max-width:240px}
+#wa-topbar .wa-flex{flex:1}
+.wa-status{font-size:12px;color:var(--muted)}
+#wa-body{flex:1;display:flex;min-height:0}
+#wa-tree{width:240px;min-width:200px;border-right:1px solid var(--line);overflow-y:auto;padding:12px;box-sizing:border-box;background:var(--card);background:color-mix(in srgb,var(--card) 88%,transparent)}
+#wa-tree .wa-tree-head{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px}
+#wa-tree-count{font-size:11px;color:var(--muted);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:86px}
+.wa-tree-tip{font-size:11px;color:var(--faint);margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#wa-editor{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg);background:color-mix(in srgb,var(--bg) 55%,transparent)}
+#wa-editor-full{flex:1;display:flex;flex-direction:column;min-height:0}
+#wa-chap-title{width:100%;box-sizing:border-box;border:0;outline:0;background:transparent;font-size:22px;font-weight:700;color:var(--ink);padding:26px 40px 6px;font-family:inherit;letter-spacing:1px}
+#wa-chap-meta{padding:0 40px 4px;font-size:12px;color:var(--muted);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#wa-chap-meta .wa-meta-tag{background:var(--tag-bg);border:1px solid var(--tag-border);color:var(--tag-ink);border-radius:6px;padding:1px 7px;font-size:11px}
+#wa-chap-body{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--ink);font-size:16px;line-height:2;padding:14px 40px 30px;font-family:inherit;box-sizing:border-box;width:100%}
+#wa-chap-body::placeholder{color:var(--faint)}
+#wa-chap-foot{padding:8px 40px 14px;font-size:12px;color:var(--muted);display:flex;gap:14px;align-items:center;border-top:1px solid var(--line);flex-wrap:wrap}
+#wa-chap-foot .wa-wc b{color:var(--accent,#e67e22)}
+#wa-side{width:250px;min-width:220px;border-left:1px solid var(--line);overflow-y:auto;padding:12px;box-sizing:border-box;background:var(--card);background:color-mix(in srgb,var(--card) 88%,transparent)}
+#wa-side .wa-side-head{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.wa-hint-tip{font-size:11px;color:var(--faint);font-weight:400}
+.wa-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);text-align:center;padding:30px;box-sizing:border-box;gap:6px}
+.wa-empty.s{height:auto;padding:20px 10px;font-size:12px}
+.wa-empty-icon{font-size:44px;opacity:.5}
+.wa-empty-t{font-size:16px;font-weight:600;color:var(--ink-soft)}
+.wa-empty-s{font-size:13px;color:var(--muted)}
+/* 第2步：卷/章卡体系 */
+.wa-tree-actions{display:flex;gap:6px;align-items:center}
+.wa-btn-mini{border:1px solid var(--line);background:var(--input-bg);color:var(--ink);border-radius:6px;padding:2px 9px;font-size:11px;cursor:pointer;font-family:inherit;line-height:1.5}
+.wa-btn-mini:hover{border-color:var(--accent,#e67e22);color:var(--accent,#e67e22)}
+.wa-tree-tip{font-size:11px;color:var(--faint);padding:2px 2px 8px}
+.wa-vol{margin:6px 0;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow:hidden}
+.wa-vol-head{display:flex;align-items:center;gap:6px;padding:7px 10px;font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;user-select:none}
+.wa-vol-head .wa-caret{transition:transform .15s;display:inline-block;font-size:10px}
+.wa-vol.collapsed .wa-caret{transform:rotate(-90deg)}
+.wa-vol-head .wa-vol-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-vol-body{display:flex;flex-direction:column;gap:6px;padding:6px 8px 8px;border-top:1px dashed var(--line)}
+.wa-vol.collapsed .wa-vol-body{display:none}
+.wa-chap-card{border:1px solid var(--line);border-radius:8px;background:var(--card);padding:6px 9px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.wa-chap-card:hover{border-color:var(--accent,#e67e22)}
+.wa-chap-card.on{border-color:var(--accent,#e67e22);box-shadow:0 0 0 1px var(--accent,#e67e22)}
+.wa-chap-card .wa-cc-t{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wa-chap-card .wa-cc-m{font-size:10px;color:var(--muted);margin-top:2px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wa-chap-card .wa-cc-st{font-size:9px;padding:0 5px;border-radius:4px;border:1px solid var(--tag-border);color:var(--tag-ink)}
+.wa-save-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;margin-left:6px;vertical-align:middle}
+.wa-save-dot.saving{background:#f0ad4e}
+/* 第3步：编辑器增强 */
+#wa-progress-wrap{height:3px;background:var(--line);margin:2px 40px 0;border-radius:2px;overflow:hidden}
+#wa-progress{height:100%;background:var(--accent,#e67e22);width:0;transition:width .3s}
+.wa-flex{flex:1}
+.wa-foot-btn{border:1px solid var(--line);background:var(--input-bg);color:var(--ink);border-radius:7px;padding:3px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+.wa-foot-btn:hover{border-color:var(--accent,#e67e22);color:var(--accent,#e67e22)}
+#wa-target-input{width:64px;border:1px solid var(--line);border-radius:6px;background:var(--input-bg);color:var(--ink);padding:2px 6px;font-size:12px;font-family:inherit}
+#write-app.wa-focus #wa-tree,#write-app.wa-focus #wa-side{display:none}
+#write-app.wa-focus #wa-editor{max-width:860px;margin:0 auto;width:100%;background:transparent}
+#write-app.wa-focus #wa-topbar{justify-content:center}
+#write-app.wa-focus #wa-chap-title{text-align:center}
+/* 写作助手侧栏 */
+.wa-side-sec{padding:10px 14px;border-bottom:1px solid var(--line)}
+.wa-side-h{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.wa-side-chaps{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow:auto}
+.wa-side-chap{border:1px solid var(--line);background:var(--input-bg);color:var(--ink);border-radius:6px;padding:4px 8px;font-size:12px;text-align:left;cursor:pointer;font-family:inherit}
+.wa-side-chap:hover{border-color:var(--accent,#e67e22)}
+.wa-side-chap.on{border-color:var(--accent,#e67e22);background:color-mix(in srgb,var(--accent,#e67e22) 14%,transparent)}
+.wa-side-idea{display:flex;align-items:center;gap:6px;width:100%;border:1px solid var(--line);background:var(--input-bg);color:var(--ink);border-radius:6px;padding:5px 8px;font-size:12px;text-align:left;cursor:pointer;margin-bottom:5px;font-family:inherit}
+.wa-side-idea:hover{border-color:var(--accent,#e67e22);background:color-mix(in srgb,var(--accent,#e67e22) 8%,transparent)}
+.wa-side-idea em{font-style:normal;font-size:10px;color:var(--muted);margin-left:auto}
+.wa-side-cat{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.wa-topbar-actions{display:flex;gap:8px;align-items:center}
+#wa-preview-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1250;display:flex;align-items:center;justify-content:center;padding:30px}
+#wa-preview-panel{width:min(760px,92vw);max-height:86vh;background:var(--bg);border:1px solid var(--line);border-radius:14px;overflow:auto;padding:10px 34px 34px;color:var(--ink);box-shadow:0 18px 60px rgba(0,0,0,.4)}
+#wa-preview-head{display:flex;justify-content:flex-end;position:sticky;top:0;background:var(--bg)}
+#wa-preview-close{border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:6px;line-height:1}
+#wa-preview-close:hover{color:var(--ink)}
+.wa-pv-book{font-size:14px;color:var(--muted);text-align:center;letter-spacing:3px}
+.wa-pv-title{font-size:22px;font-weight:700;text-align:center;margin:10px 0 4px}
+.wa-pv-meta{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px}
+.wa-pv-body{font-size:15px;line-height:2;color:var(--ink)}
+/* 写作台美化增强 */
+#wa-chap-title{font-size:24px;font-weight:700;padding:12px 4px;border:none;border-bottom:2px solid var(--line);background:transparent;color:var(--ink);outline:none;transition:border-color .2s}
+#wa-chap-title:focus{border-bottom-color:var(--accent)}
+#wa-chap-body{line-height:2;font-size:15.5px}
+#wa-chap-body:focus{outline:none;box-shadow:none}
+#wa-tree-list .wa-chap-card{transition:border-color .18s,transform .18s,box-shadow .18s}
+#wa-tree-list .wa-chap-card:hover{border-color:var(--accent-line);transform:translateX(2px);box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.wa-side-idea{transition:background .15s,transform .15s}
+.wa-side-idea:hover{background:var(--hover);transform:translateX(2px)}
+.wa-btn-mini{transition:border-color .15s,color .15s,background .15s}
+.wa-btn-mini:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+/* 写作台功能区 dock */
+#wa-dock{width:182px;flex:0 0 auto;border-left:1px solid var(--line);background:var(--card);background:color-mix(in srgb,var(--card) 88%,transparent);padding:12px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.wa-dock-title{font-size:12px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;text-align:center}
+.wa-dock-label{font-size:11px;color:var(--faint);margin:10px 2px 2px;letter-spacing:1px}
+.wa-dock-group{display:flex;flex-direction:column;gap:6px}
+.wa-dock-btn{display:flex;align-items:center;justify-content:center;gap:5px;padding:7px 8px;border-radius:9px;border:1px solid var(--line);background:var(--input-bg);color:var(--ink);font-size:12.5px;cursor:pointer;transition:border-color .15s,color .15s,background .15s;font-family:inherit}
+.wa-dock-btn:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
+.wa-dock-btn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:600}
+@media (max-width:1180px){#wa-dock{display:none}}
+@media(max-width:860px){#wa-tree{width:170px;min-width:150px}#wa-side{width:190px;min-width:160px}#wa-chap-title,#wa-chap-body,#wa-chap-foot{padding-left:20px;padding-right:20px}}
+@media(max-width:620px){#wa-side{display:none}#wa-tree{width:150px}}
 @media (max-width:640px){
   #write-title{font-size:19px;padding:12px 14px 6px}
   #write-body{font-size:15px;padding:2px 16px 10px;line-height:1.75}
@@ -1914,7 +2028,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
 <button id="hot-btn" type="button" title="热点榜单">🔥 热点</button>
 <div class="mode-switch" id="mode-switch" title="切换工作模式" style="display:none">
   <button type="button" id="mode-idea" class="on">💡 灵感</button>
-  <button type="button" id="mode-write" hidden>✍ 写作</button>
+  <button type="button" id="mode-write">✍ 写作</button>
   <button type="button" id="mode-rel">🕸 脉络</button>
 </div>
 </header>
@@ -1933,7 +2047,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     <div class="header-actions">
       <div class="mode-switch" id="mode-switch-dock" title="切换工作模式（灵感/脉络）" style="margin-bottom:4px">
         <button type="button" id="mode-idea2" class="on">💡 灵感</button>
-        <button type="button" id="mode-write2" hidden>✍ 写作</button>
+        <button type="button" id="mode-write2">✍ 写作</button>
         <button type="button" id="mode-rel2">🕸 脉络</button>
       </div>
       <button class="btn ghost" id="btn-books" title="书册管理：把灵感按作品分册">📚 书册</button>
@@ -8331,15 +8445,16 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     scheduleDraw();
   };
   function switchMode(m){
-    if(m==='write') m='idea';
     if(m===curMode) return;
     curMode=m;
     window.__curMode=m;
     document.body.classList.remove('mode-rel-body');
     if(m==='rel') document.body.classList.add('mode-rel-body');
     modeIdea.classList.toggle('on', m==='idea');
+    if(modeWrite) modeWrite.classList.toggle('on', m==='write');
     modeRel.classList.toggle('on', m==='rel');
     if(modeIdea2) modeIdea2.classList.toggle('on', m==='idea');
+    if(modeWrite2) modeWrite2.classList.toggle('on', m==='write');
     if(modeRel2) modeRel2.classList.toggle('on', m==='rel');
     var mI3=document.getElementById('mode-idea-rel');
     var mR3=document.getElementById('mode-rel-rel');
@@ -8350,8 +8465,13 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     if(m==='idea'){
       if(relOpen) closeRel();
       document.body.style.overflow='';
+      if(window.__waClose) window.__waClose();
     }else if(m==='rel'){
+      if(window.__waClose) window.__waClose();
       openRel();
+    }else if(m==='write'){
+      if(relOpen) closeRel();
+      if(window.__waOpen) window.__waOpen();
     }
   }
   window.__switchMode=function(m){ switchMode(m); };
@@ -8385,10 +8505,10 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     return true;
   };
   modeIdea.addEventListener('click', function(){ switchMode('idea'); });
-  if(modeWrite) modeWrite.addEventListener('click', function(){ switchMode('idea'); });
+  if(modeWrite) modeWrite.addEventListener('click', function(){ switchMode('write'); });
   modeRel.addEventListener('click', function(){ switchMode('rel'); });
   if(modeIdea2) modeIdea2.addEventListener('click', function(){ switchMode('idea'); });
-  if(modeWrite2) modeWrite2.addEventListener('click', function(){ switchMode('idea'); });
+  if(modeWrite2) modeWrite2.addEventListener('click', function(){ switchMode('write'); });
   if(modeRel2) modeRel2.addEventListener('click', function(){ switchMode('rel'); });
   var modeIdeaRel=document.getElementById('mode-idea-rel');
   var modeRelRel=document.getElementById('mode-rel-rel');
@@ -9135,6 +9255,449 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('./sw.js').catch(function () {});
   });
 }
+</script>
+
+<!-- ============ 写作台（墨匣·写作工作台） ============ -->
+<div id="write-app" class="wa-hidden">
+  <div id="wa-topbar">
+    <button type="button" class="btn ghost" id="wa-back" title="返回灵感模式">← 灵感</button>
+    <span class="wa-logo">✍ 写作台</span>
+    <select id="wa-book" title="选择作品"></select>
+    <button type="button" class="btn ghost" id="wa-new-book" title="新建一部小说作品">＋ 新作品</button>
+    <span class="wa-flex"></span>
+    <span id="wa-status" class="wa-status"></span>
+    <span class="wa-topbar-actions">
+      <button type="button" id="wa-preview" class="wa-btn-mini" title="阅读预览当前章节">📖 预览</button>
+      <button type="button" id="wa-export" class="wa-btn-mini" title="导出整本作品为 TXT">⬇ 导出TXT</button>
+    </span>
+  </div>
+  <div id="wa-body">
+    <aside id="wa-tree">
+      <div class="wa-tree-head"><span>📚 书册树</span><span class="wa-tree-actions"><button type="button" class="wa-btn-mini" id="wa-add-vol" title="新建一卷">＋卷</button></span><span id="wa-tree-count"></span></div>
+      <div id="wa-tree-list"></div>
+    </aside>
+    <main id="wa-editor">
+      <div id="wa-editor-empty" class="wa-empty">
+        <div class="wa-empty-icon">📖</div>
+        <div class="wa-empty-t">选择一部作品开始创作</div>
+        <div class="wa-empty-s">从左上角选作品，或点「＋ 新作品」新建一部小说</div>
+      </div>
+      <div id="wa-editor-full" class="wa-hidden">
+        <input type="text" id="wa-chap-title" placeholder="章节标题…" autocomplete="off">
+        <div id="wa-chap-meta"></div>
+        <div id="wa-progress-wrap" class="wa-hidden"><div id="wa-progress"></div></div>
+        <textarea id="wa-chap-body" placeholder="在这里开始你的故事…" spellcheck="false"></textarea>
+        <div id="wa-chap-foot"></div>
+      </div>
+    </main>
+    <aside id="wa-side">
+      <div class="wa-side-head"><span>📎 写作助手</span><span class="wa-hint-tip">选择章节后开放</span></div>
+      <div id="wa-side-body"><div class="wa-empty s">打开一个章节后，这里会出现灵感卡片、人物与伏笔速查。</div></div>
+    </aside>
+    <aside id="wa-dock">
+      <div class="wa-dock-title">⠿ 功能区</div>
+      <div class="wa-dock-label">模式</div>
+      <div class="wa-dock-group">
+        <button type="button" class="wa-dock-btn wa-dock-mode" data-m="idea" title="切回灵感模式">💡 灵感</button>
+        <button type="button" class="wa-dock-btn wa-dock-mode on" data-m="write" title="写作模式">✍ 写作</button>
+        <button type="button" class="wa-dock-btn wa-dock-mode" data-m="rel" title="切到脉络模式">🕸 脉络</button>
+      </div>
+      <div class="wa-dock-label">写作</div>
+      <div class="wa-dock-group">
+        <button type="button" class="wa-dock-btn" id="wa-dock-chap" title="在当前作品新建章节">＋ 新章节</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-vol" title="新建一卷">＋ 新卷</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-preview" title="阅读预览当前章节">📖 预览</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-export" title="导出整本作品为 TXT">⬇ 导出TXT</button>
+      </div>
+      <div class="wa-dock-label">全局</div>
+      <div class="wa-dock-group">
+        <button type="button" class="wa-dock-btn" id="wa-dock-theme" title="妆阁：主题皮肤 / 自定义调色 / 卡片美化">🎨 妆阁</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-sync" title="墨匣云阁：云端同步 / 备份导出 / 数据导入">🏮 云阁</button>
+      </div>
+    </aside>
+  </div>
+  <div id="wa-preview-mask" class="wa-hidden">
+    <div id="wa-preview-panel">
+      <div id="wa-preview-head"><button type="button" id="wa-preview-close" title="关闭预览">✕</button></div>
+      <div id="wa-preview-body"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 写作台 · 第1-2步：数据模型 + 骨架 + 作品管理 + 卷/章卡体系（自包含） ============ */
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
+  function wbToast(msg){
+    var t=$('wb-toast'); if(!t){ t=document.createElement('div'); t.id='wb-toast'; t.style.cssText='position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:rgba(20,20,24,.9);color:#fff;padding:9px 18px;border-radius:10px;font-size:13px;z-index:1300;box-shadow:0 6px 22px rgba(0,0,0,.35);pointer-events:none;transition:opacity .25s'; document.body.appendChild(t); }
+    t.textContent=msg; t.style.opacity='1';
+    clearTimeout(t._t); t._t=setTimeout(function(){ t.style.opacity='0'; },1800);
+  }
+  function wbFmt(ts){ if(!ts) return ''; var d=new Date(ts); function p(n){return n<10?'0'+n:n;} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes()); }
+  function wbWords(s){ return String(s||'').replace(/\s/g,'').length; }
+
+  var WB_KEY='moxia-wb-v1';
+  function wbLoad(){ try{ var a=JSON.parse(localStorage.getItem(WB_KEY)); if(a&&Array.isArray(a.books)) return a; }catch(e){} return {books:[],cur:null}; }
+  function wbSave(){ try{ localStorage.setItem(WB_KEY, JSON.stringify(WB)); }catch(e){} }
+  var WB=wbLoad();
+  function wbUid(){ return 'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function wbBook(id){ for(var i=0;i<WB.books.length;i++) if(WB.books[i].id===id) return WB.books[i]; return null; }
+  function wbCur(){ return wbBook(WB.cur); }
+  function wbVol(b,id){ for(var i=0;i<(b.vols||[]).length;i++) if(b.vols[i].id===id) return b.vols[i]; return null; }
+  function wbChap(b,id){ for(var i=0;i<(b.chaps||[]).length;i++) if(b.chaps[i].id===id) return b.chaps[i]; return null; }
+  function wbCurChap(){ var b=wbCur(); if(!b) return null; return wbChap(b, WB.curChap); }
+
+  var app=$('write-app'), bookSel=$('wa-book'), treeEl=$('wa-tree-list'), statusEl=$('wa-status');
+  var editorEmpty=$('wa-editor-empty'), editorFull=$('wa-editor-full');
+  var chapTitle=$('wa-chap-title'), chapBody=$('wa-chap-body'), chapMeta=$('wa-chap-meta'), chapFoot=$('wa-chap-foot');
+  var side=$('wa-side'); var sideBody=$('wa-side-body');
+  /* 写作助手：读灵感卡片库（自包含，IndexedDB 'cards' 优先，localStorage 兜底） */
+  function wbIdeasAsync(cb){
+    function fb(){
+      try{ var o=JSON.parse(localStorage.getItem('novel-idea-cards-v1')||'[]'); cb(Array.isArray(o)?o:[]); }catch(e){ cb([]); }
+    }
+    try{
+      var r=indexedDB.open('idea-cards-sync',1);
+      r.onsuccess=function(){
+        var db=r.result;
+        try{
+          var q=db.transaction('kv').objectStore('kv').get('cards');
+          q.onsuccess=function(){
+            var v=q.result;
+            if(Array.isArray(v)){ cb(v); return; }
+            fb();
+          };
+          q.onerror=function(){ fb(); };
+        }catch(e){ fb(); }
+      };
+      r.onerror=function(){ fb(); };
+    }catch(e){ fb(); }
+  }
+  function wbCatColor(n){
+    try{
+      var cc=JSON.parse(localStorage.getItem('novel-idea-cards-v1-cats-custom')||'null');
+      if(Array.isArray(cc)){ for(var i=0;i<cc.length;i++) if(cc[i].name===n) return cc[i].color; }
+    }catch(e){}
+    var def={人物:'#d9775f',人物卡:'#e06a8a',伏笔卡:'#b48ad9',情节:'#5f8d6e',世界观:'#7d6b9e',对话:'#c39a2a',场景:'#4a7fa5',其他:'#8a8578'};
+    return def[n]||'#8a8578';
+  }
+  function renderSide(){
+    var b=wbCur(), c=wbCurChap();
+    if(!b||!c){ sideBody.innerHTML='<div class="wa-empty s">选择章节后开放<br>这里会出现灵感卡片、人物与伏笔速查。</div>'; return; }
+    wbIdeasAsync(function(ideas){
+      function kwOf(s){
+        var out=[], seen={};
+        var w=String(s||'').replace(/\s/g,'');
+        var parts=w.split(/[，。！？、;；:：'"“”‘’（）()《》<>【】\n,.!?;:]/);
+        for(var L=4;L>=2;L--){
+          var cap=12;
+          parts.forEach(function(p){
+            for(var i=0;i+L<=p.length && cap>0;i++){
+              var k=p.slice(i,i+L);
+              if(!seen[k]){ seen[k]=1; out.push(k); cap--; }
+            }
+          });
+        }
+        return out.slice(0,36);
+      }
+      var kw=kwOf((c.title||'')+' '+(c.content||''));
+      function hit(cc){
+        var t=((cc.title||'')+' '+(cc.content||'')+' '+(cc.tags||[]).join(' ')).toLowerCase();
+        var n=0; kw.forEach(function(w){ if(t.indexOf(w)>-1) n+=(w.length>=3?2:1); });
+        return n;
+      }
+      var scored=ideas.map(function(cc){ return {cc:cc,n:hit(cc)}; }).filter(function(x){return x.n>0;}).sort(function(a,b){return b.n-a.n;}).slice(0,6);
+      var h='<div class="wa-side-sec"><div class="wa-side-h">📚 章节导航</div><div class="wa-side-chaps">'+
+        ((b.chaps||[]).slice(-10).reverse().map(function(ch){
+          return '<button type="button" class="wa-side-chap'+(ch.id===c.id?' on':'')+'" data-chap="'+esc(ch.id)+'">'+esc(ch.title||'未命名章节')+'</button>';
+        }).join('')||'<div class="wa-empty s">暂无章节</div>')+'</div></div>';
+      h+='<div class="wa-side-sec"><div class="wa-side-h">💡 相关灵感</div>'+
+        (scored.length? scored.map(function(x){
+          var nm=x.cc.title||String(x.cc.content||'').slice(0,12)||'未命名';
+          return '<button type="button" class="wa-side-idea" data-name="'+esc(nm)+'" title="点击插入引用"><span class="wa-side-cat" style="background:'+esc(wbCatColor(x.cc.category))+'"></span>'+esc(nm)+'<em>×'+x.n+'</em></button>';
+        }).join('') : '<div class="wa-empty s">暂无相关灵感</div>')+'</div>';
+      var chars=ideas.filter(function(cc){ return cc.category==='人物卡'||cc.category==='人物'||cc.category==='伏笔卡'; }).slice(0,8);
+      h+='<div class="wa-side-sec"><div class="wa-side-h">👤 人物 / 伏笔速查</div>'+
+        (chars.length? chars.map(function(cc){
+          var nm=cc.title||String(cc.content||'').slice(0,12)||'未命名';
+          return '<button type="button" class="wa-side-idea" data-name="'+esc(nm)+'" title="点击插入引用"><span class="wa-side-cat" style="background:'+esc(wbCatColor(cc.category))+'"></span>'+esc(nm)+'</button>';
+        }).join('') : '<div class="wa-empty s">暂无人物 / 伏笔卡</div>')+'</div>';
+      side.innerHTML=h;
+    });
+  }
+  function insertRef(text){
+    var c=wbCurChap(); if(!c) return;
+    var pos=chapBody.selectionStart==null?chapBody.value.length:chapBody.selectionStart;
+    chapBody.value=chapBody.value.slice(0,pos)+text+chapBody.value.slice(pos);
+    var np=pos+text.length;
+    saveCurChap(); chapBody.focus();
+    try{ chapBody.setSelectionRange(np,np); }catch(e){}
+    renderSide();
+    wbToast('已插入引用');
+  }
+
+  function wbPreview(){
+    var b=wbCur(), c=wbCurChap();
+    if(!b||!c){ wbToast('请先选择章节'); return; }
+    $('wa-preview-title')||0;
+    var body=$('wa-preview-body');
+    body.innerHTML='<div class="wa-pv-book">'+esc(b.name)+'</div>'+
+      '<div class="wa-pv-title">'+esc(c.title||'未命名章节')+'</div>'+
+      '<div class="wa-pv-meta">'+esc(b.author||'佚名')+' · '+(c.status==='published'?'已发布':'草稿')+' · '+wbWords(c.content)+' 字</div>'+
+      '<div class="wa-pv-body">'+esc(c.content||'').replace(/\n/g,'<br>')+'</div>';
+    $('wa-preview-mask').classList.remove('wa-hidden');
+  }
+  function wbExport(){
+    var b=wbCur();
+    if(!b){ wbToast('请先创建作品'); return; }
+    var lines=['《'+b.name+'》','作者：'+(b.author||'佚名')];
+    if(b.intro) lines.push(b.intro);
+    lines.push('');
+    var vols=b.vols||[], chaps=b.chaps||[];
+    vols.forEach(function(v){
+      lines.push('【'+v.name+'】'); lines.push('');
+      chaps.filter(function(c){return c.volId===v.id;}).forEach(function(c){
+        lines.push(c.title||'未命名章节'); lines.push('');
+        lines.push(c.content||''); lines.push('');
+      });
+    });
+    var loose=chaps.filter(function(c){return !c.volId;});
+    if(loose.length){
+      lines.push('【散章】'); lines.push('');
+      loose.forEach(function(c){ lines.push(c.title||'未命名章节'); lines.push(''); lines.push(c.content||''); lines.push(''); });
+    }
+    var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=(b.name||'墨匣作品')+'.txt';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },500);
+    wbToast('已导出 TXT');
+  }
+
+  function renderBookSel(){
+    var h='';
+    if(!WB.books.length) h='<option value="">（还没有作品）</option>';
+    WB.books.forEach(function(b){ h+='<option value="'+esc(b.id)+'"'+(b.id===WB.cur?' selected':'')+'>'+esc(b.name)+'</option>'; });
+    bookSel.innerHTML=h;
+  }
+  function chapCardHTML(b,c){
+    var t=c.title||'未命名章节';
+    var st=c.status==='published'?'已发布':'草稿';
+    var stCls=c.status==='published'?'st-pub':'st-draft';
+    return '<div class="wa-chap-card'+(c.id===WB.curChap?' on':'')+'" data-chap="'+esc(c.id)+'">'+
+      '<div class="wa-cc-t">'+esc(t)+'</div>'+
+      '<div class="wa-cc-m"><span>'+wbWords(c.content)+' 字</span><span>'+wbFmt(c.updatedAt||c.createdAt)+'</span><span class="wa-cc-st '+stCls+'">'+st+'</span></div>'+
+      '</div>';
+  }
+  function renderTree(){
+    var b=wbCur();
+    if(!b){ treeEl.innerHTML='<div class="wa-empty s">新建一部作品后，这里会出现「卷 → 章」结构。</div>'; $('wa-tree-count').textContent=''; return; }
+    var vols=b.vols||[], chaps=b.chaps||[];
+    $('wa-tree-count').textContent=(vols.length?vols.length+'卷 ':'')+chaps.length+'章';
+    var collapsed={};
+    treeEl.querySelectorAll('.wa-vol.collapsed').forEach(function(el){ collapsed[el.getAttribute('data-vol')||'']=1; });
+    var h='<div class="wa-tree-tip">点击「＋卷」分卷，或直接新建章节。</div>';
+    if(!vols.length && !chaps.length){ h+='<div class="wa-empty s">还没有卷和章节。<br>点右上「＋卷」新建第一卷。</div>'; }
+    vols.forEach(function(v){
+      var vc=chaps.filter(function(c){return c.volId===v.id;});
+      h+='<div class="wa-vol'+(collapsed[v.id]?' collapsed':'')+'" data-vol="'+esc(v.id)+'">'+
+        '<div class="wa-vol-head"><span class="wa-caret">▼</span><span class="wa-vol-name">'+esc(v.name||'未命名卷')+'</span><span class="wa-vol-cnt">'+vc.length+'</span>'+
+        '<button type="button" class="wa-btn-mini wa-vol-add" data-vol="'+esc(v.id)+'" title="在本卷新建章节">＋章</button></div>'+
+        '<div class="wa-vol-body">'+(vc.length?vc.map(function(c){return chapCardHTML(b,c);}).join(''):'<div class="wa-empty s" style="padding:8px">本卷还没有章节</div>')+'</div>'+
+        '</div>';
+    });
+    var loose=chaps.filter(function(c){return !c.volId;});
+    if(loose.length){
+      h+='<div class="wa-vol'+(collapsed['']?' collapsed':'')+'" data-vol="">'+
+        '<div class="wa-vol-head"><span class="wa-caret">▼</span><span class="wa-vol-name">📄 散章</span><span class="wa-vol-cnt">'+loose.length+'</span>'+
+        '<button type="button" class="wa-btn-mini wa-vol-add" data-vol="" title="新建散章">＋章</button></div>'+
+        '<div class="wa-vol-body">'+loose.map(function(c){return chapCardHTML(b,c);}).join('')+'</div>'+
+        '</div>';
+    }
+    treeEl.innerHTML=h;
+  }
+  function renderChapMeta(b,c){
+    var wc=wbWords(c.content);
+    chapMeta.innerHTML='<span class="wa-meta-tag">'+(c.status==='published'?'已发布':'草稿')+'</span><span>'+wc+' 字</span><span>更新于 '+wbFmt(c.updatedAt||c.createdAt)+'</span>';
+    var pw=$('wa-progress-wrap'), pg=$('wa-progress');
+    var t=Number(c.target)||0;
+    if(t>0){ pw.classList.remove('wa-hidden'); pg.style.width=Math.min(100,Math.round(wc/t*100))+'%'; pg.title=wc+'/'+t; }
+    else { pw.classList.add('wa-hidden'); pg.style.width='0'; }
+    chapFoot.innerHTML='<span class="wa-wc">字数 <b>'+wc+'</b></span>'+
+      '<span class="wa-target">目标 <input id="wa-target-input" type="number" min="0" value="'+(t||'')+'" placeholder="0"> 字</span>'+
+      '<span id="wa-save-state">已自动保存</span>'+
+      '<span class="wa-flex"></span>'+
+      '<button type="button" class="wa-foot-btn" id="wa-pub">'+(c.status==='published'?'转为草稿':'发布')+'</button>'+
+      '<button type="button" class="wa-foot-btn" id="wa-focus">'+($('write-app').classList.contains('wa-focus')?'退出专注':'专注')+'</button>';
+  }
+  function renderEditor(){
+    var b=wbCur();
+    if(!b){ editorEmpty.classList.remove('wa-hidden'); editorFull.classList.add('wa-hidden'); return; }
+    editorEmpty.classList.add('wa-hidden'); editorFull.classList.remove('wa-hidden');
+    var c=wbCurChap();
+    if(c){
+      chapTitle.value=c.title||'';
+      chapTitle.placeholder='';
+      chapBody.value=c.content||'';
+      renderChapMeta(b,c);
+      return;
+    }
+    chapTitle.value=''; chapBody.value=''; chapMeta.innerHTML=''; chapFoot.innerHTML='';
+    chapTitle.placeholder='「'+b.name+'」— 在左侧点选或新建章节后开始写作…';
+  }
+  function updateStatus(t){ if(statusEl) statusEl.innerHTML=t||''; }
+  function openWrite(){
+    app.classList.remove('wa-hidden');
+    var dt=$('dock-toggle'); if(dt) dt.style.display='none';
+    renderBookSel(); renderTree(); renderEditor(); renderSide();
+    updateStatus(WB.books.length?('共 '+WB.books.length+' 部作品'):'');
+  }
+  function closeWrite(){
+    app.classList.add('wa-hidden');
+    var dt=$('dock-toggle'); if(dt) dt.style.display='';
+  }
+  window.__waOpen=openWrite; window.__waClose=closeWrite;
+
+  function newBook(){
+    var n=prompt('新作品名称：',''); if(!n||!n.trim()) return;
+    var nm=n.trim();
+    if(WB.books.some(function(x){return x.name===nm;})){ wbToast('已有同名作品'); return; }
+    var b={id:wbUid(), name:nm, author:'', intro:'', createdAt:Date.now(), vols:[], chaps:[]};
+    WB.books.push(b); WB.cur=b.id; WB.curChap=null; wbSave();
+    renderBookSel(); renderTree(); renderEditor();
+    updateStatus('当前：'+nm);
+    wbToast('已创建作品「'+nm+'」');
+  }
+  function newVol(){
+    var b=wbCur(); if(!b){ wbToast('请先新建作品'); return; }
+    var n=prompt('卷名：','第一卷'); if(n==null) return;
+    var nm=(n||'').trim()||('第'+(b.vols.length+1)+'卷');
+    b.vols=b.vols||[]; b.vols.push({id:wbUid(), name:nm}); wbSave();
+    renderTree(); wbToast('已新建卷「'+nm+'」');
+  }
+  function newChap(volId){
+    var b=wbCur(); if(!b){ wbToast('请先新建作品'); return; }
+    b.chaps=b.chaps||[];
+    var c={id:wbUid(), volId:volId||'', title:'', content:'', status:'draft', createdAt:Date.now(), updatedAt:Date.now()};
+    b.chaps.push(c); WB.curChap=c.id; wbSave();
+    renderTree(); renderEditor(); renderChapMeta(b,c); renderSide();
+    wbToast('已新建章节（在右侧直接开写）');
+    chapTitle.focus();
+  }
+  function selectChap(id){
+    var b=wbCur(); if(!b) return;
+    WB.curChap=id; wbSave();
+    renderTree(); renderEditor(); renderSide();
+  }
+  function saveCurChap(){
+    var b=wbCur(), c=wbCurChap();
+    if(!b||!c) return;
+    c.title=chapTitle.value;
+    c.content=chapBody.value;
+    c.updatedAt=Date.now();
+    wbSave();
+    renderChapMeta(b,c);
+    var card=treeEl.querySelector('.wa-chap-card[data-chap="'+c.id+'"]');
+    if(card){ card.outerHTML=chapCardHTML(b,c); }
+    var sv=$('wa-save-state'); if(sv){ sv.textContent='已自动保存 '+wbFmt(Date.now()); }
+    clearTimeout(saveCurChap._side); saveCurChap._side=setTimeout(renderSide,400);
+  }
+  function toggleVol(el){
+    el.closest('.wa-vol').classList.toggle('collapsed');
+  }
+
+  $('wa-new-book').addEventListener('click', newBook);
+  $('wa-add-vol').addEventListener('click', newVol);
+  bookSel.addEventListener('change', function(){
+    var id=this.value; if(!id) return;
+    WB.cur=id; WB.curChap=null; wbSave();
+    renderTree(); renderEditor();
+    var b=wbCur(); updateStatus(b?('当前：'+b.name):'');
+  });
+  treeEl.addEventListener('click', function(e){
+    var add=e.target.closest('.wa-vol-add');
+    if(add){ newChap(add.getAttribute('data-vol')||''); return; }
+    var head=e.target.closest('.wa-vol-head');
+    if(head && !e.target.closest('button')){ toggleVol(head); return; }
+    var card=e.target.closest('.wa-chap-card');
+    if(card){ selectChap(card.getAttribute('data-chap')); return; }
+  });
+  chapTitle.addEventListener('input', function(){ saveCurChap(); });
+  chapBody.addEventListener('input', function(){ saveCurChap(); });
+  chapFoot.addEventListener('change', function(e){
+    var ti=e.target&&e.target.id==='wa-target-input';
+    if(!ti) return;
+    var b=wbCur(), c=wbCurChap(); if(!b||!c) return;
+    c.target=Math.max(0,parseInt(e.target.value,10)||0); wbSave();
+    renderChapMeta(b,c);
+  });
+  chapFoot.addEventListener('keydown', function(e){
+    if(e.target&&e.target.id==='wa-target-input'&&(e.key==='Enter'||e.key==='Escape')){
+      e.preventDefault(); e.target.blur();
+    }
+  });
+  chapFoot.addEventListener('click', function(e){
+    var b=wbCur(), c=wbCurChap(); if(!b||!c) return;
+    if(e.target.id==='wa-pub'){
+      c.status=c.status==='published'?'draft':'published'; c.updatedAt=Date.now(); wbSave();
+      renderTree(); renderChapMeta(b,c);
+      wbToast(c.status==='published'?'已发布':'已转为草稿');
+      return;
+    }
+    if(e.target.id==='wa-focus'){
+      app.classList.toggle('wa-focus');
+      wbSave();
+      renderChapMeta(b,c);
+      if(app.classList.contains('wa-focus')){ chapBody.focus(); } else { renderEditor(); }
+      return;
+    }
+  });
+  $('wa-back').addEventListener('click', function(){ if(window.__switchMode) window.__switchMode('idea'); });
+  $('wa-preview').addEventListener('click', wbPreview);
+  $('wa-export').addEventListener('click', wbExport);
+  $('wa-preview-close').addEventListener('click', function(){ $('wa-preview-mask').classList.add('wa-hidden'); });
+  $('wa-preview-mask').addEventListener('click', function(e){ if(e.target===$('wa-preview-mask')) $('wa-preview-mask').classList.add('wa-hidden'); });
+  /* 写作台功能区 dock */
+  document.querySelectorAll('#wa-dock .wa-dock-mode').forEach(function(b){
+    b.addEventListener('click', function(){
+      var m=b.getAttribute('data-m');
+      if(m==='write'){ if(window.__waOpen) window.__waOpen(); }
+      else if(window.__switchMode) window.__switchMode(m);
+    });
+  });
+  $('wa-dock-chap').addEventListener('click', function(){
+    var b=wbCur();
+    var v=(b&&b.vols&&b.vols.length)? b.vols[0].id : '';
+    newChap(v);
+  });
+  $('wa-dock-vol').addEventListener('click', newVol);
+  $('wa-dock-preview').addEventListener('click', wbPreview);
+  $('wa-dock-export').addEventListener('click', wbExport);
+  $('wa-dock-theme').addEventListener('click', function(e){
+    e.stopPropagation();
+    var p=document.getElementById('theme-panel');
+    if(!p) return;
+    if(p.hidden){ p.hidden=false; p.style.zIndex='1170'; }
+    else { p.hidden=true; p.style.zIndex=''; }
+  });
+  $('wa-dock-sync').addEventListener('click', function(){
+    var m=document.getElementById('sync-modal');
+    if(!m) return;
+    if(!m.classList.contains('show')){ m.classList.add('show'); m.style.zIndex='1170'; }
+    else { m.classList.remove('show'); m.style.zIndex=''; }
+  });
+  side.addEventListener('click', function(e){
+    var ch=e.target.closest('.wa-side-chap');
+    if(ch){ selectChap(ch.getAttribute('data-chap')); return; }
+    var idea=e.target.closest('.wa-side-idea');
+    if(idea){
+      var nm=idea.getAttribute('data-name')||'灵感';
+      insertRef('《'+nm+'》');
+    }
+  });
+})();
 </script>
 </body>
 </html>
