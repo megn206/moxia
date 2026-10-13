@@ -1020,6 +1020,25 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 .wa-btn-mini:hover{border-color:var(--accent-line);color:var(--accent);background:var(--accent-soft)}
 /* 写作台功能区 dock */
 #wa-dock{width:182px;flex:0 0 auto;border-left:1px solid var(--line);background:var(--card);background:color-mix(in srgb,var(--card) 88%,transparent);padding:12px 10px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+/* 正文引用标记 + 悬停小卡 */
+.wa-ref{position:relative;display:inline-block;border-bottom:1px dashed var(--accent-line,#e67e22);color:var(--accent,#e67e22);cursor:pointer;margin:0 1px}
+.wa-ref-pop{position:absolute;left:0;top:calc(100% + 8px);min-width:200px;max-width:280px;background:var(--panel-bg,var(--card-bg));border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:12px;line-height:1.6;color:var(--ink);box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:1300;display:none;white-space:normal}
+.wa-ref:hover .wa-ref-pop{display:block}
+.wa-ref-pop .wrp-cat{display:inline-block;padding:1px 7px;border-radius:6px;font-size:11px;color:#fff;margin-bottom:4px}
+.wa-ref-pop .wrp-title{font-weight:600;margin:2px 0 4px}
+.wa-ref-pop .wrp-body{max-height:96px;overflow:hidden;opacity:.85}
+/* 大纲转章选择面板 */
+.wa-pick-mask{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1320;display:none;align-items:center;justify-content:center}
+.wa-pick-mask.show{display:flex}
+.wa-pick-panel{background:var(--panel-bg,var(--card-bg));border:1px solid var(--line);border-radius:14px;width:min(460px,90vw);max-height:72vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.wa-pick-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink)}
+.wa-pick-head .x{margin-left:auto;cursor:pointer;color:var(--muted);font-size:16px}
+.wa-pick-list{padding:8px;overflow-y:auto}
+.wa-pick-opt{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin:4px 0;cursor:pointer;color:var(--ink);font-size:13px;font-family:inherit}
+.wa-pick-opt:hover{border-color:var(--accent-line,#e67e22)}
+.wa-pick-opt .cat{flex:0 0 auto;width:8px;height:8px;border-radius:50%}
+.wa-pick-opt .tt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wa-pick-opt .cnt{font-size:12px;color:var(--muted)}
 .wa-dock-title{font-size:12px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;text-align:center}
 .wa-dock-label{font-size:11px;color:var(--faint);margin:10px 2px 2px;letter-spacing:1px}
 .wa-dock-group{display:flex;flex-direction:column;gap:6px}
@@ -3125,6 +3144,18 @@ function metaApply(snap, rowUpdated){
     }
   }catch(e){} finally { META_APPLYING = false; }
 }
+/* ===== 写作台书册同步（WB 数据走同一张表，特殊 id=__wb__ 端到端加密，last-write-wins） ===== */
+var WB_ID='__wb__', WB_SYNC_KEY=KEY+'-wb-sync', WB_DIRTY_KEY=KEY+'-wb-dirty';
+function wbSyncBase(){ try{ return JSON.parse(localStorage.getItem(WB_SYNC_KEY)||'null'); }catch(e){ return null; } }
+function setWbSyncBase(data, updatedAt){ try{ localStorage.setItem(WB_SYNC_KEY, JSON.stringify({data:data, updatedAt:updatedAt||0})); }catch(e){} }
+function wbSyncDirty(){ try{ return localStorage.getItem(WB_DIRTY_KEY)==='1'; }catch(e){ return false; } }
+function setWbSyncDirty(v){ try{ localStorage.setItem(WB_DIRTY_KEY, v?'1':'0'); }catch(e){} }
+function markWbDirty(){
+  try{ setWbSyncDirty(true); }catch(e){}
+  if (typeof scheduleSync==='function'){ try{ scheduleSync(600); }catch(e){} }
+}
+window.__wbMarkDirty = markWbDirty;
+window.__wbDirtyNow = function(){ return wbSyncDirty(); };
 function needCrypto(){ if (!window.IdeaCrypto) throw new Error('缺少加密组件'); }
 function cloudMergeRows(rows){
   var c = cfg(), d = jget(DIRTY_KEY), map = {}, mx = Number(c.cursor)||0, dataFails = 0, dataGot = 0, delGot = 0, addGot = 0, updGot = 0;
@@ -3146,6 +3177,20 @@ function cloudMergeRows(rows){
             if (ms && (Number(row.updated) > Number(mb.updatedAt)) && JSON.stringify(ms)!==JSON.stringify(mb.data||null)){
               metaApply(ms, Number(row.updated));
               setMetaBase(ms, Number(row.updated));
+              dataGot++; updGot++;
+            }
+          }catch(e){ dataFails++; }
+        }
+        continue;
+      }
+      if (row.id===WB_ID){                            // 写作台书册行
+        if (Number(row.deleted)!==1 && !wbSyncDirty()){   // 本地有改动未推则以本地为准
+          try{
+            var wb2 = JSON.parse(IdeaCrypto.decStr(row.data, c.token));
+            var wbBase = wbSyncBase() || {data:null, updatedAt:0};
+            if (wb2 && wb2.data && (Number(row.updated) > Number(wbBase.updatedAt)) && JSON.stringify(wb2)!==JSON.stringify(wbBase.data||null)){
+              if (typeof window.__wbApply==='function'){ try{ window.__wbApply(wb2); }catch(e){} }
+              setWbSyncBase(wb2, Number(row.updated));
               dataGot++; updGot++;
             }
           }catch(e){ dataFails++; }
@@ -3229,6 +3274,21 @@ function cloudPush(){
         updated: nowStamp(), deleted: 0 });
     }catch(e){ pushedMetaSnap = null; }
   }
+  // 写作台书册行：本地有改动未推，或首次有本地作品时一起上传
+  var pushedWbSnap = null;
+  if (typeof window.__wbGet==='function'){
+    try{
+      var wbInfo = window.__wbGet();
+      var wbNoBase = !wbSyncBase();
+      var wbLocalHas = wbInfo && wbInfo.data && Array.isArray(wbInfo.data.books) && wbInfo.data.books.length>0;
+      if (wbInfo && (wbSyncDirty() || (wbNoBase && wbLocalHas))){
+        pushedWbSnap = { data: wbInfo.data, updatedAt: Date.now() };
+        rows.push({ id: WB_ID,
+          data: IdeaCrypto.encStr(JSON.stringify(pushedWbSnap), c.token),
+          updated: nowStamp(), deleted: 0 });
+      }
+    }catch(e){ pushedWbSnap = null; }
+  }
   if (!rows.length) return Promise.resolve({ any:false, n:0, delN:0 });
   var batches=[], cur=[], sz=2;
   rows.forEach(function(r){
@@ -3254,6 +3314,10 @@ function cloudPush(){
         if (metaDirty() && pushedMetaSnap){
           setMetaDirty(false);
           setMetaBase(pushedMetaSnap, Date.now());
+        }
+        if (pushedWbSnap){
+          setWbSyncDirty(false);
+          setWbSyncBase(pushedWbSnap, Date.now());
         }
         lastPushed = true;
       });
@@ -3767,6 +3831,18 @@ if(relDropBtn){
     }
   });
 }
+/* 把灵感卡片拖到写作台 dock 的「✍ 写作」按钮：切到写作，再拖到编辑区放置 */
+var waWriteBtn=document.querySelector('#wa-dock .wa-dock-mode[data-m="write"]');
+if(waWriteBtn){
+  waWriteBtn.addEventListener('dragover', function(e){
+    e.preventDefault(); e.dataTransfer.dropEffect='copy';
+    if(!window.__waGhostArmed && window.__curMode!=='write'){
+      window.__waGhostArmed=true;
+      if(window.__switchMode) window.__switchMode('write');
+      showToast('已切换到写作，继续拖到中间编辑区放置', false);
+    }
+  });
+}
 /* 任意卡片开始拖动时记录其 id；拖到按钮切换后松手时接上继续拖 */
 document.addEventListener('dragstart', function(e){
   var card=e.target && e.target.closest ? e.target.closest('.card') : null;
@@ -3781,6 +3857,17 @@ document.addEventListener('dragend', function(e){
     var w=document.getElementById('rel-canvas-wrap');
     if(w){ var r=w.getBoundingClientRect(); inC = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom; }
     if(id && window.__curMode==='rel' && !inC){ startGhostDrop(e.clientX, e.clientY, id); }
+  }
+  if(window.__waGhostArmed){
+    window.__waGhostArmed=false;
+    var id2=window.__relGhostId||'';
+    window.__relGhostId='';
+    var ed=document.getElementById('wa-editor');
+    var inE=false;
+    if(ed){ var r2=ed.getBoundingClientRect(); inE = e.clientX>=r2.left && e.clientX<=r2.right && e.clientY>=r2.top && e.clientY<=r2.bottom; }
+    if(id2 && window.__curMode==='write' && inE && typeof window.__waDropCard==='function'){
+      try{ window.__waDropCard(id2); }catch(err){}
+    }
   }
 }, true);
 /* 拖到切换按钮后：自动打开对应界面，卡片跟随鼠标，移动到画布位置后点击放置（ESC 放弃） */
@@ -7892,6 +7979,27 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
         person:isP, x:0,y:0,vx:0,vy:0, r:(isP?34:26)-(c.scope==='rel'?0:8), isIdea:c.scope!=='rel'};
       nodes.push(nd); byId[c.id]=nd;
     }
+    // 写作台章节节点：把书册章节作为节点加入脉络（章 id 加 wbch: 前缀，便于与卡区分）
+    if(typeof window.__wbGet==='function'){
+      try{
+        var wbInfo=window.__wbGet();
+        var wb=wbInfo&&wbInfo.data;
+        if(wb&&Array.isArray(wb.books)){
+          wb.books.forEach(function(wbb){
+            (wbb.chaps||[]).forEach(function(ch){
+              var ndId='wbch:'+ch.id;
+              if(byId[ndId]) return;
+              var nm=(wbb.name? wbb.name+' · ':'')+(ch.title||'未命名章节');
+              var wbNd={id:ndId, title:nm, cat:'章节', color:'#e67e22', pinned:false, starred:ch.status==='published',
+                hasImg:false, tags:[], date:ch.date||'', timeline:ch.date||ch.timeline||'',
+                content:String(ch.content||'').slice(0,60),
+                person:false, x:0,y:0,vx:0,vy:0, r:24, isIdea:true, wbChap:true, wbBook:wbb.id, wbChapId:ch.id};
+              nodes.push(wbNd); byId[ndId]=wbNd;
+            });
+          });
+        }
+      }catch(e){}
+    }
     // 手动关联边（实线）
     cardsIn.forEach(function(c){
       var a=byId[c.id]; if(!a) return;
@@ -9308,6 +9416,13 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         <button type="button" class="wa-dock-btn" id="wa-dock-vol" title="新建一卷">＋ 新卷</button>
         <button type="button" class="wa-dock-btn" id="wa-dock-preview" title="阅读预览当前章节">📖 预览</button>
         <button type="button" class="wa-dock-btn" id="wa-dock-export" title="导出整本作品为 TXT">⬇ 导出TXT</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-outline" title="把灵感卡里的情节/大纲卡一键转为章节">🎯 大纲转章</button>
+      </div>
+      <div class="wa-dock-label">联动</div>
+      <div class="wa-dock-group">
+        <button type="button" class="wa-dock-btn" id="wa-dock-lib" title="素材库：本册全部灵感/人物/伏笔卡，点击插入引用">📇 素材库</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-people" title="人物出场统计：统计当前章节提到的人物卡">👥 人物出场</button>
+        <button type="button" class="wa-dock-btn" id="wa-dock-search" title="全局搜索：同时搜章节、灵感、人物、伏笔">🔍 全局搜索</button>
       </div>
       <div class="wa-dock-label">全局</div>
       <div class="wa-dock-group">
@@ -9320,6 +9435,12 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     <div id="wa-preview-panel">
       <div id="wa-preview-head"><button type="button" id="wa-preview-close" title="关闭预览">✕</button></div>
       <div id="wa-preview-body"></div>
+    </div>
+  </div>
+  <div id="wa-pick-mask" class="wa-pick-mask">
+    <div class="wa-pick-panel">
+      <div class="wa-pick-head"><span id="wa-pick-title">选择卡片</span><span class="x" id="wa-pick-close" title="关闭">✕</span></div>
+      <div class="wa-pick-list" id="wa-pick-list"></div>
     </div>
   </div>
 </div>
@@ -9339,8 +9460,30 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 
   var WB_KEY='moxia-wb-v1';
   function wbLoad(){ try{ var a=JSON.parse(localStorage.getItem(WB_KEY)); if(a&&Array.isArray(a.books)) return a; }catch(e){} return {books:[],cur:null}; }
-  function wbSave(){ try{ localStorage.setItem(WB_KEY, JSON.stringify(WB)); }catch(e){} }
+  function wbSave(){
+    try{ localStorage.setItem(WB_KEY, JSON.stringify(WB)); }catch(e){}
+    if (!WB._applying && typeof window.__wbMarkDirty==='function'){
+      try{ window.__wbMarkDirty(); }catch(e){}
+    }
+  }
   var WB=wbLoad();
+  /* 云端同步接口：主脚本通过 __wbGet / __wbApply 读取与应用书册数据 */
+  window.__wbGet = function(){ return { data: WB, updatedAt: WB._updatedAt||0 }; };
+  window.__wbApply = function(snap){
+    if (!snap || !snap.data || !Array.isArray(snap.data.books)) return false;
+    WB._applying = true;
+    try{
+      var books = snap.data.books, cur = snap.data.cur || null, curChap = snap.data.curChap || null;
+      WB.books = books;
+      WB.cur = cur;
+      WB.curChap = curChap;
+      WB._updatedAt = Number(snap.updatedAt)||0;
+      wbSave();
+    } finally { WB._applying = false; }
+    try{ renderBookSel(); renderTree(); renderEditor(); renderSide(); }catch(e){}
+    try{ updateStatus(WB.books.length?('共 '+WB.books.length+' 部作品'):''); }catch(e){}
+    return true;
+  };
   function wbUid(){ return 'w'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
   function wbBook(id){ for(var i=0;i<WB.books.length;i++) if(WB.books[i].id===id) return WB.books[i]; return null; }
   function wbCur(){ return wbBook(WB.cur); }
@@ -9415,37 +9558,85 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       h+='<div class="wa-side-sec"><div class="wa-side-h">💡 相关灵感</div>'+
         (scored.length? scored.map(function(x){
           var nm=x.cc.title||String(x.cc.content||'').slice(0,12)||'未命名';
-          return '<button type="button" class="wa-side-idea" data-name="'+esc(nm)+'" title="点击插入引用"><span class="wa-side-cat" style="background:'+esc(wbCatColor(x.cc.category))+'"></span>'+esc(nm)+'<em>×'+x.n+'</em></button>';
+          return '<button type="button" class="wa-side-idea" data-id="'+esc(x.cc.id)+'" data-name="'+esc(nm)+'" title="点击插入引用"><span class="wa-side-cat" style="background:'+esc(wbCatColor(x.cc.category))+'"></span>'+esc(nm)+'<em>×'+x.n+'</em></button>';
         }).join('') : '<div class="wa-empty s">暂无相关灵感</div>')+'</div>';
       var chars=ideas.filter(function(cc){ return cc.category==='人物卡'||cc.category==='人物'||cc.category==='伏笔卡'; }).slice(0,8);
       h+='<div class="wa-side-sec"><div class="wa-side-h">👤 人物 / 伏笔速查</div>'+
         (chars.length? chars.map(function(cc){
           var nm=cc.title||String(cc.content||'').slice(0,12)||'未命名';
-          return '<button type="button" class="wa-side-idea" data-name="'+esc(nm)+'" title="点击插入引用"><span class="wa-side-cat" style="background:'+esc(wbCatColor(cc.category))+'"></span>'+esc(nm)+'</button>';
+          return '<button type="button" class="wa-side-idea" data-id="'+esc(cc.id)+'" data-name="'+esc(nm)+'" title="点击插入引用"><span class="wa-side-cat" style="background:'+esc(wbCatColor(cc.category))+'"></span>'+esc(nm)+'</button>';
         }).join('') : '<div class="wa-empty s">暂无人物 / 伏笔卡</div>')+'</div>';
+      /* 素材库：本册全部灵感卡，按分类分组，点击插入引用 */
+      var libIdeas=ideas.filter(function(cc){ 
+        var bk=''; try{ bk=curBookId(); }catch(e){}
+        return !cc.scope || cc.scope==='idea' || cc.scope==='rel';
+      });
+      var libGroup={};
+      libIdeas.forEach(function(cc){ var k=cc.category||'其他'; (libGroup[k]=libGroup[k]||[]).push(cc); });
+      var libKeys=Object.keys(libGroup);
+      h+='<div class="wa-side-sec"><div class="wa-side-h">📇 素材库 <em style="font-weight:400;font-size:11px;color:var(--muted)">'+libIdeas.length+' 条</em></div>'+
+        (libKeys.length? libKeys.map(function(k){
+          var grp=libGroup[k].slice(0,8);
+          return '<div class="wa-side-libcat"><span class="wa-side-cat" style="background:'+esc(wbCatColor(k))+'"></span>'+esc(k)+'</div>'+
+            grp.map(function(cc){
+              var nm=cc.title||String(cc.content||'').slice(0,14)||'未命名';
+              return '<button type="button" class="wa-side-idea" data-id="'+esc(cc.id)+'" data-name="'+esc(nm)+'" title="点击插入引用">'+esc(nm)+'</button>';
+            }).join('');
+        }).join('') : '<div class="wa-empty s">本册还没有素材卡<br>去灵感模式新建，或把灵感卡拖进来</div>')+'</div>';
       side.innerHTML=h;
+      window.__wbIdeas=ideas;
     });
   }
-  function insertRef(text){
+  function insertRef(text, id){
     var c=wbCurChap(); if(!c) return;
     var pos=chapBody.selectionStart==null?chapBody.value.length:chapBody.selectionStart;
-    chapBody.value=chapBody.value.slice(0,pos)+text+chapBody.value.slice(pos);
-    var np=pos+text.length;
+    var mark = id ? '[@'+id+':'+text.replace(/[[\]@:]/g,'')+']' : ('《'+text+'》');
+    chapBody.value=chapBody.value.slice(0,pos)+mark+chapBody.value.slice(pos);
+    var np=pos+mark.length;
+    if (id){
+      c.mats=c.mats||[];
+      if(c.mats.indexOf(id)===-1) c.mats.push(id);
+    }
     saveCurChap(); chapBody.focus();
     try{ chapBody.setSelectionRange(np,np); }catch(e){}
     renderSide();
-    wbToast('已插入引用');
+    wbToast('已插入引用'+(id?'（素材已挂到本章）':''));
   }
+  /* 灵感卡直接拖入写作台编辑区：挂素材 + 插入引用标记 */
+  window.__waDropCard=function(cardId){
+    var c=wbCurChap(); if(!c){ wbToast('请先选中一个章节再拖入'); return; }
+    var ideas=window.__wbIdeas||[];
+    var cc=null;
+    for(var i=0;i<ideas.length;i++){ if(ideas[i].id===cardId){ cc=ideas[i]; break; } }
+    if(!cc) return;
+    var nm=cc.title||String(cc.content||'').slice(0,12)||'灵感卡';
+    c.mats=c.mats||[];
+    if(c.mats.indexOf(cardId)===-1) c.mats.push(cardId);
+    wbSave();
+    chapBody.value=(chapBody.value||'')+'[@'+cardId+':'+nm.replace(/[[\]@:]/g,'')+']';
+    saveCurChap();
+    renderSide();
+    wbToast('已拖入素材「'+nm+'」并插入引用');
+  };
 
   function wbPreview(){
     var b=wbCur(), c=wbCurChap();
     if(!b||!c){ wbToast('请先选择章节'); return; }
-    $('wa-preview-title')||0;
     var body=$('wa-preview-body');
+    var pvContent=esc(c.content||'').replace(/\n/g,'<br>');
+    /* 渲染 [@id:名字] 引用标记为悬停小卡 */
+    pvContent=pvContent.replace(/\[@([A-Za-z0-9_-]+):([^\]]*)\]/g, function(m,id,nm){
+      var cc=null; var ideas=window.__wbIdeas||[];
+      for(var i=0;i<ideas.length;i++){ if(ideas[i].id===id){ cc=ideas[i]; break; } }
+      if(!cc) return '<span class="wa-ref" data-id="'+esc(id)+'">《'+esc(nm||'引用')+'》<span class="wa-ref-pop">（引用卡未找到）</span></span>';
+      var cnm=cc.title||String(cc.content||'').slice(0,12)||'未命名';
+      var ccbody=String(cc.content||'').slice(0,90);
+      return '<span class="wa-ref" data-id="'+esc(id)+'">《'+esc(cnm)+'》<span class="wa-ref-pop"><span class="wrp-cat" style="background:'+esc(wbCatColor(cc.category))+'">'+esc(cc.category||'其他')+'</span><div class="wrp-title">'+esc(cnm)+'</div><div class="wrp-body">'+esc(ccbody)+'</div></span></span>';
+    });
     body.innerHTML='<div class="wa-pv-book">'+esc(b.name)+'</div>'+
       '<div class="wa-pv-title">'+esc(c.title||'未命名章节')+'</div>'+
       '<div class="wa-pv-meta">'+esc(b.author||'佚名')+' · '+(c.status==='published'?'已发布':'草稿')+' · '+wbWords(c.content)+' 字</div>'+
-      '<div class="wa-pv-body">'+esc(c.content||'').replace(/\n/g,'<br>')+'</div>';
+      '<div class="wa-pv-body">'+pvContent+'</div>';
     $('wa-preview-mask').classList.remove('wa-hidden');
   }
   function wbExport(){
@@ -9603,6 +9794,37 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     if(card){ card.outerHTML=chapCardHTML(b,c); }
     var sv=$('wa-save-state'); if(sv){ sv.textContent='已自动保存 '+wbFmt(Date.now()); }
     clearTimeout(saveCurChap._side); saveCurChap._side=setTimeout(renderSide,400);
+    clearTimeout(saveCurChap._fs); saveCurChap._fs=setTimeout(function(){ wbSyncForeshadow(c); },1500);
+  }
+  /* 伏笔回写：正文【伏笔：xxx】自动匹配伏笔卡并记录埋设位置 */
+  function wbSyncForeshadow(c){
+    var t=c.content||'';
+    var re=/【伏笔[：:]?(.+?)】/g, m, hits=[];
+    while((m=re.exec(t))){ hits.push(m[1].trim()); }
+    if(!hits.length) return;
+    var ideas=window.__wbIdeas||[];
+    var fcards=ideas.filter(function(x){ return x.category==='伏笔卡'; });
+    var touched=0;
+    hits.forEach(function(h){
+      if(!h) return;
+      fcards.forEach(function(fc){
+        var nm=fc.title||'';
+        var txt=(fc.title||'')+' '+(fc.content||'');
+        var matched = txt.indexOf(h)>-1 || (nm && h.indexOf(nm)>-1);
+        if(!matched) return;
+        fc.foreshadow=fc.foreshadow||[];
+        var entry={ chap:(c.title||'').trim()||'未命名章节', book:(wbCur()||{}).name||'', text:h, at:Date.now() };
+        if(!fc.foreshadow.some(function(x){ return x.text===h && x.chap===entry.chap; })){
+          fc.foreshadow.push(entry);
+          touched++;
+          try{
+            var c2=null; for(var i=0;i<cards.length;i++){ if(cards[i].id===fc.id){ c2=cards[i]; break; } }
+            if(c2){ c2.foreshadow=fc.foreshadow; c2.updatedAt=Date.now(); persist(); if(typeof syncNow==='function'){ try{ syncNow(); }catch(e){} } }
+          }catch(e){}
+        }
+      });
+    });
+    if(touched) wbToast('已把 '+touched+' 处伏笔埋设记入伏笔卡');
   }
   function toggleVol(el){
     el.closest('.wa-vol').classList.toggle('collapsed');
@@ -9694,9 +9916,154 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     var idea=e.target.closest('.wa-side-idea');
     if(idea){
       var nm=idea.getAttribute('data-name')||'灵感';
-      insertRef('《'+nm+'》');
+      var id=idea.getAttribute('data-id')||'';
+      insertRef(nm, id);
     }
   });
+  /* 大纲转章面板 */
+  var pickMask=$('wa-pick-mask'), pickList=$('wa-pick-list'), pickTitle=$('wa-pick-title');
+  function openPick(title, opts, onPick){
+    pickTitle.textContent=title;
+    pickList._searchMode=false;
+    pickList.innerHTML=opts.length? opts.map(function(o,i){
+      return '<button type="button" class="wa-pick-opt" data-i="'+i+'"><span class="cat" style="background:'+esc(o.color||'#8a8578')+'"></span><span class="tt">'+esc(o.title)+'</span><span class="cnt">'+esc(o.cat||'')+'</span></button>';
+    }).join('') : '<div class="wa-empty s">没有可用卡片</div>';
+    pickList._onPick=onPick;
+    pickMask.classList.add('show');
+  }
+  function clearPickSearch(){
+    var head=document.querySelector('.wa-pick-head');
+    if(head){
+      var oldInput=head.querySelector('#wa-search-input');
+      if(oldInput) oldInput.remove();
+    }
+  }
+  /* 全局搜索：同时搜章节、灵感、人物、伏笔 */
+  function wbSearch(){
+    clearPickSearch();
+    var ideas=window.__wbIdeas||[];
+    var wbInfo=(typeof window.__wbGet==='function')? window.__wbGet() : null;
+    var wbBooks=(wbInfo&&wbInfo.data&&Array.isArray(wbInfo.data.books))? wbInfo.data.books : [];
+    var head=document.querySelector('.wa-pick-head');
+    var inp=document.createElement('input');
+    inp.id='wa-search-input';
+    inp.type='text';
+    inp.placeholder='搜章节 / 灵感 / 人物 / 伏笔…';
+    inp.style.cssText='flex:1;min-width:120px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--input-bg);color:var(--ink);font-size:13px;font-family:inherit;outline:none';
+    head.insertBefore(inp, head.querySelector('.x'));
+    pickTitle.textContent='🔍 全局搜索';
+    function render(q){
+      q=(q||'').trim().toLowerCase();
+      if(!q){ pickList._searchMode=false; pickList.innerHTML='<div class="wa-empty s">输入关键词，同时搜章节、灵感、人物、伏笔</div>'; return; }
+      var opts=[];
+      wbBooks.forEach(function(b){
+        (b.chaps||[]).forEach(function(ch){
+          if(((ch.title||'')+' '+(ch.content||'')).toLowerCase().indexOf(q)>-1){
+            opts.push({ title:(ch.title||'未命名章节'), cat:b.name+' · 章', color:'#e67e22',
+              _go:function(){ WB.cur=b.id; WB.curChap=ch.id; wbSave(); renderBookSel(); renderTree(); renderEditor(); renderChapMeta(b,ch); renderSide(); } });
+          }
+        });
+      });
+      ideas.forEach(function(cc){
+        if(((cc.title||'')+' '+(cc.content||'')+' '+(cc.tags||[]).join(' ')).toLowerCase().indexOf(q)>-1){
+          opts.push({ title:cc.title||String(cc.content||'').slice(0,14)||'未命名', cat:cc.category||'其他', color:wbCatColor(cc.category), _cc:cc });
+        }
+      });
+      opts=opts.slice(0,60);
+      pickList._searchMode=true; pickList._opts=opts;
+      pickList.innerHTML= opts.length? opts.map(function(o,i){
+        return '<button type="button" class="wa-pick-opt" data-i="'+i+'"><span class="cat" style="background:'+esc(o.color)+'"></span><span class="tt">'+esc(o.title)+'</span><span class="cnt">'+esc(o.cat||'')+'</span></button>';
+      }).join('') : '<div class="wa-empty s">没有匹配的内容</div>';
+    }
+    inp.addEventListener('input', function(){ render(inp.value); });
+    render('');
+    pickMask.classList.add('show');
+    setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
+  }
+  pickMask.addEventListener('click', function(e){
+    if(e.target===pickMask){ clearPickSearch(); pickMask.classList.remove('show'); }
+  });
+  $('wa-pick-close').addEventListener('click', function(){ clearPickSearch(); pickMask.classList.remove('show'); });
+  pickList.addEventListener('click', function(e){
+    var o=e.target.closest('.wa-pick-opt');
+    if(!o) return;
+    var i=Number(o.getAttribute('data-i'));
+    pickMask.classList.remove('show');
+    clearPickSearch();
+    if(pickList._searchMode && pickList._opts){
+      var so=pickList._opts[i];
+      if(so._go){ try{ so._go(); }catch(err){} return; }
+      if(so._cc){ insertRef(so._cc.title||String(so._cc.content||'').slice(0,12)||'灵感卡', so._cc.id); return; }
+      return;
+    }
+    var fn=pickList._onPick;
+    if(fn) fn(i);
+  });
+  /* 大纲转章：把灵感卡里的情节/大纲/世界观卡一键转为章节 */
+  function wbOutlineToChap(){
+    var b=wbCur(); if(!b){ wbToast('请先创建作品'); return; }
+    var ideas=window.__wbIdeas||[];
+    var pool=ideas.filter(function(cc){
+      var cat=cc.category||'';
+      return cat==='情节'||cat==='大纲'||cat==='世界观'||cat==='场景'||cat==='对话';
+    });
+    if(!pool.length){ wbToast('没有可用的情节/大纲卡，先去灵感模式建一张'); return; }
+    openPick('🎯 选择要转为章节的卡片（点击生成）', pool.map(function(cc){
+      return { title: cc.title||String(cc.content||'').slice(0,16)||'未命名', cat: cc.category||'其他', color: wbCatColor(cc.category) };
+    }), function(i){
+      var cc=pool[i];
+      var v=(b.vols&&b.vols.length)? b.vols[0].id : '';
+      b.chaps=b.chaps||[];
+      var c={id:wbUid(), volId:v, title:cc.title||'', content:cc.content||'', status:'draft', createdAt:Date.now(), updatedAt:Date.now(), mats:[cc.id]};
+      b.chaps.push(c); WB.curChap=c.id; wbSave();
+      renderTree(); renderEditor(); renderChapMeta(b,c); renderSide();
+      wbToast('已生成章节「'+(c.title||'未命名')+'」（素材已挂接）');
+      chapTitle.focus();
+    });
+  }
+  /* 素材库总览：弹面板列出本册全部卡片 */
+  function wbLib(){
+    var ideas=window.__wbIdeas||[];
+    if(!ideas.length){ wbToast('素材库是空的'); return; }
+    var grp={};
+    ideas.forEach(function(cc){ var k=cc.category||'其他'; (grp[k]=grp[k]||[]).push(cc); });
+    var opts=[];
+    Object.keys(grp).forEach(function(k){
+      grp[k].forEach(function(cc){
+        opts.push({ title: cc.title||String(cc.content||'').slice(0,16)||'未命名', cat: k, color: wbCatColor(k), _cc: cc });
+      });
+    });
+    openPick('📇 素材库 · '+opts.length+' 条（点击插入引用）', opts, function(i){
+      var cc=opts[i]._cc;
+      insertRef(cc.title||String(cc.content||'').slice(0,12)||'灵感卡', cc.id);
+    });
+  }
+  /* 人物出场统计：当前章节正文提到的人物卡 */
+  function wbPeopleStat(){
+    var b=wbCur(), c=wbCurChap();
+    if(!b||!c){ wbToast('请先选择章节'); return; }
+    var ideas=window.__wbIdeas||[];
+    var chars=ideas.filter(function(cc){ return cc.category==='人物卡'||cc.category==='人物'; });
+    var text=String(c.title||'')+' '+(c.content||'');
+    var rows=chars.map(function(cc){
+      var nm=cc.title||'';
+      if(!nm) return null;
+      var n=0, i=0;
+      while((i=text.indexOf(nm,i))!==-1){ n++; i+=nm.length; }
+      return { cc:cc, n:n };
+    }).filter(Boolean).sort(function(a,b){ return b.n-a.n; });
+    var opts=(rows.length? rows : []).map(function(r){
+      return { title: r.cc.title + (r.n>0? ' ×'+r.n : '（本章未出现）'), cat: r.cc.category||'人物', color: wbCatColor(r.cc.category), _cc: r.cc };
+    });
+    openPick('👥 人物出场统计 · 本章共提到 '+rows.reduce(function(s,r){return s+r.n;},0)+' 次（点击插入引用）', opts, function(i){
+      var cc=opts[i]._cc;
+      insertRef(cc.title||'人物', cc.id);
+    });
+  }
+  $('wa-dock-outline').addEventListener('click', wbOutlineToChap);
+  $('wa-dock-lib').addEventListener('click', wbLib);
+  $('wa-dock-people').addEventListener('click', wbPeopleStat);
+  $('wa-dock-search').addEventListener('click', wbSearch);
 })();
 </script>
 </body>
