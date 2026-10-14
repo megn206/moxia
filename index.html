@@ -1802,6 +1802,25 @@ body.view-list .card.covered::before{content:none}
 #s-cloud[hidden]{display:none}
 
 /* 功能工具箱 */
+/* 相似查重 */
+.dup-sum{font-size:12px;color:var(--muted);margin:2px 0 8px}
+.dup-thr{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;font-size:12px;color:var(--ink)}
+.dup-thr span{white-space:nowrap;color:var(--muted)}
+.dup-thr input[type=range]{flex:1;accent-color:#e67e22;min-width:0}
+.dup-thr b{min-width:40px;text-align:right;color:var(--accent);font-size:13px}
+.dup-pair{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:transparent}
+.dup-card{flex:1;min-width:0;cursor:pointer;border:0;background:transparent;color:var(--ink);font:inherit;text-align:left;padding:0}
+.dup-card:hover{color:var(--accent)}
+.dup-card .dc-t{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dup-card .dc-c{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.dup-card .dc-cat{font-size:10px;color:var(--faint);margin-top:2px}
+.dup-mid{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:96px}
+.dup-bar{height:6px;width:84px;border-radius:3px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden}
+.dup-bar i{display:block;height:100%;background:linear-gradient(90deg,#e67e22,#f0a83a);border-radius:3px}
+.dup-pct{font-size:11px;color:var(--accent);font-weight:700;white-space:nowrap}
+.dup-ops{display:flex;gap:6px;flex-direction:column;align-items:stretch}
+.dup-ops .btn{font-size:11px;padding:4px 8px;white-space:nowrap}
+.dup-none{padding:22px 10px;text-align:center;color:var(--muted);font-size:13px}
 #tools-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
 .tool-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;text-align:left;width:100%;font:inherit}
 .tool-item:hover{background:var(--accent-soft);border-color:var(--accent)}
@@ -2102,6 +2121,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
       <button class="btn ghost dock-mode-idea" id="btn-cats-edit" title="分类设置：自定义分类名称、颜色和形状">🏷 分类</button>
       <button class="btn primary" id="btn-new" data-primary-action>✚ 新建灵感</button>
       <button class="btn ghost dock-mode-idea" id="btn-draw">🎲 随机抽一张</button>
+      <button class="btn ghost dock-mode-idea" id="btn-dupcheck" title="相似查重：找出相似度 50% 以上的卡片，一键删减重复内容">🪞 查重删减</button>
       <button class="btn ghost m-off" id="btn-sync" title="云端同步 / 备份导出 / 数据导入"><span class="dot-led"></span><span>🏮 墨匣云阁</span></button>
       <button id="streak-badge" class="dock-mode-idea" title="点我看创作日历">🔥 0 天</button>
                   <button class="btn ghost" id="btn-sticky" title="贴一张便签，写临时备忘">🗒 便签</button>
@@ -2238,6 +2258,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
 <input type="file" id="file-bg-image" accept="image/*" hidden>
 <input type="file" id="file-bg-video" accept="video/*" hidden>
 <input type="file" id="file-bg-wallpaper" webkitdirectory multiple hidden>
+<div id="dup-modal" class="overlay"><div class="modal"><h3 class="serif">🪞 相似查重</h3><div class="dup-sum" id="dup-sum"></div><div class="dup-thr"><span>相似度阈值</span><input type="range" id="dup-thr" min="30" max="90" step="5" value="50"><b id="dup-thr-val">50%</b></div><div id="dup-body" style="max-height:46vh;overflow-y:auto"></div><div class="modal-actions"><button class="btn primary" id="btn-dup-close">关闭</button></div></div></div>
 <div id="stats-modal" class="overlay"><div class="modal"><h3 class="serif">📊 灵感统计</h3><div id="stats-body"></div><div class="modal-actions"><button class="btn primary" id="btn-stats-close">关闭</button></div></div></div>
 <div id="link-modal" class="overlay"><div class="modal"><h3 class="serif">🔗 剧情串链</h3>
   <p class="hint" style="margin:4px 0 2px">选择一张卡片建立双向关联（A↔B），点卡片上的 🔗 标签可跳转。</p>
@@ -4548,6 +4569,109 @@ $('#btn-draw').addEventListener('click', drawOne);
 $('#btn-draw-again').addEventListener('click', drawOne);
 $('#btn-draw-close').addEventListener('click', function(){ $('#drawer').classList.remove('show'); });
 $('#drawer').addEventListener('click', function(e){ if (e.target===this) this.classList.remove('show'); });
+/* ---- 相似查重：找出相似度 ≥50% 的卡片对，一键删减 ---- */
+function dupGrams(t){
+  var s=String(t||'').replace(/\s+/g,'');
+  var g={};
+  if(!s) return g;
+  if(s.length===1){ g[s]=1; return g; }
+  for(var i=0;i+2<=s.length;i++){ var k=s.slice(i,i+2); g[k]=(g[k]||0)+1; }
+  return g;
+}
+function dupJaccard(a,b){
+  var keys={}, uni=0, inter=0;
+  for(var k in a) keys[k]=1;
+  for(var k in b) keys[k]=1;
+  for(var k in keys){ uni++; if(a[k]&&b[k]) inter++; }
+  return uni? inter/uni : 0;
+}
+function dupTagOverlap(a,b){
+  var ta=(a.tags||[]), tb=(b.tags||[]);
+  for(var i=0;i<ta.length;i++){ for(var j=0;j<tb.length;j++){ if(String(ta[i])===String(tb[j])) return true; } }
+  return false;
+}
+var dupPairsCache=null;
+var dupThreshold=0.5;
+function computeDupPairs(){
+  var feats=cards.map(function(c){
+    return { titleG:dupGrams((c.title||'').slice(0,20)), bodyG:dupGrams((c.content||'').slice(0,240)), tags:(c.tags||[]).slice(), id:c.id };
+  });
+  var out=[];
+  for(var i=0;i<feats.length;i++){
+    for(var j=i+1;j<feats.length;j++){
+      var sT=dupJaccard(feats[i].titleG,feats[j].titleG);
+      if(sT<0.3 && !dupTagOverlap(feats[i],feats[j])) continue;
+      var sC=dupJaccard(feats[i].bodyG,feats[j].bodyG);
+      var s=sT*0.5+sC*0.4+(dupTagOverlap(feats[i],feats[j])?0.1:0);
+      if(s>=dupThreshold) out.push({i:i,j:j,s:s});
+    }
+  }
+  out.sort(function(x,y){ return y.s-x.s; });
+  return out;
+}
+function refreshDup(){ dupPairsCache=null; openDupCheck(); }
+function renderDupFromCache(){ if(dupPairsCache===null){ dupPairsCache=computeDupPairs(); } openDupCheck(); }
+function openDupCheck(){
+  var pairs=dupPairsCache||computeDupPairs();
+  dupPairsCache=pairs;
+  var sum=document.getElementById('dup-sum');
+  var body=document.getElementById('dup-body');
+  var modal=document.getElementById('dup-modal');
+  var thrTxt=Math.round(dupThreshold*100)+'%';
+  if(!pairs.length){
+    sum.textContent='共 '+cards.length+' 张卡片，未发现相似度 ≥'+thrTxt+' 的重复组合。';
+    body.innerHTML='<div class="dup-none">✨ 没有需要删减的重复卡片</div>';
+    modal.classList.add('show');
+    return;
+  }
+  sum.textContent='共 '+cards.length+' 张卡片，发现 '+pairs.length+' 组相似组合（相似度 ≥'+thrTxt+'）。点卡片可查看详情，可删除其中一张或忽略。';
+  body.innerHTML='';
+  pairs.forEach(function(p,k){
+    var a=cards[p.i], b=cards[p.j];
+    if(!a||!b) return;
+    var row=document.createElement('div');
+    row.className='dup-pair';
+    row.setAttribute('data-k', String(k));
+    row.innerHTML='<button type="button" class="dup-card" data-open="'+esc(a.id)+'"><div class="dc-t">'+esc(a.title||'无标题')+'</div><div class="dc-c">'+esc((a.content||'').slice(0,46))+'</div><div class="dc-cat">'+esc(a.category||'')+' · '+(a.tags||[]).join('、')+'</div></button>'+
+      '<div class="dup-mid"><div class="dup-bar"><i style="width:'+Math.round(p.s*100)+'%"></i></div><div class="dup-pct">'+Math.round(p.s*100)+'%</div></div>'+
+      '<button type="button" class="dup-card" data-open="'+esc(b.id)+'"><div class="dc-t">'+esc(b.title||'无标题')+'</div><div class="dc-c">'+esc((b.content||'').slice(0,46))+'</div><div class="dc-cat">'+esc(b.category||'')+' · '+(b.tags||[]).join('、')+'</div></button>'+
+      '<div class="dup-ops"><button type="button" class="btn ghost" data-op="del-a" data-pair="'+p.i+','+p.j+'">删左</button><button type="button" class="btn ghost" data-op="del-b" data-pair="'+p.i+','+p.j+'">删右</button><button type="button" class="btn ghost" data-op="ignore" data-pair="'+p.i+','+p.j+'">忽略</button></div>';
+    body.appendChild(row);
+  });
+  modal.classList.add('show');
+}
+$('#btn-dupcheck').addEventListener('click', openDupCheck);
+var dupThrEl=document.getElementById('dup-thr');
+if(dupThrEl){
+  dupThrEl.addEventListener('input', function(){
+    dupThreshold=parseInt(this.value,10)/100;
+    var v=document.getElementById('dup-thr-val'); if(v) v.textContent=this.value+'%';
+    dupPairsCache=null; openDupCheck();
+  });
+}
+$('#btn-dup-close').addEventListener('click', function(){ $('#dup-modal').classList.remove('show'); });
+$('#dup-modal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('show'); });
+$('#dup-body').addEventListener('click', function(e){
+  var op=e.target.closest('[data-op]');
+  if(op){
+    var pair=(op.dataset.pair||'').split(',').map(Number);
+    if(op.dataset.op==='del-a'){
+      var ca=cards[pair[0]];
+      if(ca&&confirm('删除「'+(ca.title||'无标题')+'」？\n删除后可到 功能→灵感回收站 恢复。')){ del(ca.id); refreshDup(); }
+    }else if(op.dataset.op==='del-b'){
+      var cb=cards[pair[1]];
+      if(cb&&confirm('删除「'+(cb.title||'无标题')+'」？\n删除后可到 功能→灵感回收站 恢复。')){ del(cb.id); refreshDup(); }
+    }else if(op.dataset.op==='ignore'){
+      var rowEl=op.closest('.dup-pair');
+      var k=parseInt(rowEl?rowEl.getAttribute('data-k'):'0',10);
+      if(!isNaN(k)&&k>=0&&k<dupPairsCache.length){ dupPairsCache.splice(k,1); }
+      renderDupFromCache();
+    }
+    return;
+  }
+  var open=e.target.closest('[data-open]');
+  if(open){ openEditor(open.dataset.open); }
+});
 
 /* ---------- 导出 / 导入 ---------- */
 /* ---------- 同步记录日志（本次新增/更新/删除/上传）+ 云端备份 ---------- */
