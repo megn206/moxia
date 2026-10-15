@@ -2099,7 +2099,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     </div>
     <p class="logo-sub">小说灵感卡片 · 一张卡片一个灵感</p>
   </div>
-<button id="hot-btn" type="button" title="热点榜单">🔥 热点</button>
+<button id="hot-btn" type="button" title="热点榜单">🔥 风云</button>
 <div class="mode-switch" id="mode-switch" title="切换工作模式" style="display:none">
   <button type="button" id="mode-idea" class="on">💡 灵感</button>
   <button type="button" id="mode-write">✍ 写作</button>
@@ -2124,17 +2124,17 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
         <button type="button" id="mode-write2">✍ 写作</button>
         <button type="button" id="mode-rel2">🕸 脉络</button>
       </div>
-      <button class="btn ghost" id="btn-books" title="书册管理：把灵感按作品分册">📚 书册</button>
+      <button class="btn ghost" id="btn-books" title="书册管理：把灵感按作品分册">📚 卷阁</button>
       <button class="btn ghost" id="btn-theme" title="妆阁：主题皮肤 / 自定义调色 / 卡片美化">🎨 妆阁</button>
-      <button class="btn ghost dock-mode-idea" id="btn-outline" title="章节目录：按卷→章查看书册结构">📖 目录</button>
-      <button class="btn ghost dock-mode-idea" id="btn-cats-edit" title="分类设置：自定义分类名称、颜色和形状">🏷 分类</button>
-      <button class="btn primary" id="btn-new" data-primary-action>✚ 新建灵感</button>
-      <button class="btn ghost dock-mode-idea" id="btn-draw">🎲 随机抽一张</button>
-      <button class="btn ghost dock-mode-idea" id="btn-dupcheck" title="相似查重：找出相似度 50% 以上的卡片，一键删减重复内容">🪞 查重删减</button>
+      <button class="btn ghost dock-mode-idea" id="btn-outline" title="章节目录：按卷→章查看书册结构">📖 章回</button>
+      <button class="btn ghost dock-mode-idea" id="btn-cats-edit" title="分类设置：自定义分类名称、颜色和形状">🏷 名目</button>
+      <button class="btn primary" id="btn-new" data-primary-action>✚ 落墨</button>
+      <button class="btn ghost dock-mode-idea" id="btn-draw" title="随机抽一张灵感卡片">🎲 天机</button>
+      <button class="btn ghost dock-mode-idea" id="btn-dupcheck" title="相似查重：找出相似度 50% 以上的卡片，一键删减重复内容">🪞 照鉴</button>
       <button class="btn ghost m-off" id="btn-sync" title="云端同步 / 备份导出 / 数据导入"><span class="dot-led"></span><span>🏮 墨匣云阁</span></button>
-      <button id="streak-badge" class="dock-mode-idea" title="点我看创作日历">🔥 0 天</button>
-                  <button class="btn ghost" id="btn-sticky" title="贴一张便签，写临时备忘">🗒 便签</button>
-            <button class="btn ghost" id="btn-tools" title="功能工具箱：识别图片文字等，后续新功能都加在这里">🧩 功能</button>
+      <button id="streak-badge" class="dock-mode-idea" title="点我看创作日历">🔥 文火 0 天</button>
+                  <button class="btn ghost" id="btn-sticky" title="贴一张便签，写临时备忘">🗒 便笺</button>
+            <button class="btn ghost" id="btn-tools" title="功能工具箱：识别图片文字等，后续新功能都加在这里">🧩 百宝</button>
             <button class="btn ghost" id="btn-more" title="更多功能">⋯</button>
       <div class="more-menu" id="more-menu" hidden>
         <button id="m-export">💾 导出备份</button>
@@ -3990,7 +3990,7 @@ function updateStreakBadge(){
   var m=calGet(); var streak=0;
   for(var d=new Date(); (m[calDayKey(d)]||0)>0; d=new Date(d.getFullYear(),d.getMonth(),d.getDate()-1)){ streak++; if(streak>365) break; }
   var el=document.getElementById('streak-badge');
-  if(el) el.textContent='🔥 '+streak+' 天';
+  if(el) el.textContent='🔥 文火 '+streak+' 天';
 }
 function render(force){
   var sig = cardsSig() + '##' + filterSig();
@@ -5617,7 +5617,7 @@ function bookOf(c){ return (c && c.book) || DEFAULT_BOOK; }
 function bookName(id){ if(id===DEFAULT_BOOK) return '默认册'; var bs=loadBooks(); for(var i=0;i<bs.length;i++) if(bs[i].id===id) return bs[i].name; return '默认册'; }
 function setCurBook(id){ try{ localStorage.setItem(CUR_BOOK_KEY, id); }catch(e){} markMetaDirty(); render(true); renderBookBtn(); renderBooksPanel(); }
 function bookCounts(){ var m={}; m[DEFAULT_BOOK]=0; loadBooks().forEach(function(b){ m[b.id]=0; }); cards.forEach(function(c){ var k=bookOf(c); if(!(k in m)) m[k]=0; m[k]++; }); return m; }
-function renderBookBtn(){ var b=$('#btn-books'); if(b) b.innerHTML='📚 '+esc(bookName(curBookId())); }
+function renderBookBtn(){ var b=$('#btn-books'); if(b) b.innerHTML='📚 卷阁 · '+esc(bookName(curBookId())); }
 function renderBooksPanel(){
   var cur=curBookId(), cnt=bookCounts();
   var html='<div class="bk-item'+(cur===DEFAULT_BOOK?' active':'')+'" data-bk="'+DEFAULT_BOOK+'">'
