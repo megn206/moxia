@@ -8720,6 +8720,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   };
   function switchMode(m){
     if(m===curMode) return;
+    if(window.__waClose && typeof wbFlushSave==='function' && document.getElementById('write-app') && !document.getElementById('write-app').classList.contains('wa-hidden')){ try{ wbFlushSave(); }catch(e){} }
     curMode=m;
     window.__curMode=m;
     document.body.classList.remove('mode-rel-body');
@@ -10014,6 +10015,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     updateStatus(WB.books.length?('共 '+WB.books.length+' 部作品'):'');
   }
   function closeWrite(){
+    wbFlushSave();
     app.classList.add('wa-hidden');
     var dt=$('dock-toggle'); if(dt) dt.style.display='';
   }
@@ -10046,6 +10048,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     chapTitle.focus();
   }
   function selectChap(id){
+    wbFlushSave();
     var b=wbCur(); if(!b) return;
     WB.curChap=id; wbSave();
     renderTree(); renderEditor(); renderSide();
@@ -10064,6 +10067,15 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     clearTimeout(saveCurChap._side); saveCurChap._side=setTimeout(renderSide,400);
     clearTimeout(saveCurChap._fs); saveCurChap._fs=setTimeout(function(){ wbSyncForeshadow(c); },1500);
   }
+  /* 输入防抖保存：打字期间零开销，停顿 300ms 或离开/切章时才全量保存 */
+  function wbScheduleSave(){
+    clearTimeout(wbScheduleSave._t);
+    wbScheduleSave._t=setTimeout(function(){ wbScheduleSave._t=null; saveCurChap(); },300);
+  }
+  function wbFlushSave(){
+    if(wbScheduleSave._t){ clearTimeout(wbScheduleSave._t); wbScheduleSave._t=null; saveCurChap(); }
+  }
+  window.addEventListener('beforeunload', function(){ try{ wbFlushSave(); }catch(e){} });
   /* 伏笔回写：正文【伏笔：xxx】自动匹配伏笔卡并记录埋设位置 */
   function wbSyncForeshadow(c){
     var t=c.content||'';
@@ -10114,8 +10126,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     var card=e.target.closest('.wa-chap-card');
     if(card){ selectChap(card.getAttribute('data-chap')); return; }
   });
-  chapTitle.addEventListener('input', function(){ saveCurChap(); });
-  chapBody.addEventListener('input', function(){ saveCurChap(); });
+  chapTitle.addEventListener('input', function(){ wbScheduleSave(); });
+  chapBody.addEventListener('input', function(){ wbScheduleSave(); });
+  chapTitle.addEventListener('blur', wbFlushSave);
+  chapBody.addEventListener('blur', wbFlushSave);
   chapBody.addEventListener('paste', function(e){
     e.preventDefault();
     var t=(e.clipboardData||window.clipboardData).getData('text/plain')||'';
