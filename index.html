@@ -1416,6 +1416,10 @@ body.bg-custom-img #hot-btn{backdrop-filter:none}
   box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent),0 2px 12px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 .search-wrap::before{content:"🔍";position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.5;transition:.25s;pointer-events:none}
+.search-wrap input{padding-right:56px}
+#search-mode{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted,#888);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:8px;opacity:.7;z-index:2;letter-spacing:1px;font-family:inherit;transition:.2s}
+#search-mode:hover{opacity:1;background:color-mix(in srgb,var(--line) 40%,transparent)}
+#search-mode.exact{color:var(--accent,#e67e22);font-weight:700;opacity:1}
 .search-wrap:focus-within::before{opacity:1;transform:translateY(-50%) scale(1.15)}
 .cat-bar,.tag-bar{
   max-width:1100px;margin:10px auto 0;padding:0 20px;
@@ -2348,6 +2352,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
 <div class="search-bar">
   <div class="search-wrap">
     <input id="search" type="text" placeholder="搜索标题、内容或标签…">
+    <button id="search-mode" type="button" title="相对：任一关键词命中">模糊</button>
     <span class="search-resize" id="search-resize" title="拖动调整搜索框宽度"></span>
   </div>
 </div>
@@ -3470,7 +3475,7 @@ function $(sel){ return document.querySelector(sel); }
 
 var cards = [];               // 启动引导里从 IndexedDB 镜像 / 旧数据迁移填充
 window.__findCard = function(id){ return findCard(id); };   // 供灵感广场等外部模块读取卡片
-var filter = { q:'', cat:'全部', tag:null };
+var filter = { q:'', cat:'全部', tag:null, mode:(function(){ try{ return localStorage.getItem('moxia-search-mode')==='exact'?'exact':'fuzzy'; }catch(e){ return 'fuzzy'; } })() };
 var editingId = null;
 var editingScope = 'idea';
 var selectedCat = '情节';
@@ -3698,7 +3703,14 @@ function visible(){
     if (filter.tag && (c.tags||[]).indexOf(filter.tag)<0) return false;
     if (q){
       var t = ((c.title||'')+' '+(c.content||'')+' '+(c.tags||[]).join(' ')).toLowerCase();
-      if (t.indexOf(q)<0) return false;
+      var ws = q.split(/\s+/).filter(function(x){ return x; });
+      if (filter.mode==='exact'){
+        /* 全对（精确）：所有关键词都必须命中 */
+        if (!ws.every(function(w){ return t.indexOf(w)>=0; })) return false;
+      } else {
+        /* 相对（模糊）：任一关键词命中即可 */
+        if (!ws.some(function(w){ return t.indexOf(w)>=0; })) return false;
+      }
     }
     return true;
   }).sort(function(a,b){
@@ -3833,7 +3845,7 @@ function renderTags(){
   bar.style.display = (entries.length||active)?'flex':'none';
 }
 
-function filterSig(){ return filter.q + '|' + filter.cat + '|' + (filter.tag||''); }
+function filterSig(){ return filter.q + '|' + filter.cat + '|' + (filter.tag||'') + '|' + filter.mode; }
 /* 工具栏按钮拖动排序 */
 var DOCK_ORDER_KEY='moxia-dock-order';
 function dockOrder(){ try{ return JSON.parse(localStorage.getItem(DOCK_ORDER_KEY)||'[]'); }catch(e){ return []; } }
@@ -4289,7 +4301,7 @@ $('#cat-bar').addEventListener('click', function(e){
 });
 $('#tag-bar').addEventListener('click', function(e){
   if (e.target.id==='clear-filter'){
-    filter = {q:'',cat:'全部',tag:null}; $('#search').value=''; render(); return;
+    filter.q=''; filter.cat='全部'; filter.tag=null; $('#search').value=''; render(); return;
   }
   var chip = e.target.closest('.tag-chip'); if (!chip) return;
   filter.tag = (filter.tag===chip.dataset.tag) ? null : chip.dataset.tag;
@@ -4299,6 +4311,21 @@ $('#search').addEventListener('input', function(){
   filter.q = this.value;
   clearTimeout($('#search')._db);
   $('#search')._db=setTimeout(render,150);
+});
+/* 搜索模式切换：相对（模糊，任一关键词命中）/ 全对（精确，全部关键词命中） */
+var smBtn=document.getElementById('search-mode');
+function syncSearchModeBtn(){
+  if(!smBtn) return;
+  smBtn.textContent = filter.mode==='exact' ? '精确' : '模糊';
+  smBtn.classList.toggle('exact', filter.mode==='exact');
+  smBtn.title = filter.mode==='exact' ? '全对：所有关键词都必须命中（空格分隔）' : '相对：任一关键词命中即可（空格分隔）';
+}
+syncSearchModeBtn();
+if(smBtn) smBtn.addEventListener('click', function(){
+  filter.mode = filter.mode==='exact' ? 'fuzzy' : 'exact';
+  try{ localStorage.setItem('moxia-search-mode', filter.mode); }catch(e){}
+  syncSearchModeBtn();
+  render();
 });
 
 /* ---------- 编辑弹窗 ---------- */
