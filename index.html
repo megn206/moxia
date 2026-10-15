@@ -3708,8 +3708,9 @@ function visible(){
         /* 全对（精确）：所有关键词都必须命中 */
         if (!ws.every(function(w){ return t.indexOf(w)>=0; })) return false;
       } else {
-        /* 相对（模糊）：任一关键词命中即可 */
-        if (!ws.some(function(w){ return t.indexOf(w)>=0; })) return false;
+        /* 相对（模糊）：字序无关——查询里的每个字都要出现，顺序不限 */
+        var chars = q.replace(/\s+/g,'').split('');
+        if (!chars.every(function(ch){ return t.indexOf(ch)>=0; })) return false;
       }
     }
     return true;
@@ -3814,10 +3815,23 @@ function cardHtml(c,i){
 }
 function hl(s){
   var q = filter.q.trim();
-  if (!q || q.length<2) return s;
+  if (!q) return s;
   try {
-    var re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi');
-    return s.replace(re, function(m){ return '<mark class="search-hl">'+m+'</mark>'; });
+    var escRe = function(x){ return x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); };
+    if (filter.mode==='exact'){
+      /* 全对：整串连续高亮 */
+      var re = new RegExp(escRe(q),'gi');
+      return s.replace(re, function(m){ return '<mark class="search-hl">'+m+'</mark>'; });
+    }
+    /* 模糊：字序无关，逐字高亮；先占位保护已生成的 mark，避免嵌套误标 */
+    var chars = q.replace(/\s+/g,'').split('');
+    var saved = [];
+    var out = s.replace(/<mark[^>]*>[\s\S]*?<\/mark>/g, function(m){ saved.push(m); return '\uE000'+(saved.length-1)+'\uE001'; });
+    chars.forEach(function(ch){
+      var re = new RegExp(escRe(ch),'gi');
+      out = out.replace(re, function(m){ return '<mark class="search-hl">'+m+'</mark>'; });
+    });
+    return out.replace(/\uE000(\d+)\uE001/g, function(_,i){ return saved[+i]; });
   } catch(e){ return s; }
 }
 
