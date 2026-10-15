@@ -1003,6 +1003,11 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 .wa-side-idea{display:flex;align-items:center;gap:6px;width:100%;border:1px solid var(--line);background:var(--input-bg);color:var(--ink);border-radius:6px;padding:5px 8px;font-size:12px;text-align:left;cursor:pointer;margin-bottom:5px;font-family:inherit}
 .wa-side-idea:hover{border-color:var(--accent,#e67e22);background:color-mix(in srgb,var(--accent,#e67e22) 8%,transparent)}
 .wa-side-idea em{font-style:normal;font-size:10px;color:var(--muted);margin-left:auto}
+.wa-side-pop{position:fixed;z-index:1350;display:none;background:var(--bg,#fffdf8);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 32px rgba(0,0,0,.20);padding:10px 12px;font-size:12px;color:var(--ink);pointer-events:auto;max-height:62vh;overflow:auto}
+.wa-side-pop .wsp-cat{display:inline-block;font-size:10px;padding:2px 9px;border-radius:10px;color:#fff;margin-bottom:6px}
+.wa-side-pop .wsp-t{font-weight:700;font-size:13px;margin-bottom:5px}
+.wa-side-pop .wsp-c{line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--ink);font-size:12px}
+.wa-side-pop .wsp-tags{margin-top:7px;color:var(--muted);font-size:11px;border-top:1px dashed var(--line);padding-top:6px}
 .wa-side-cat{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
 .wa-topbar-actions{display:flex;gap:8px;align-items:center}
 #wa-preview-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1250;display:flex;align-items:center;justify-content:center;padding:30px}
@@ -9775,6 +9780,17 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     });
   }
   /* 正文标记 ↔ 富文本：把 [@id:名字] 渲染成引用小卡，保存时还原为标记 */
+  /* 构建完整引用小卡（含 hover 弹层：分类/标题/标签/正文），插入与重渲染共用 */
+  function wbBuildChipHtml(id, nm){
+    var cc=null, ideas=window.__wbIdeas||[];
+    for(var i=0;i<ideas.length;i++){ if(ideas[i].id===id){ cc=ideas[i]; break; } }
+    var cnm=nm||(cc&&(cc.title||String(cc.content||'').slice(0,12)))||'引用';
+    var cid=esc(id);
+    var tags=cc&&Array.isArray(cc.tags)&&cc.tags.length?esc(cc.tags.slice(0,6).join(' · ')):'';
+    var body=cc?esc(String(cc.content||'').slice(0,160)):'';
+    var stars=cc&&cc.fav?esc(cc.fav):'';
+    return '<span class="wa-ed-chip" contenteditable="false" data-id="'+cid+'">《'+esc(cnm)+'》<span class="wa-ref-pop"><span class="wrp-cat" style="background:'+esc(cc?wbCatColor(cc.category):'#8a8578')+'">'+esc(cc?cc.category:'')+'</span>'+(stars?'<span class="wrp-star">'+stars+'</span>':'')+'<div class="wrp-title">'+esc(cnm)+'</div>'+(tags?'<div class="wrp-tags">'+tags+'</div>':'')+'<div class="wrp-body">'+body+'</div></span></span>';
+  }
   function wbContentToHtml(t){
     var h=esc(t||'').replace(/\n/g,'<br>');
     h=h.replace(/\[@([A-Za-z0-9_-]+):([^\]]*)\]/g, function(m,id,nm){
@@ -9785,7 +9801,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       var tags=cc&&Array.isArray(cc.tags)&&cc.tags.length?esc(cc.tags.slice(0,6).join(' · ')):'';
       var body=cc?esc(String(cc.content||'').slice(0,160)):'';
       var stars=cc&&cc.fav?esc(cc.fav):'';
-      return '<span class="wa-ed-chip" contenteditable="false" data-id="'+cid+'">《'+esc(cnm)+'》<span class="wa-ref-pop"><span class="wrp-cat" style="background:'+esc(cc?wbCatColor(cc.category):'#8a8578')+'">'+esc(cc?cc.category:'')+'</span>'+(stars?'<span class="wrp-star">'+stars+'</span>':'')+'<div class="wrp-title">'+esc(cnm)+'</div>'+(tags?'<div class="wrp-tags">'+tags+'</div>':'')+'<div class="wrp-body">'+body+'</div></span></span>';
+      return wbBuildChipHtml(id, nm);
     });
     return h;
   }
@@ -9837,9 +9853,9 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     var nm=String(text||'').replace(/[[\]@:]/g,'');
     var el;
     if (id){
-      el=document.createElement('span');
-      el.className='wa-ed-chip'; el.setAttribute('contenteditable','false'); el.setAttribute('data-id',id);
-      el.textContent='《'+nm+'》';
+      var _tmp=document.createElement('div');
+      _tmp.innerHTML=wbBuildChipHtml(id, nm);
+      el=_tmp.firstChild;
       c.mats=c.mats||[];
       if(c.mats.indexOf(id)===-1) c.mats.push(id);
     } else {
@@ -9861,9 +9877,9 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     c.mats=c.mats||[];
     if(c.mats.indexOf(cardId)===-1) c.mats.push(cardId);
     wbSave();
-    var sp=document.createElement('span');
-    sp.className='wa-ed-chip'; sp.setAttribute('contenteditable','false'); sp.setAttribute('data-id',cardId);
-    sp.textContent='《'+nm.replace(/[[\]@:]/g,'')+'》';
+    var _tmp=document.createElement('div');
+    _tmp.innerHTML=wbBuildChipHtml(cardId, nm);
+    var sp=_tmp.firstChild;
     wbInsertAtCaret(sp);
     saveCurChap();
     renderSide();
@@ -10116,6 +10132,27 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     hideChipPop();
     var pop=chip.querySelector('.wa-ref-pop');
     if(!pop) return;
+    /* 数据补全：异步加载时正文可能为空，hover/点击时从卡片数据即时填充 */
+    var bb=pop.querySelector('.wrp-body');
+    if(bb && !(bb.textContent||'').trim()){
+      var cid=chip.getAttribute('data-id')||'';
+      var _ideas=window.__wbIdeas||[], _cc=null;
+      for(var _i=0;_i<_ideas.length;_i++){ if(_ideas[_i].id===cid){ _cc=_ideas[_i]; break; } }
+      if(_cc){
+        var _cat=pop.querySelector('.wrp-cat');
+        if(_cat){ _cat.style.background=wbCatColor(_cc.category); _cat.textContent=_cc.category||''; }
+        var _tt=pop.querySelector('.wrp-title');
+        if(_tt && !_tt.textContent) _tt.textContent=_cc.title||'引用';
+        bb.textContent=String(_cc.content||'').slice(0,160);
+        if(_cc.tags&&_cc.tags.length){
+          var _tg=pop.querySelector('.wrp-tags');
+          if(!_tg){ _tg=document.createElement('div'); _tg.className='wrp-tags'; pop.insertBefore(_tg, bb); }
+          if(!_tg.textContent) _tg.textContent=_cc.tags.slice(0,6).join(' · ');
+        }
+      } else {
+        bb.textContent='（引用卡未找到，可到灵感模式查看）';
+      }
+    }
     var rc=chip.getBoundingClientRect();
     var pw=pop.offsetWidth||240, ph=pop.offsetHeight||180;
     var x=Math.min(rc.left, Math.max(8, window.innerWidth-pw-8));
@@ -10265,6 +10302,48 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       var id=idea.getAttribute('data-id')||'';
       insertRef(nm, id);
     }
+  });
+  /* 素材库/速查悬停弹层：鼠标碰到小卡显示完整内容 */
+  var wbPopTimer=null;
+  function wbSidePopFind(id){
+    var arr=window.__wbIdeas;
+    if(arr){ for(var i=0;i<arr.length;i++){ if(arr[i].id===id) return arr[i]; } }
+    return null;
+  }
+  function wbSidePopShow(btn){
+    var id=btn.getAttribute('data-id')||'';
+    var cc=wbSidePopFind(id);
+    if(!cc) return;
+    var pop=document.getElementById('wa-side-pop');
+    if(!pop){
+      pop=document.createElement('div');
+      pop.id='wa-side-pop'; pop.className='wa-side-pop';
+      pop.addEventListener('mouseenter', function(){ clearTimeout(wbPopTimer); });
+      pop.addEventListener('mouseleave', function(){ wbPopTimer=setTimeout(wbSidePopHide,220); });
+      document.body.appendChild(pop);
+    }
+    var txt=(cc.content||'').replace(/\[@[^\]]+\]/g,'').slice(0,600);
+    pop.innerHTML='<div class="wsp-cat" style="background:'+esc(wbCatColor(cc.category))+'">'+esc(cc.category||'')+'</div>'+
+      (cc.title?'<div class="wsp-t">'+esc(cc.title)+'</div>':'')+
+      (txt?'<div class="wsp-c">'+esc(txt)+'</div>':'<div class="wsp-c" style="color:var(--muted)">（无正文）</div>')+
+      (cc.tags&&cc.tags.length?'<div class="wsp-tags">🏷 '+cc.tags.map(function(t){return esc(t);}).join('、')+'</div>':'');
+    var r=btn.getBoundingClientRect();
+    var pw=Math.min(340, Math.max(220, window.innerWidth*0.3));
+    pop.style.width=pw+'px';
+    var x=r.right+10;
+    if(x+pw>window.innerWidth-8) x=r.left-pw-10;
+    if(x<8) x=8;
+    var y=Math.min(Math.max(10, r.top-8), Math.max(10, window.innerHeight-150));
+    pop.style.left=x+'px'; pop.style.top=y+'px';
+    pop.style.display='block';
+  }
+  function wbSidePopHide(){ var p=document.getElementById('wa-side-pop'); if(p) p.style.display='none'; }
+  side.addEventListener('mouseover', function(e){
+    var b=e.target.closest('.wa-side-idea');
+    if(b){ clearTimeout(wbPopTimer); wbSidePopShow(b); }
+  });
+  side.addEventListener('mouseout', function(e){
+    if(e.target.closest('.wa-side-idea')){ clearTimeout(wbPopTimer); wbPopTimer=setTimeout(wbSidePopHide,260); }
   });
   /* 大纲转章面板 */
   var pickMask=$('wa-pick-mask'), pickList=$('wa-pick-list'), pickTitle=$('wa-pick-title');
