@@ -3076,7 +3076,10 @@ function cardsSig(){
 
 function load(){ return idbGet('cards'); }
 function persist(){ saveMirror(); scheduleSync(); return true; }
-function saveMirror(){ idbSet('cards', cards); }
+function saveMirror(){
+  if (DB){ idbSet('cards', cards); return; }        // IndexedDB 就绪：写主镜像
+  try { localStorage.setItem(KEY, JSON.stringify(cards)); } catch(e){}  // 未就绪：降级写 localStorage，防止数据丢失
+}
 
 function diffDirty(){
   var d = jget(DIRTY_KEY), m = jget(DEL_KEY), seen = {};
@@ -3908,7 +3911,9 @@ document.addEventListener('dragend', function(e){
     var inC=false;
     var w=document.getElementById('rel-canvas-wrap');
     if(w){ var r=w.getBoundingClientRect(); inC = e.clientX>=r.left && e.clientX<=r.right && e.clientY>=r.top && e.clientY<=r.bottom; }
-    if(id && window.__curMode==='rel' && !inC){ startGhostDrop(e.clientX, e.clientY, id); }
+    var _rp3=document.getElementById('rel-page');
+    var relOpen3 = _rp3 && _rp3.classList.contains('show');
+    if(id && relOpen3 && !inC){ startGhostDrop(e.clientX, e.clientY, id); }
   }
   if(window.__waGhostArmed){
     window.__waGhostArmed=false;
@@ -4290,7 +4295,11 @@ $('#tag-bar').addEventListener('click', function(e){
   filter.tag = (filter.tag===chip.dataset.tag) ? null : chip.dataset.tag;
   render();
 });
-$('#search').addEventListener('input', function(){ filter.q = this.value; render(); });
+$('#search').addEventListener('input', function(){
+  filter.q = this.value;
+  clearTimeout($('#search')._db);
+  $('#search')._db=setTimeout(render,150);
+});
 
 /* ---------- 编辑弹窗 ---------- */
 function buildCatPicker(){
@@ -4495,8 +4504,9 @@ $('#btn-del-card').addEventListener('click', function(){
   closeEditor();
 });
 $('#btn-new').addEventListener('click', function(){
-    var mode = window.__curMode || 'idea';
-    if(mode==='rel'){
+    var _rp=document.getElementById('rel-page');
+    var relOpenNow = _rp && _rp.classList.contains('show');
+    if(relOpenNow){
       editingScope = 'rel';
       openEditor(null);
       return;
@@ -5003,7 +5013,9 @@ document.addEventListener('keydown', function(e){
     var editing=$('#editor').classList.contains('show');
     if(!editing && tag!=='INPUT' && tag!=='TEXTAREA' && !e.ctrlKey && !e.metaKey && !e.altKey){
       e.preventDefault();
-      if (window.__curMode==='rel'){ editingScope='rel'; openEditor(null); }
+      var _rp2=document.getElementById('rel-page');
+      var relOpen2 = _rp2 && _rp2.classList.contains('show');
+      if (relOpen2){ editingScope='rel'; openEditor(null); }
       else { openEditor(null); }
     }
   }
@@ -8815,7 +8827,11 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   });
   bookSel.addEventListener('change', function(){ relBook=this.value; build();
     if(modeSel.value==='time') layoutTime(); else layoutNet(); draw(); });
-  searchBox.addEventListener('input', function(){ q=this.value.trim().toLowerCase(); draw(); });
+  searchBox.addEventListener('input', function(){
+    q=this.value.trim().toLowerCase();
+    clearTimeout(searchBox._db);
+    searchBox._db=setTimeout(draw,150);
+  });
   peopleSw.addEventListener('click', function(){
     peopleOn=!peopleOn;
     this.classList.toggle('on', peopleOn);
@@ -9234,7 +9250,10 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     });
   }
 
-  if(searchBox){ searchBox.addEventListener('input', applyFilter); }
+  if(searchBox){ searchBox.addEventListener('input', function(){
+    clearTimeout(searchBox._db);
+    searchBox._db=setTimeout(applyFilter,150);
+  }); }
   btn.addEventListener('click',function(e){
     e.stopPropagation();
     var open=panel.hidden;
@@ -10414,7 +10433,10 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         return '<button type="button" class="wa-pick-opt" data-i="'+i+'"><span class="cat" style="background:'+esc(o.color)+'"></span><span class="tt">'+esc(o.title)+'</span><span class="cnt">'+esc(o.cat||'')+'</span></button>';
       }).join('') : '<div class="wa-empty s">没有匹配的内容</div>';
     }
-    inp.addEventListener('input', function(){ render(inp.value); });
+    inp.addEventListener('input', function(){
+      clearTimeout(inp._db);
+      inp._db=setTimeout(function(){ render(inp.value); },150);
+    });
     render('');
     pickMask.classList.add('show');
     setTimeout(function(){ try{ inp.focus(); }catch(e){} },50);
