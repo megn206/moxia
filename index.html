@@ -1420,6 +1420,7 @@ body.bg-custom-img #hot-btn{backdrop-filter:none}
 #search-mode{position:absolute;right:10px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:var(--muted,#888);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:8px;opacity:.7;z-index:2;letter-spacing:1px;font-family:inherit;transition:.2s}
 #search-mode:hover{opacity:1;background:color-mix(in srgb,var(--line) 40%,transparent)}
 #search-mode.exact{color:var(--accent,#e67e22);font-weight:700;opacity:1}
+#search-mode.sem{color:#4fa3c9;font-weight:700;opacity:1}
 .search-wrap:focus-within::before{opacity:1;transform:translateY(-50%) scale(1.15)}
 .cat-bar,.tag-bar{
   max-width:1100px;margin:10px auto 0;padding:0 20px;
@@ -3481,7 +3482,17 @@ function $(sel){ return document.querySelector(sel); }
 
 var cards = [];               // 启动引导里从 IndexedDB 镜像 / 旧数据迁移填充
 window.__findCard = function(id){ return findCard(id); };   // 供灵感广场等外部模块读取卡片
-var filter = { q:'', cat:'全部', tag:null, mode:(function(){ try{ return localStorage.getItem('moxia-search-mode')==='exact'?'exact':'fuzzy'; }catch(e){ return 'fuzzy'; } })() };
+/* —— 大意搜索：近义词词典（意思相近也算命中）—— */
+var SYN_GROUPS=[["江湖","武林","绿林"],["复仇","报仇","雪恨","讨还公道"],["爱","喜欢","倾心","心动","情愫"],["恨","怨","憎"],["剑","长剑","利剑"],["战","斗","战斗","交锋","厮杀","打斗","开战","交战"],["死","亡","殒命","丧命"],["生","活","存活","生存"],["家","故园","故乡","家乡"],["朋友","友人","知己","故交"],["敌人","仇敌","对手","对头"],["天下","江山","社稷"],["王","帝","君主","天子"],["将军","将领","统帅","主帅"],["士兵","兵卒","士卒"],["马","骏马","坐骑"],["船","舟","扁舟"],["雨","甘霖","骤雨"],["风","清风","朔风","寒风"],["雪","飞雪","瑞雪"],["花","繁花","落花"],["月","明月","皓月"],["夜","深夜","长夜"],["梦","幻梦","梦境"],["心","心灵","心房"],["情","感情","情义","情意"],["义","道义","侠义"],["忠","忠诚","赤诚"],["奸","奸佞","奸邪"],["侠","侠客","游侠","剑客"],["谋","计谋","谋划","算计"],["骗","欺骗","蒙骗"],["伤","受伤","负伤"],["病","患病","染疾"],["药","丹药","灵药"],["毒","毒药","奇毒"],["财","财富","金银"],["宝","宝物","珍宝","异宝"],["妖","妖怪","精怪","妖兽"],["仙","仙人","神仙"],["魔","魔头","妖魔"],["佛","僧人","和尚"],["道","道人","道士"],["师","师父","师尊","恩师"],["徒","弟子","徒弟"],["婚","成亲","大婚","迎娶"],["恋","热恋","相恋"],["别","离别","分别","诀别"],["聚","团聚","相聚"],["喜","欢喜","喜悦","欣喜"],["怒","愤怒","暴怒"],["哀","悲伤","悲痛","忧伤"],["乐","快乐","欢乐"],["苦","苦难","痛苦","苦楚"],["甜","甜蜜","甘甜"],["冷","寒冷","刺骨"],["热","炎热","酷热"],["强","强大","强悍"],["弱","弱小","孱弱"],["快","迅速","飞速"],["慢","缓慢","迟缓"],["大","宏大","庞大"],["小","微小","渺小"],["美","美好","美妙"],["丑","丑陋","难看"],["好","美好","良善"],["坏","恶劣","邪恶"],["善","善良","仁善"],["恶","凶恶","残暴"],["真","真诚","真挚"],["假","虚伪","虚假"],["新","崭新","如新"],["旧","陈旧","久远"],["战争","战事","战乱"],["和平","安宁","太平"],["富贵","荣华","显赫"],["贫穷","贫困","潦倒"],["智慧","聪慧","睿智"],["愚蠢","愚笨","迟钝"],["勇敢","英勇","无畏"],["胆小","怯懦","畏缩"]];
+var SYN_MAP={};
+SYN_GROUPS.forEach(function(g){ g.forEach(function(w){ (SYN_MAP[w]=SYN_MAP[w]||[]).push.apply(SYN_MAP[w], g.filter(function(x){ return x!==w; })); }); });
+function synExpand(w){
+  var out=[w];
+  var s=SYN_MAP[w];
+  if(s) out=out.concat(s);
+  return out.filter(function(v,i){ return v && out.indexOf(v)===i; });
+}
+var filter = { q:'', cat:'全部', tag:null, mode:(function(){ try{ var m=localStorage.getItem('moxia-search-mode'); return m==='exact'?'exact':(m==='sem'?'sem':'fuzzy'); }catch(e){ return 'fuzzy'; } })() };
 var editingId = null;
 var editingScope = 'idea';
 var selectedCat = '情节';
@@ -3713,6 +3724,13 @@ function visible(){
       if (filter.mode==='exact'){
         /* 全对（精确）：所有关键词都必须命中 */
         if (!ws.every(function(w){ return t.indexOf(w)>=0; })) return false;
+      } else if (filter.mode==='sem'){
+        /* 大意：任一关键词或其近义词命中即算（意思相近） */
+        var hitSem = ws.some(function(w){
+          var exts = synExpand(w);
+          return exts.some(function(x){ return x && t.indexOf(x)>=0; });
+        });
+        if (!hitSem) return false;
       } else {
         /* 相对（模糊）：字序无关——查询里的每个字都要出现，顺序不限 */
         var chars = q.replace(/\s+/g,'').split('');
@@ -3828,6 +3846,20 @@ function hl(s){
       /* 全对：整串连续高亮 */
       var re = new RegExp(escRe(q),'gi');
       return s.replace(re, function(m){ return '<mark class="search-hl">'+m+'</mark>'; });
+    }
+    if (filter.mode==='sem'){
+      /* 大意：高亮查询词及其近义词的命中处（长词优先，避免短词先标） */
+      var semRe = [];
+      q.split(/\s+/).filter(function(x){ return x; }).forEach(function(w){
+        synExpand(w).forEach(function(x){ if (x && semRe.indexOf(x)<0) semRe.push(x); });
+      });
+      semRe.sort(function(a,b){ return b.length-a.length; });
+      var saved2 = [];
+      var out2 = s.replace(/<mark[^>]*>[\s\S]*?<\/mark>/g, function(m){ saved2.push(m); return '\uE000'+(saved2.length-1)+'\uE001'; });
+      semRe.forEach(function(x){
+        out2 = out2.replace(new RegExp(escRe(x),'gi'), function(m){ return '<mark class="search-hl">'+m+'</mark>'; });
+      });
+      return out2.replace(/\uE000(\d+)\uE001/g, function(_,i){ return saved2[+i]; });
     }
     /* 模糊：字序无关，逐字高亮；先占位保护已生成的 mark，避免嵌套误标 */
     var chars = q.replace(/\s+/g,'').split('');
@@ -4332,17 +4364,19 @@ $('#search').addEventListener('input', function(){
   clearTimeout($('#search')._db);
   $('#search')._db=setTimeout(render,150);
 });
-/* 搜索模式切换：相对（模糊，任一关键词命中）/ 全对（精确，全部关键词命中） */
+/* 搜索模式切换：模糊（字序无关）/ 精确（全对）/ 大意（近义词也算）三态 */
 var smBtn=document.getElementById('search-mode');
 function syncSearchModeBtn(){
   if(!smBtn) return;
-  smBtn.textContent = filter.mode==='exact' ? '精确' : '模糊';
-  smBtn.classList.toggle('exact', filter.mode==='exact');
-  smBtn.title = filter.mode==='exact' ? '全对：所有关键词都必须命中（空格分隔）' : '相对：任一关键词命中即可（空格分隔）';
+  var m=filter.mode;
+  smBtn.textContent = m==='exact' ? '精确' : (m==='sem' ? '大意' : '模糊');
+  smBtn.classList.toggle('exact', m==='exact');
+  smBtn.classList.toggle('sem', m==='sem');
+  smBtn.title = m==='exact' ? '全对：所有关键词都必须命中（空格分隔）' : (m==='sem' ? '大意：意思相近也算命中（近义词自动扩展）' : '相对：字序无关，每个字都出现即可');
 }
 syncSearchModeBtn();
 if(smBtn) smBtn.addEventListener('click', function(){
-  filter.mode = filter.mode==='exact' ? 'fuzzy' : 'exact';
+  filter.mode = filter.mode==='fuzzy' ? 'exact' : (filter.mode==='exact' ? 'sem' : 'fuzzy');
   try{ localStorage.setItem('moxia-search-mode', filter.mode); }catch(e){}
   syncSearchModeBtn();
   render();
