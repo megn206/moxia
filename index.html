@@ -1980,6 +1980,12 @@ body.view-list .card.covered::before{content:none}
 .tl-hbody{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-hdrop-hint{position:relative;width:100%;text-align:center;color:var(--muted);font-size:13px;padding:22px;border:2px dashed var(--line);border-radius:10px;background:var(--hover)}
 #tl-bar.tl-hover .tl-hdrop-hint{border-color:var(--accent);color:var(--accent)}
+/* 指针拖动增强：幽灵卡 + 插入指示线 */
+.tl-ghost{position:fixed;z-index:1200;pointer-events:none;opacity:.92;filter:drop-shadow(0 10px 20px rgba(0,0,0,.28));transform:rotate(2deg) scale(1.03);transition:left .02s,top .02s}
+.tl-hdrop-marker{position:absolute;top:10px;bottom:10px;width:3px;border-radius:3px;background:var(--accent);box-shadow:0 0 10px var(--accent);pointer-events:none;z-index:4}
+#tl-bar-list.tl-drag-active{cursor:grabbing}
+#tl-bar-list.tl-drag-active .tl-hitem{cursor:grabbing}
+.tl-hitem.tl-hdrag-op{opacity:.35;transform:scale(.97)}
 .tl-day{position:relative;padding:2px 0 10px 46px;font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.5px}
 .tl-day::before{content:'';position:absolute;left:9px;top:7px;width:14px;height:14px;border-radius:50%;background:var(--accent-deep);border:3px solid var(--card);box-shadow:0 0 0 2px var(--accent-line);box-sizing:border-box}
 .tl-time{font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap}
@@ -7985,7 +7991,9 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   if(c1) c1.addEventListener('click', function(){ show(false); });
   var s1=document.getElementById('tl-bar-sort');
   if(s1) s1.addEventListener('click', function(){ save(auto()); render(); showToast('已按日期 + 时间标记自动排序', false); });
+  var _tlSuppressClick=false;
   TLB_LIST.addEventListener('click', function(e){
+    if(_tlSuppressClick){ _tlSuppressClick=false; return; }
     var del=e.target.closest('.tl-hdel');
     if(del){
       var it=del.closest('.tl-hitem'); if(!it) return;
@@ -7997,19 +8005,72 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var row=e.target.closest('.tl-hitem'); if(!row) return;
     if(findCard(row.dataset.id)) openEditor(row.dataset.id);
   });
-  TLB_LIST.addEventListener('dragstart', function(e){
+  /* —— 条带内排序：Pointer 拖动（幽灵跟随 + 实时插入线 + 边缘自动滚动）—— */
+  var _tlDrag=null, _tlMoved=false, _tlGhost=null, _tlMarker=null, _tlInsert=0, _tlScrollT=null;
+  function _tlScrollStop(){ if(_tlScrollT){ clearInterval(_tlScrollT); _tlScrollT=null; } }
+  TLB_LIST.addEventListener('pointerdown', function(e){
+    if(e.button!==0) return;
     var it=e.target.closest('.tl-hitem'); if(!it) return;
-    DRAG=it.dataset.id;
-    e.dataTransfer.setData('text/plain', DRAG);
-    e.dataTransfer.effectAllowed='move';
-    it.classList.add('tl-hdrag');
-  });
-  TLB_LIST.addEventListener('dragend', function(){
-    [].forEach.call(TLB_LIST.querySelectorAll('.tl-hdrag'),function(x){ x.classList.remove('tl-hdrag'); });
-    TLB.classList.remove('tl-hover'); DRAG=null;
-  });
-  TLB_LIST.addEventListener('dragover', function(e){
-    e.preventDefault(); e.dataTransfer.dropEffect='move'; TLB.classList.add('tl-hover');
+    if(e.target.closest('.tl-hdel')) return;           // ✕ 删除按钮不启动拖动
+    e.preventDefault();                                // 阻止文本选择 / 原生拖拽
+    _tlDrag=it.dataset.id; _tlMoved=false; _tlInsert=0;
+    _tlGhost=it.cloneNode(true); _tlGhost.className='tl-ghost';
+    _tlGhost.style.left=(e.clientX-85+10)+'px'; _tlGhost.style.top=(e.clientY-48)+'px';
+    document.body.appendChild(_tlGhost);
+    it.classList.add('tl-hdrag-op');
+    TLB_LIST.classList.add('tl-drag-active');
+    _tlMarker=document.createElement('div'); _tlMarker.className='tl-hdrop-marker';
+    TLB_LIST.appendChild(_tlMarker);
+    var items=TLB_LIST.querySelectorAll('.tl-hitem');
+    _tlMarker.style.left=(items.length?items[items.length-1].offsetLeft+items[items.length-1].offsetWidth+10:0)+'px';
+    var body=TLB_LIST.parentNode;
+    function _mv(ev){
+      _tlMoved=true;
+      _tlGhost.style.left=(ev.clientX-85+10)+'px'; _tlGhost.style.top=(ev.clientY-48)+'px';
+      var its=TLB_LIST.querySelectorAll('.tl-hitem'), idx=its.length;
+      for(var i=0;i<its.length;i++){
+        var r=its[i].getBoundingClientRect();
+        if(ev.clientX<r.left+r.width/2){ idx=i; break; }
+        if(ev.clientX<r.right){ idx=i+1; break; }
+      }
+      _tlInsert=idx;
+      if(its[idx]) _tlMarker.style.left=(its[idx].offsetLeft-4)+'px';
+      else if(its.length) _tlMarker.style.left=(its[its.length-1].offsetLeft+its[its.length-1].offsetWidth+10)+'px';
+      var br=body.getBoundingClientRect();
+      if(ev.clientX>br.right-56){ if(!_tlScrollT) _tlScrollT=setInterval(function(){ body.scrollLeft+=9; },16); }
+      else if(ev.clientX<br.left+56){ if(!_tlScrollT) _tlScrollT=setInterval(function(){ body.scrollLeft-=9; },16); }
+      else _tlScrollStop();
+    }
+    function _up(){
+      document.removeEventListener('pointermove', _mv);
+      document.removeEventListener('pointerup', _up);
+      _tlScrollStop();
+      if(_tlGhost&&_tlGhost.parentNode) _tlGhost.parentNode.removeChild(_tlGhost);
+      if(_tlMarker&&_tlMarker.parentNode) _tlMarker.parentNode.removeChild(_tlMarker);
+      [].forEach.call(TLB_LIST.querySelectorAll('.tl-hdrag-op'),function(x){ x.classList.remove('tl-hdrag-op'); });
+      TLB_LIST.classList.remove('tl-drag-active');
+      var id=_tlDrag; _tlDrag=null;
+      if(!_tlMoved || !id) return;
+      _tlSuppressClick=true;                          // 拖动结束不触发"点卡打开"
+      var its=TLB_LIST.querySelectorAll('.tl-hitem');
+      var anchor=null, after=false;
+      if(_tlInsert<its.length){ anchor=its[_tlInsert].dataset.id; }
+      else if(its.length){ anchor=its[its.length-1].dataset.id; after=true; }
+      if(anchor===id) return;                          // 位置没变
+      var order=load();
+      var cur=order.indexOf(id);
+      if(cur>=0) order.splice(cur,1);
+      if(anchor){
+        var ai=order.indexOf(anchor);
+        order.splice((ai<0?order.length:ai)+(after?1:0),0,id);
+      }else{
+        if(order.indexOf(id)<0) order.push(id);
+      }
+      save(order); render();
+      showToast('已调整时间线顺序', false);
+    }
+    document.addEventListener('pointermove', _mv);
+    document.addEventListener('pointerup', _up);
   });
   TLB_LIST.addEventListener('dragleave', function(e){
     if(!TLB_LIST.contains(e.relatedTarget)) TLB.classList.remove('tl-hover');
