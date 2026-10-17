@@ -2032,6 +2032,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     <button type="button" class="btn ghost" id="rel-relayout">↻ 重排</button>
     <button type="button" class="btn ghost" id="rel-focus" title="随机聚焦一张卡片">🎲 随机聚焦</button>
     <button type="button" class="btn ghost" id="rel-ai-btn" title="AI 自动理解脉络：梗概 / 人物关系 / 伏笔追踪 / 矛盾与建议">✨ 理解</button>
+    <button type="button" class="btn ghost" id="rel-ask-btn" title="提出你的问题，让 AI 基于当前脉络回答">🧠 问AI</button>
     <button type="button" class="btn ghost" id="rel-export" title="导出整张图为 PNG">💾 导出</button>
     <button type="button" class="btn primary" id="rel-close">✕ 关闭</button>
   </div>
@@ -2328,6 +2329,13 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
 <div id="ai-rel-modal" class="overlay"><div class="modal" style="max-width:660px">
   <h3 class="serif">✨ 脉络理解</h3>
   <p class="hint" style="margin:4px 0 10px">AI 基于当前画布节点与关系生成分析，结果仅作参考。</p>
+  <div id="ai-rel-ask-box" style="margin-bottom:10px;display:none">
+    <textarea id="ai-rel-ask" rows="2" placeholder="输入你的要求，例如：找出所有师徒关系 / 主角和哪些人有仇？ / 按时间顺序讲一遍故事 / 帮我检查伏笔有没有漏回收…" style="width:100%;box-sizing:border-box;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:13.5px;font-family:inherit;line-height:1.6;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+      <button class="btn primary" id="btn-ai-rel-run" style="flex:none">▶ 运行</button>
+      <span class="hint" style="margin:0" id="ai-rel-ask-hint">未配置 AI 会先弹出设置；留空则执行默认五节分析</span>
+    </div>
+  </div>
   <div id="ai-rel-out" style="max-height:60vh;overflow:auto;font-size:13.5px;line-height:1.8;white-space:pre-wrap;background:var(--input-bg);border:1px solid var(--line);border-radius:10px;padding:14px;color:var(--ink)"></div>
   <div class="modal-actions">
     <button class="btn ghost" id="btn-ai-rel-copy">📋 复制</button>
@@ -9005,6 +9013,64 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
         showToast('AI 理解失败：'+(e.message||e), true);
       }).finally(function(){
         relAiBtn.disabled=false;
+      });
+    });
+  }
+  /* —— 问AI：用户自定义要求，AI 基于当前脉络回答 —— */
+  var relAskBtn=document.getElementById('rel-ask-btn');
+  var relAskBox=document.getElementById('ai-rel-ask-box');
+  var relAsk=document.getElementById('ai-rel-ask');
+  var relAskRun=document.getElementById('btn-ai-rel-run');
+  function relAskCollect(){
+    var ns=nodes.filter(function(n){ return !n.isIdea; });
+    if(!ns.length) return null;
+    var lines=[];
+    ns.forEach(function(n,k){
+      var c=findCard(n.id);
+      var t=c?(c.title||''):'';
+      lines.push((k+1)+'. 《'+(t||'(无标题)')+'》 ['+(c?(c.category||''):'')+']'+(c&&c.date?' ('+c.date+')':'')+(c&&c.timeline?' · '+c.timeline:''));
+      if(c&&c.content) lines.push('   内容：'+String(c.content).slice(0,180));
+      if(c&&c.fdata) lines.push('   伏笔：类型'+(c.fdata.type||'')+' 埋设「'+(c.fdata.bury||'')+'」 计划回收「'+(c.fdata.collect||'')+'」'+(c.fdata.status==='done'?' [已回收]':' [未回收]'));
+    });
+    var relLines=[];
+    edges.forEach(function(e){
+      var a=findNode(e.a), b=findNode(e.b);
+      var ca=a?findCard(a.id):null, cb=b?findCard(b.id):null;
+      relLines.push('《'+(ca?(ca.title||'?'):'?')+'》 --['+e.type+']--> 《'+(cb?(cb.title||'?'):'?')+'》');
+    });
+    if(relLines.length) lines.push('【关系连线】\n'+relLines.join('\n'));
+    return lines.join('\n');
+  }
+  if(relAskBtn && relAskBox){
+    relAskBtn.addEventListener('click', function(){
+      var out=document.getElementById('ai-rel-out');
+      if(out) out.textContent='';
+      relAskBox.style.display='block';
+      document.getElementById('ai-rel-modal').classList.add('show');
+      if(relAsk) setTimeout(function(){ relAsk.focus(); }, 120);
+    });
+  }
+  if(relAskRun){
+    relAskRun.addEventListener('click', function(){
+      var req=(relAsk?relAsk.value:'').trim();
+      var info=relAskCollect();
+      if(!info){ showToast('画布上还没有节点，先新建几个节点吧', false); return; }
+      var sys='你是资深小说剧情分析师。用户会提出一个具体问题或要求，请基于下方剧情脉络清单，围绕用户要求给出简洁、直接的中文回答（3-15 行）。若要求整理关系/伏笔/时间线，请列点呈现；若信息不足以回答，直接说明缺什么。不要客套开场。';
+      var user=req
+        ? '【用户要求】\n'+req+'\n\n【脉络信息】\n'+info
+        : '请执行默认分析（五节：剧情梗概 / 人物关系 / 伏笔追踪 / 逻辑与风险 / 创作建议）。\n\n【脉络信息】\n'+info;
+      relAskRun.disabled=true;
+      var oldTxt=relAskRun.textContent;
+      relAskRun.textContent='分析中…';
+      showToast('AI 正在理解…', false);
+      callAI([{role:'system',content:sys},{role:'user',content:user}], 2000).then(function(txt){
+        showRelAI(txt);
+      }).catch(function(e){
+        if(e==='no-key') return;
+        showToast('AI 理解失败：'+(e.message||e), true);
+      }).finally(function(){
+        relAskRun.disabled=false;
+        relAskRun.textContent=oldTxt;
       });
     });
   }
