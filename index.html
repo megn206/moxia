@@ -2027,7 +2027,7 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
     <select id="rel-book" title="切换书册"></select>
     <input type="text" id="rel-search" placeholder="搜索高亮卡片…">
     <label class="rel-sw on" id="rel-people-sw" title="把「人物」分类卡片的标题当人名，自动连到提到它的卡片"><span class="sw-track"><span class="sw-knob"></span></span>人物匹配</label>
-    <label class="rel-sw" id="rel-ideas-sw" title="把当前书册的灵感卡片也画进来作参考（只读）"><span class="sw-track"><span class="sw-knob"></span></span>灵感卡片</label>
+    <label class="rel-sw" id="rel-ideas-sw" title="把当前书册的其余灵感卡片也画进来作参考（人物卡默认已显示）（只读）"><span class="sw-track"><span class="sw-knob"></span></span>灵感卡片</label>
     <select id="rel-cat" title="按分类筛选节点"></select>
     <button type="button" class="btn ghost" id="rel-relayout">↻ 重排</button>
     <button type="button" class="btn ghost" id="rel-focus" title="随机聚焦一张卡片">🎲 随机聚焦</button>
@@ -8289,16 +8289,16 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       var c=cards[i];
       if(bookOf(c)!==bk) continue;
       if(c.scope==='write') continue;
-      if(!showIdeas && c.scope!=='rel') continue;
+      if(!showIdeas && c.scope!=='rel' && c.category!=='人物' && c.category!=='人物卡') continue;
       if(catFilter!=='全部' && c.category!==catFilter) continue;
       cardsIn.push(c);
       var isP=false;
-      try{ isP = CATS.some(function(x){ return x.name==='人物' && x.name===c.category; }); }catch(e){}
+      try{ isP = (c.category==='人物' || c.category==='人物卡'); }catch(e){}
       var nd={id:c.id, title:(chapLabel(c)?chapLabel(c)+' · ':'')+((c.title||'').trim()||(c.content||'').trim().slice(0,3)||'?'), cat:c.category||'其他', color:catColorOf(c.category),
         pinned:!!c.pinned, starred:!!c.starred, hasImg:!!(c.images&&c.images.length),
         tags:(c.tags||[]).slice(0,3), date:c.date||'', timeline:c.timeline||'',
         content:(c.content||'').slice(0,80),
-        person:isP, x:0,y:0,vx:0,vy:0, r:(isP?34:26)-(c.scope==='rel'?0:8), isIdea:c.scope!=='rel'};
+        person:isP, x:0,y:0,vx:0,vy:0, r:(isP?34:26)-(c.scope==='rel'?0:8), isIdea:(c.scope!=='rel' && !isP)};
       nodes.push(nd); byId[c.id]=nd;
     }
     // 写作台章节节点：把书册章节作为节点加入脉络（章 id 加 wbch: 前缀，便于与卡区分）
