@@ -1088,6 +1088,7 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 }
 #rel-page{position:fixed;inset:0;z-index:950;background:var(--bg);display:none;flex-direction:column;overflow:hidden}
 #rel-page.show{display:flex}
+#rel-page{background-color:var(--bg);background-image:linear-gradient(color-mix(in srgb,var(--bg) 55%,transparent),color-mix(in srgb,var(--bg) 38%,transparent)),radial-gradient(var(--dot) 1px,transparent 1px),var(--bg-img);background-size:100% 100%,26px 26px,cover;background-position:center,center,center;background-attachment:fixed,fixed,fixed}
 #rel-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;background:var(--panel-bg,var(--card-bg));border-bottom:1px solid var(--line);font-size:13px}
 #rel-bar .t{font-weight:600;margin-right:6px}
 #rel-bar select,#rel-bar input[type=text]{background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit}
@@ -1098,14 +1099,15 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 .rel-sw.on .sw-track{background:var(--accent,#e67e22)}
 .rel-sw .sw-knob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s}
 .rel-sw.on .sw-knob{left:18px}
-#rel-canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#rel-canvas-wrap{flex:1;position:relative;overflow:hidden;background:transparent}
 #rel-canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
 #rel-canvas.dragging{cursor:grabbing}
 #rel-tip{position:absolute;left:14px;bottom:10px;font-size:12px;color:var(--muted);pointer-events:none}
-#rel-link-picker,#rel-connect-picker{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1160;display:none;align-items:center;justify-content:center}
-#rel-link-picker.show,#rel-connect-picker.show{display:flex}
+#rel-hold-hint{position:absolute;display:none;font-size:12px;color:#fff;background:rgba(30,30,30,.82);border-radius:8px;padding:5px 10px;pointer-events:none;z-index:5;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,.3)}
+#rel-link-picker,#rel-connect-picker,#rel-edge-picker{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1160;display:none;align-items:center;justify-content:center}
+#rel-link-picker.show,#rel-connect-picker.show,#rel-edge-picker.show{display:flex}
 #rel-canvas.connecting{cursor:crosshair}
-.rel-lp-panel{background:var(--panel-bg,var(--card-bg));border:1px solid var(--line);border-radius:14px;width:min(420px,90vw);max-height:70vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden}
+.rel-lp-panel,.rel-edge-panel{background:var(--panel-bg,var(--card-bg));border:1px solid var(--line);border-radius:14px;width:min(420px,90vw);max-height:70vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden}
 .rel-lp-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink)}
 .rel-lp-head select{margin-left:auto;background:var(--input-bg,#eee);border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:var(--ink);font-size:12px}
 .rel-lp-list{padding:8px;overflow-y:auto}
@@ -1123,10 +1125,27 @@ body.mode-rel-body #outline-panel,body.mode-rel-body #stats-modal{display:none}
 #rel-panel .rp-link{display:inline-block;border:1px solid var(--line);border-radius:7px;padding:2px 8px;font-size:12px;margin:2px 4px 2px 0;cursor:pointer;background:var(--input-bg)}
 #rel-panel .rp-link:hover{border-color:var(--accent-line);color:var(--accent)}
 #rel-panel .rp-act{margin-top:8px;display:flex;gap:8px}
-.rel-legend{position:absolute;left:14px;top:14px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px;background:var(--panel-bg,var(--card-bg));border:1px solid var(--line);border-radius:10px;padding:8px 10px;z-index:2}
+.rel-legend{position:absolute;left:14px;top:14px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:3px;background:var(--panel-bg,var(--card-bg));border:1px solid var(--line);border-radius:10px;padding:5px 7px;z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.rel-legend .lg-toggle{display:flex;align-items:center;gap:4px;background:transparent;border:none;color:var(--muted);font-size:11px;font-family:inherit;padding:2px 4px;cursor:pointer}
+.rel-legend .lg-toggle:hover{color:var(--ink)}
+.rel-legend.collapsed .lg-body{display:none}
+.rel-legend .lg-body{display:flex;flex-direction:column;gap:3px}
 .rel-legend .lg-item{display:flex;align-items:center;gap:6px}
-.rel-legend .lg-line{width:16px;height:0;border-top:2px solid}
+.rel-legend .lg-item .lg-line{width:16px;height:0;border-top:2px solid}
 .rel-legend .lg-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.rel-legend .lg-set{width:100%;margin-top:6px;display:flex;padding-left:22px}
+.btn.mini{font-size:12px;padding:3px 9px;border-radius:7px}
+.rel-edge-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink)}
+.rel-edge-head .rel-edge-sub{font-size:11px;color:var(--muted);font-weight:400}
+.rel-edge-head .btn{margin-left:auto}
+.rel-edge-list{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:7px}
+.rel-edge-row{display:flex;align-items:center;gap:10px;background:var(--tag-bg,#f0ece2);border:1px solid var(--line);border-radius:10px;padding:7px 11px}
+.rel-edge-row .re-name{font-size:13px;color:var(--ink);font-weight:600;min-width:70px}
+.rel-edge-row .re-desc{font-size:11px;color:var(--muted);flex:1}
+.rel-edge-row .re-pick{width:42px;height:26px;border:1px solid var(--line);border-radius:7px;background:var(--input-bg,#fff);padding:1px;cursor:pointer}
+.rel-edge-row .re-reset{border:none;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;padding:3px 6px;border-radius:6px;font-family:inherit}
+.rel-edge-row .re-reset:hover{color:var(--accent);background:var(--accent-soft,#f5e8e0)}
+.rel-edge-foot{padding:10px 14px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
 
 /* SECTION: sticky 便签贴纸 */
 .sticky-note{
@@ -2039,14 +2058,19 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
   <div id="rel-canvas-wrap">
     <canvas id="rel-canvas"></canvas>
     <div class="rel-legend" id="rel-legend">
+      <button type="button" class="lg-toggle" id="rel-legend-toggle" title="收起/展开图例">📖 图例 ▾</button>
+      <div class="lg-body" id="rel-legend-body">
       <span class="lg-item"><span class="lg-line" style="border-color:var(--ink)"></span>关联</span>
       <span class="lg-item"><span class="lg-line" style="border-color:#b48ad9;border-top-style:dashed"></span>伏笔</span>
       <span class="lg-item"><span class="lg-line" style="border-color:#e07a7a"></span>人物关系</span>
       <span class="lg-item"><span class="lg-line" style="border-color:#e6a23c"></span>因果</span>
       <span class="lg-item"><span class="lg-line" style="border-color:#4fa3c9"></span>对照</span>
+      <span class="lg-item"><span class="lg-line" style="border-color:#5fae7a"></span>事件</span>
       <span class="lg-item"><span class="lg-line" style="border-color:var(--muted);border-top-style:dashed"></span>人物出场</span>
       <span class="lg-item"><span class="lg-dot" style="background:var(--accent,#e67e22)"></span>人物</span>
       <span class="lg-item"><span class="lg-dot" style="background:var(--muted)"></span>普通卡片</span>
+      <span class="lg-item lg-set"><button type="button" class="btn ghost mini" id="rel-edge-btn" title="自定义每种线的颜色">✎ 线色设置</button></span>
+      </div>
     </div>
     <div id="rel-panel">
       <h4 id="rp-title"></h4>
@@ -2061,7 +2085,8 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
         <button type="button" class="btn ghost" id="rp-close">关闭</button>
       </div>
     </div>
-    <div id="rel-tip">拖动节点 / 拖空白平移 · 滚轮或双指缩放 · 点击节点看详情</div>
+    <div id="rel-tip">点击节点看详情 · 按住节点拖到另一节点建立关联 · 拖空白平移 · 滚轮缩放</div>
+    <div id="rel-hold-hint">按住并拖到另一个节点上松手 → 建立关联</div>
     <div id="rel-link-picker">
       <div class="rel-lp-panel">
         <div class="rel-lp-head">🔗 建立关联
@@ -2071,10 +2096,14 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
             <option value="人物关系">人物关系</option>
             <option value="因果">因果</option>
             <option value="对照">对照</option>
+            <option value="事件">事件</option>
           </select>
           <button type="button" class="btn ghost" id="rel-lp-close">✕</button>
         </div>
-        <div class="rel-lp-list" id="rel-lp-list"></div>
+        <div class="rel-lp-list">
+          <input type="text" id="rel-lp-text" placeholder="关系 / 事件（可选）：如 师徒、姐弟、雨夜重逢" style="width:100%;box-sizing:border-box;background:var(--input-bg,#eee);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink);font-size:13px;font-family:inherit;margin-bottom:8px">
+          <div id="rel-lp-list"></div>
+        </div>
       </div>
     </div>
     <div id="rel-connect-picker">
@@ -2086,12 +2115,25 @@ body.mode-idea-body .dock-mode-rel,body.mode-write-body .dock-mode-rel{display:n
             <option value="人物关系">人物关系</option>
             <option value="因果">因果</option>
             <option value="对照">对照</option>
+            <option value="事件">事件</option>
           </select>
           <button type="button" class="btn ghost" id="rel-conn-cancel">✕</button>
         </div>
         <div class="rel-lp-list">
           <div id="rel-conn-info" style="padding:4px 2px 10px;font-size:13px;color:var(--muted);line-height:1.7"></div>
+          <input type="text" id="rel-conn-text" placeholder="关系 / 事件（可选）：如 师徒、姐弟、雨夜重逢" style="width:100%;box-sizing:border-box;background:var(--input-bg,#eee);border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink);font-size:13px;font-family:inherit;margin-bottom:10px">
           <button type="button" class="btn primary" id="rel-conn-ok" style="width:100%">✓ 建立关联</button>
+        </div>
+      </div>
+    </div>
+    <div id="rel-edge-picker">
+      <div class="rel-edge-panel">
+        <div class="rel-edge-head">✎ 线色设置<span class="rel-edge-sub">给每种关联线换上专属颜色</span>
+          <button type="button" class="btn ghost" id="rel-edge-close">✕</button>
+        </div>
+        <div class="rel-edge-list" id="rel-edge-list"></div>
+        <div class="rel-edge-foot">
+          <button type="button" class="btn ghost" id="rel-edge-reset">↺ 全部恢复默认</button>
         </div>
       </div>
     </div>
@@ -8273,6 +8315,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   var pickList=document.getElementById('rel-lp-list');
   var connPicker=document.getElementById('rel-connect-picker');
   var connType=document.getElementById('rel-conn-type');
+  var edgePicker=document.getElementById('rel-edge-picker');
   var connFrom=null, connTo=null;
 
   function catColorOf(name){
@@ -8327,7 +8370,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       var a=byId[c.id]; if(!a) return;
       (c.links||[]).forEach(function(lid){
         var b=byId[lid];
-        if(b && !edgeExists(a.id,b.id)){ var rt=((c.relTypes||{})[lid]||'link'); edges.push({a:a.id,b:b.id,type:rt}); }
+        if(b && !edgeExists(a.id,b.id)){ var rt=((c.relTypes||{})[lid]||'link'); edges.push({a:a.id,b:b.id,type:rt,text:((c.relTexts||{})[lid]||'')}); }
       });
     });
     // 人物名：人物分类卡片的标题
@@ -8493,13 +8536,66 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
 
   /* ---- 关系类型样式 ---- */
   var EDGE_STYLE={
-    'link':{color:getCss('--ink','#dfe6ee'),width:2,dash:[]},
+    'link':{color:getCss('--ink','#3a3a3a'),width:2,dash:[]},
     '伏笔':{color:'#b48ad9',width:1.8,dash:[6,3]},
     '人物关系':{color:'#e07a7a',width:2,dash:[]},
     '因果':{color:'#e6a23c',width:2,dash:[]},
     '对照':{color:'#4fa3c9',width:1.6,dash:[]},
+    '事件':{color:'#5fae7a',width:2,dash:[]},
     'people':{color:getCss('--muted','#7f8ea3'),width:1.2,dash:[5,4]}
   };
+  /* ---- 线色自定义：与分类标签同思路，存 localStorage 随时可改 ---- */
+  var EDGE_TYPES=[
+    ['link','关联','默认跟随主题墨色'],
+    ['伏笔','伏笔','虚线 · 埋下的线索'],
+    ['人物关系','人物关系','人物之间的羁绊'],
+    ['因果','因果','事件发展的因果链'],
+    ['对照','对照','呼应 / 对比'],
+    ['事件','事件','事件发展的推进'],
+    ['people','人物出场','虚线 · 人物登场记录']
+  ];
+  function edgeOverrides(){ try{ return JSON.parse(localStorage.getItem('moxia-rel-edge-colors')||'{}'); }catch(e){ return {}; } }
+  function edgeColor(type){
+    var ov=edgeOverrides();
+    if(ov[type]) return ov[type];
+    if(type==='people') return getCss('--muted','#7f8ea3');
+    if(!EDGE_STYLE[type]) return getCss('--ink','#3a3a3a');
+    return EDGE_STYLE[type].color;
+  }
+  function openEdgePicker(){
+    var list=document.getElementById('rel-edge-list');
+    var ov=edgeOverrides();
+    list.innerHTML=EDGE_TYPES.map(function(t){
+      var key=t[0], name=t[1], desc=t[2];
+      var cur=ov[key]||EDGE_STYLE[key].color;
+      return '<div class="rel-edge-row"><span class="re-name">'+esc(name)+'</span><span class="re-desc">'+esc(desc)+'</span><input type="color" class="re-pick" data-key="'+key+'" value="'+cur+'"><button type="button" class="re-reset" data-key="'+key+'" title="恢复这条线默认色">↺</button></div>';
+    }).join('');
+    edgePicker.classList.add('show');
+  }
+  document.getElementById('rel-edge-btn').addEventListener('click', openEdgePicker);
+  document.getElementById('rel-edge-close').addEventListener('click', function(){ edgePicker.classList.remove('show'); });
+  document.getElementById('rel-edge-reset').addEventListener('click', function(){
+    localStorage.removeItem('moxia-rel-edge-colors');
+    openEdgePicker(); build(); if(modeSel.value==='time') layoutTime(); else layoutNet(); draw();
+    showToast('线色已全部恢复默认', false);
+  });
+  document.getElementById('rel-edge-list').addEventListener('input', function(ev){
+    var t=ev.target;
+    if(t && t.classList && t.classList.contains('re-pick') && t.value){
+      var ov=edgeOverrides(); ov[t.dataset.key]=t.value;
+      localStorage.setItem('moxia-rel-edge-colors', JSON.stringify(ov));
+      build(); if(modeSel.value==='time') layoutTime(); else layoutNet(); draw();
+    }
+  });
+  document.getElementById('rel-edge-list').addEventListener('click', function(ev){
+    var t=ev.target;
+    if(t && t.classList && t.classList.contains('re-reset')){
+      var ov=edgeOverrides(); delete ov[t.dataset.key];
+      localStorage.setItem('moxia-rel-edge-colors', JSON.stringify(ov));
+      openEdgePicker(); build(); if(modeSel.value==='time') layoutTime(); else layoutNet(); draw();
+      showToast('这条线已恢复默认色', false);
+    }
+  });
 
   /* ---- 时间轴拖拽整理：落到最近列 = 改日期，列内按 y 重排 ---- */
   function snapTimeline(nd, wx, wy){
@@ -8554,11 +8650,29 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       var dim=(q && (matchNode(a)||matchNode(b))) ? 1 : 0.25;
       ctx.globalAlpha=dim;
       var st=EDGE_STYLE[e.type]||EDGE_STYLE['link'];
-      try{ ctx.strokeStyle=st.color; }catch(x){}
+      // 线色：自定义 > 主题动态(关联/人物出场) > 默认色
+      var ec=edgeColor(e.type);
+      try{ ctx.strokeStyle=ec; }catch(x){}
       ctx.lineWidth=st.width;
       ctx.setLineDash(st.dash);
       ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       ctx.setLineDash([]);
+      // 关系/事件文字（人物出场虚线不显示文字，避免杂乱）
+      var lbl = e.type==='people' ? '' : (e.text || (e.type!=='link' ? e.type : ''));
+      if(lbl){
+        var mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+        ctx.globalAlpha=dim;
+        ctx.font='11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        var tw=ctx.measureText(lbl).width;
+        ctx.fillStyle='rgba(255,255,255,.88)';
+        ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=1;
+        var pad=3;
+        ctx.beginPath();
+        if(ctx.roundRect){ ctx.roundRect(mx-tw/2-pad, my-8, tw+pad*2, 16, 5); ctx.fill(); ctx.stroke(); }
+        else { ctx.fillRect(mx-tw/2-pad, my-8, tw+pad*2, 16); }
+        ctx.fillStyle='rgba(30,30,30,.85)';
+        ctx.fillText(lbl, mx, my+1);
+      }
     });
     ctx.globalAlpha=1;
     // 节点
@@ -8651,6 +8765,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     return {x:e.clientX,y:e.clientY};
   }
   var pressTimer=null;
+  var holdTimer=null;
   function enterConnect(){
     if(!drag || drag.mode!=='pending') return;
     drag.mode='connect';
@@ -8664,7 +8779,9 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var nd=hitNode(w.x,w.y);
     if(nd){ drag={mode:'pending',id:nd.id,sx:p.x,sy:p.y,ox:nd.x,oy:nd.y,moved:false};
       canvas.classList.add('dragging');
-      pressTimer=setTimeout(enterConnect, 500);
+      pressTimer=setTimeout(enterConnect, 400);
+      if(relHoldHint){ relHoldHint.style.left=(p.x-120)+'px'; relHoldHint.style.top=(p.y+18)+'px'; relHoldHint.style.display='block'; }
+      holdTimer=setTimeout(function(){ if(drag && drag.mode==='pending' && relHoldHint) relHoldHint.style.display='block'; }, 220);
       if(e.cancelable) e.preventDefault();
     } else {
       drag={mode:'pan',sx:p.x,sy:p.y,ox:cam.x,oy:cam.y,moved:false};
@@ -8706,6 +8823,8 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var wasDrag=drag;
     drag=null; canvas.classList.remove('dragging'); canvas.classList.remove('connecting');
     if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; }
+    if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; }
+    if(relHoldHint) relHoldHint.style.display='none';
     if(wasDrag.mode==='pending' && !wasDrag.moved){
       var nd=findNode(wasDrag.id);
       if(nd) selectNode(nd);
@@ -8804,6 +8923,16 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   function openRel(){
     relOpen=true;
     relBook=curBookId();
+    // 首次进入引导提示
+    try{
+      if(!localStorage.getItem('moxia-rel-tip-done')){
+        localStorage.setItem('moxia-rel-tip-done','1');
+        showToast('提示：点击节点看详情；按住节点拖到另一节点可建立关联；拖空白处平移画布', false);
+      }
+    }catch(e){}
+    // 图例折叠状态
+    var lg=document.getElementById('rel-legend');
+    if(lg){ try{ if(localStorage.getItem('moxia-rel-legend-collapsed')==='1') lg.classList.add('collapsed'); }catch(e){} }
     // 书册下拉
     var books=loadBooks();
     var opts='<option value="'+DEFAULT_BOOK+'">📚 默认册</option>';
@@ -8964,6 +9093,14 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     scheduleDraw();
   });
   document.getElementById('rel-close').addEventListener('click', closeRel);
+  var relLegendToggle=document.getElementById('rel-legend-toggle');
+  if(relLegendToggle){ relLegendToggle.addEventListener('click', function(){
+    var lg=document.getElementById('rel-legend'); if(!lg) return;
+    lg.classList.toggle('collapsed');
+    this.textContent=lg.classList.contains('collapsed')?'📖 图例 ▸':'📖 图例 ▾';
+    try{ localStorage.setItem('moxia-rel-legend-collapsed', lg.classList.contains('collapsed')?'1':'0'); }catch(e){}
+  }); }
+  var relHoldHint=document.getElementById('rel-hold-hint');
   modeSel.addEventListener('change', function(){
     build();
     if(this.value==='time') layoutTime(); else layoutNet();
@@ -9149,11 +9286,13 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var bk=relBook||curBookId();
     var opts=cards.filter(function(x){ return x.scope==='rel' && x.id!==cur.id && bookOf(x)===bk; });
     pickType.value='关联';
+    var lpTxtEl=document.getElementById('rel-lp-text'); if(lpTxtEl) lpTxtEl.value='';
     pickList.innerHTML=opts.length
       ? opts.map(function(x){
           var linked=(cur.links||[]).indexOf(x.id)>=0;
           var rt=(cur.relTypes||{})[x.id]||'';
-          return '<button class="rel-lp-opt'+(linked?' linked':'')+'" data-lid="'+x.id+'"><span>'+esc(x.title||'（无标题）')+'</span><span class="cnt">'+(linked?(rt?'✓ '+esc(rt):'✓ 已关联'):'')+'</span></button>';
+          var rtx=linked&&rt ? ((cur.relTexts||{})[x.id]||'') : '';
+          return '<button class="rel-lp-opt'+(linked?' linked':'')+'" data-lid="'+x.id+'"><span>'+esc(x.title||'（无标题）')+'</span><span class="cnt">'+(linked?(rt?'✓ '+esc(rt)+(rtx?'·'+esc(rtx):''):'✓ 已关联'):'')+'</span></button>';
         }).join('')
       : '<div class="link-empty">当前书册还没有其他节点，先点「✚ 新节点」建几个吧</div>';
     linkPicker.classList.add('show');
@@ -9164,11 +9303,14 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
     var a=findCard(fid), b=findCard(tid);
     document.getElementById('rel-conn-info').innerHTML='<b>'+esc(a?(a.title||'（无标题）'):'')+'</b> → <b>'+esc(b?(b.title||'（无标题）'):'')+'</b>';
     connType.value='关联';
+    var ct=document.getElementById('rel-conn-text'); if(ct) ct.value='';
     connPicker.classList.add('show');
   }
   function commitConnect(){
     if(!connFrom || !connTo){ connPicker.classList.remove('show'); return; }
     var t=connType.value||'关联';
+    var txtEl=document.getElementById('rel-conn-text');
+    var txt=(txtEl?txtEl.value:'').trim();
     var a=findCard(connFrom), b=findCard(connTo);
     if(a && b){
       a.links=a.links||[]; b.links=b.links||[];
@@ -9176,9 +9318,15 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
         a.links.push(connTo); b.links.push(connFrom);
         a.relTypes=a.relTypes||{}; b.relTypes=b.relTypes||{};
         a.relTypes[connTo]=t; b.relTypes[connFrom]=t;
+        if(txt){
+          a.relTexts=a.relTexts||{}; b.relTexts=b.relTexts||{};
+          a.relTexts[connTo]=txt; b.relTexts[connFrom]=txt;
+        } else {
+          if(a.relTexts) delete a.relTexts[connTo]; if(b.relTexts) delete b.relTexts[connFrom];
+        }
         a.updatedAt=Math.max(Number(a.updatedAt)||0, nowStamp());
         b.updatedAt=Math.max(Number(b.updatedAt)||0, nowStamp());
-        if(persist()){ build(); if(modeSel.value==='time') layoutTime(); else layoutNet(); draw(); showToast('已关联（'+t+'）', false); }
+        if(persist()){ build(); if(modeSel.value==='time') layoutTime(); else layoutNet(); draw(); showToast('已关联（'+t+(txt?'·'+txt:'')+'）', false); }
       } else {
         showToast('这两张卡片已有关联', false);
       }
@@ -9205,10 +9353,16 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
       if(a.relTypes) delete a.relTypes[bid]; if(b.relTypes) delete b.relTypes[a.id];
     } else {
       var t=pickType.value||'关联';
+      var lpTxtEl=document.getElementById('rel-lp-text');
+      var lpTxt=(lpTxtEl?lpTxtEl.value:'').trim();
       a.links=a.links||[]; b.links=b.links||[];
       a.links.push(bid); b.links.push(a.id);
       a.relTypes=a.relTypes||{}; b.relTypes=b.relTypes||{};
       a.relTypes[bid]=t; b.relTypes[a.id]=t;
+      if(lpTxt){
+        a.relTexts=a.relTexts||{}; b.relTexts=b.relTexts||{};
+        a.relTexts[bid]=lpTxt; b.relTexts[a.id]=lpTxt;
+      }
     }
     a.updatedAt=Math.max(Number(a.updatedAt)||0, nowStamp());
     b.updatedAt=Math.max(Number(b.updatedAt)||0, nowStamp());
@@ -9231,7 +9385,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
   canvas.addEventListener('mousedown', pointerDown);
   canvas.addEventListener('mousemove', pointerMove);
   canvas.addEventListener('mouseup', pointerUp);
-  canvas.addEventListener('mouseleave', function(){ drag=null; canvas.classList.remove('dragging'); canvas.classList.remove('connecting'); if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } });
+  canvas.addEventListener('mouseleave', function(){ drag=null; canvas.classList.remove('dragging'); canvas.classList.remove('connecting'); if(pressTimer){ clearTimeout(pressTimer); pressTimer=null; } if(holdTimer){ clearTimeout(holdTimer); holdTimer=null; } if(relHoldHint) relHoldHint.style.display='none'; });
   canvas.addEventListener('wheel', wheel, {passive:false});
   canvas.addEventListener('touchstart', touchStart, {passive:false});
   canvas.addEventListener('touchmove', touchMove, {passive:false});
