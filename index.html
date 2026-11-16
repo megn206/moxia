@@ -4411,6 +4411,33 @@ function metaBase(){ try{ return JSON.parse(localStorage.getItem(META_KEY)||'nul
 function setMetaBase(data, updatedAt){ try{ localStorage.setItem(META_KEY, JSON.stringify({data:data, updatedAt:updatedAt||0})); }catch(e){} }
 function metaDirty(){ try{ return localStorage.getItem(META_DIRTY)==='1'; }catch(e){ return false; } }
 function setMetaDirty(v){ try{ localStorage.setItem(META_DIRTY, v?'1':'0'); }catch(e){} }
+/* ===== 脉络时间线同步（特殊 id=__tl__，随同步一起上传轨道归属/顺序/当前轨道） ===== */
+var TL_ID='__tl__', TL_TRACKS_KEY='moxia-tl-tracks', TL_ORDER_KEY='moxia-tl-order', TL_BASE_KEY=KEY+'-tl-base', TL_DIRTY_KEY=KEY+'-tl-dirty';
+function tlBase(){ try{ return JSON.parse(localStorage.getItem(TL_BASE_KEY)||'null'); }catch(e){ return null; } }
+function setTLBase(data, updatedAt){ try{ localStorage.setItem(TL_BASE_KEY, JSON.stringify({data:data, updatedAt:updatedAt||0})); }catch(e){} }
+function tlSyncDirty(){ try{ return localStorage.getItem(TL_DIRTY_KEY)==='1'; }catch(e){ return false; } }
+function setTLSyncDirty(v){ try{ localStorage.setItem(TL_DIRTY_KEY, v?'1':'0'); }catch(e){} }
+function tlSnap(){
+  var tracks=null, order=null;
+  try{ tracks=JSON.parse(localStorage.getItem(TL_TRACKS_KEY)||'null'); }catch(e){}
+  try{ order=JSON.parse(localStorage.getItem(TL_ORDER_KEY)||'null'); }catch(e){}
+  return { tracks: tracks, order: order };
+}
+function tlHasContent(tracks){
+  if (!tracks || !tracks.orders || typeof tracks.orders!=='object') return false;
+  var has=false;
+  Object.keys(tracks.orders).forEach(function(k){ if ((tracks.orders[k]||[]).length) has=true; });
+  return has;
+}
+function tlApply(snap, updatedAt){
+  if (!snap) return;
+  try{
+    if (snap.tracks) localStorage.setItem(TL_TRACKS_KEY, JSON.stringify(snap.tracks));
+    if (Array.isArray(snap.order)) localStorage.setItem(TL_ORDER_KEY, JSON.stringify(snap.order));
+  }catch(e){}
+  window._trackCache = null;
+  if (typeof window.__moTLRefresh==='function'){ try{ window.__moTLRefresh(); }catch(e){} }
+}
 var META_APPLYING=false;
 function markMetaDirty(){ if (META_APPLYING) return; try{ setMetaDirty(true); setMetaBase(metaSnap(), Date.now()); }catch(e){} }
 function metaSnap(){
@@ -4515,6 +4542,20 @@ function cloudMergeRows(rows, offsetMs){
       var row = list[i];
       mx = Math.max(mx, Number(row.updated)||0);
       if (Number(row.updated) > cloudMax) cloudMax = Number(row.updated);
+      if (row.id===TL_ID){                              // 脉络时间线行（轨道归属/顺序/当前轨道）
+        if (Number(row.deleted)!==1 && !tlSyncDirty()){  // 本地有改动未推则以本地为准
+          try{
+            var tls = JSON.parse(IdeaCrypto.decStr(row.data, c.token));
+            var tlb = tlBase() || {data:null, updatedAt:0};
+            if (tls && tls.tracks && ((Number(row.updated)+offsetMs) > Number(tlb.updatedAt)) && JSON.stringify(tls)!==JSON.stringify(tlb.data||null)){
+              tlApply(tls, Number(row.updated));
+              setTLBase(tls, Number(row.updated));
+              dataGot++; updGot++;
+            }
+          }catch(e){ dataFails++; }
+        }
+        continue;
+      }
       if (row.id===META_ID){                            // 分类/设置行
         if (Number(row.deleted)!==1 && !metaDirty()){   // 本地有改动未推则以本地为准
           try{
@@ -4841,6 +4882,17 @@ function cloudPush(){
       }
     }catch(e){ pushedWbSnap = null; }
   }
+  // 脉络时间线行：本地有改动未推、或首次（无基线但有内容）时一起上传
+  var pushedTlSnap = null;
+  try{
+    var tlNow = tlSnap();
+    if (tlNow.tracks && (tlSyncDirty() || (!tlBase() && tlHasContent(tlNow.tracks)))){
+      pushedTlSnap = tlNow;
+      rows.push({ id: TL_ID,
+        data: IdeaCrypto.encStr(JSON.stringify(pushedTlSnap), c.token),
+        updated: nowStamp(), deleted: 0 });
+    }
+  }catch(e){ pushedTlSnap = null; }
   if (!rows.length) return Promise.resolve({ any:false, n:0, delN:0 });
   var delN = rows.filter(function(r){ return Number(r.deleted)===1; }).length;
   if (c.backend==='cb'){
@@ -4855,6 +4907,10 @@ function cloudPush(){
       if (pushedWbSnap){
         setWbSyncDirty(false);
         setWbSyncBase(pushedWbSnap, Date.now());
+      }
+      if (pushedTlSnap){
+        setTLSyncDirty(false);
+        setTLBase(pushedTlSnap, Date.now());
       }
       lastPushed = true;
       return { any: true, n: rows.length, delN: delN };
@@ -4888,6 +4944,10 @@ function cloudPush(){
         if (pushedWbSnap){
           setWbSyncDirty(false);
           setWbSyncBase(pushedWbSnap, Date.now());
+        }
+        if (pushedTlSnap){
+          setTLSyncDirty(false);
+          setTLBase(pushedTlSnap, Date.now());
         }
         lastPushed = true;
       });
@@ -6494,7 +6554,9 @@ $('#btn-cloud-backup').addEventListener('click', function(){
   try{ needCrypto(); }catch(e){ alert('缺少加密组件'); return; }
   if (!cards.length){ alert('还没有卡片，无需备份'); return; }
   var snap = { v:1, t:Date.now(), cards: cards, meta: (typeof metaSnap==='function') ? metaSnap() : null,
-    wb: (typeof window.__wbGet==='function') ? (function(){ try{ return window.__wbGet(); }catch(e){ return null; } })() : null };
+    wb: (typeof window.__wbGet==='function') ? (function(){ try{ return window.__wbGet(); }catch(e){ return null; } })() : null,
+    tl: (function(){ try{ return JSON.parse(localStorage.getItem('moxia-tl-order')||'null'); }catch(e){ return null; } })(),
+    tlTracks: (function(){ try{ return JSON.parse(localStorage.getItem('moxia-tl-tracks')||'null'); }catch(e){ return null; } })() };
   var enc;
   try{ enc = IdeaCrypto.encStr(JSON.stringify(snap), c.token); }
   catch(e){ alert('备份加密失败：' + e.message); return; }
@@ -6545,8 +6607,15 @@ $('#btn-cloud-restore').addEventListener('click', function(){
       try{ window.__wbApply(snap.wb); }catch(e){}
       if (typeof setWbSyncBase==='function'){ try{ setWbSyncBase(snap.wb, Date.now()); }catch(e){} }
     }
+    if (snap.tlTracks && typeof snap.tlTracks==='object'){
+      try{ localStorage.setItem('moxia-tl-tracks', JSON.stringify(snap.tlTracks)); }catch(e){}
+      window._trackCache = null;
+      if (typeof window.__moTLRefresh==='function'){ try{ window.__moTLRefresh(); }catch(e){} }
+      try{ if (typeof setTLSyncDirty==='function') setTLSyncDirty(true); }catch(e){}
+    }
+    if (Array.isArray(snap.tl)){ try{ localStorage.setItem('moxia-tl-order', JSON.stringify(snap.tl)); }catch(e){} }
     persist(); render();
-    alert('已从云端备份恢复 ' + cards.length + ' 张卡片、设置与写作台书册');
+    alert('已从云端备份恢复 ' + cards.length + ' 张卡片、设置、写作台书册与时间线');
   })
   .catch(function(e){ showToast('恢复失败：' + ((e&&e.message)||''), false); });
 });
@@ -6594,7 +6663,7 @@ $('#file-import').addEventListener('change', function(){
       importedMeta = (raw.meta && typeof raw.meta==='object') ? raw.meta : null;
       importedWb = (raw.wb && raw.wb.data && Array.isArray(raw.wb.data.books)) ? raw.wb : null;
       if (Array.isArray(raw.tl)){ try{ localStorage.setItem('moxia-tl-order', JSON.stringify(raw.tl)); }catch(e){} }        // 脉络时间轴顺序
-      if (raw.tlTracks && typeof raw.tlTracks==='object'){ try{ localStorage.setItem('moxia-tl-tracks', JSON.stringify(raw.tlTracks)); window._trackCache=null; if(window.__moTLRefresh) window.__moTLRefresh(); }catch(e){} }   // 脉络多轨（主线/支线/回忆）
+      if (raw.tlTracks && typeof raw.tlTracks==='object'){ try{ localStorage.setItem('moxia-tl-tracks', JSON.stringify(raw.tlTracks)); window._trackCache=null; if(window.__moTLRefresh) window.__moTLRefresh(); if (typeof setTLSyncDirty==='function') setTLSyncDirty(true); }catch(e){} }   // 脉络多轨（主线/支线/回忆），导入后待同步
       if (raw.sync && typeof raw.sync==='object' && raw.sync.backend){ try{ localStorage.setItem('novel-idea-cards-v1-sync', JSON.stringify(raw.sync)); }catch(e){} }   // 云端/局域网同步配置
       if (Array.isArray(raw.conflicts)){ try{ localStorage.setItem('moxia-conflicts', JSON.stringify(raw.conflicts)); }catch(e){} }  // 冲突备份记录
       raw = raw.cards;
@@ -8513,7 +8582,8 @@ $('#btn-sync-off').addEventListener('click', function(){
       v:2, kind:'snapshot', at:Date.now(),
       cards: cards.filter(function(c){ return c && c.id; }),
       meta:{ snap: meta, at: mb ? (mb.updatedAt||0) : 0 },
-      tomb: tomb, wb: wbPack
+      tomb: tomb, wb: wbPack,
+      tl: (function(){ try{ return { tracks: JSON.parse(localStorage.getItem('moxia-tl-tracks')||'null'), order: JSON.parse(localStorage.getItem('moxia-tl-order')||'null') }; }catch(e){ return null; } })()
     };
   }
   function sendSnapshot(){
@@ -8562,8 +8632,17 @@ $('#btn-sync-off').addEventListener('click', function(){
     }
     var delN = applyTomb(data.tomb);
     var wbOk = applyWb(data.wb);
+    var tlOk = false;
+    if (data.tl && data.tl.tracks && typeof tlApply==='function' && !tlSyncDirty()){
+      var tlb = tlBase() || {updatedAt:0};
+      if (Number(data.at||0) > Number(tlb.updatedAt||0)){
+        tlApply(data.tl, Number(data.at));
+        if (typeof setTLBase==='function') setTLBase(data.tl, Number(data.at));
+        tlOk = true;
+      }
+    }
     if (add || upd || delN){ persist(); render(); }
-    log('收到对方快照：新增 ' + add + '、更新 ' + upd + '、删除 ' + delN + (wbOk ? '、写作台书册已同步' : '') + ((add||upd||delN) ? '，已合并保存' : '（无变化）'));
+    log('收到对方快照：新增 ' + add + '、更新 ' + upd + '、删除 ' + delN + (wbOk ? '、写作台书册已同步' : '') + (tlOk ? '、时间线已同步' : '') + ((add||upd||delN) ? '，已合并保存' : '（无变化）'));
   }
   /* 把卡片按本机删除路径移除：进回收站（可恢复）+ 移出列表 + 记删除墓碑 */
   function lanRemoveCard(c, tombAt){
@@ -10266,7 +10345,7 @@ function moTLData(){
       cards.filter(function(c){ return (c.date&&String(c.date).trim())||(c.timeline&&String(c.timeline).trim()); }).forEach(function(c){ d.orders.main.push(c.id); d.trackOf[c.id]='main'; });
       d.orders.main=moTLSortIds(d.orders.main);
     }
-    moTLSave(d);
+    moTLSave(d, 1);
   }
   if(!d.orders.main) d.orders.main=[];
   if(!d.orders.sub) d.orders.sub=[];
@@ -10275,7 +10354,12 @@ function moTLData(){
   if(!d.active) d.active='all';
   return d;
 }
-function moTLSave(d){ try{ localStorage.setItem('moxia-tl-tracks', JSON.stringify(d)); }catch(e){} }
+function moTLSave(d, silent){
+  try{ localStorage.setItem('moxia-tl-tracks', JSON.stringify(d)); }catch(e){}
+  if (silent) return;   // 自动初始化不算本机改动，避免反向覆盖云端已有时间线
+  try{ localStorage.setItem('novel-idea-cards-v1-tl-dirty','1'); }catch(e){}
+  try{ if (typeof scheduleSync==='function') scheduleSync(); }catch(e){}   // 有改动立即并入同步队列
+}
 function moTLSetActive(t){ var d=moTLData(); d.active=t; moTLSave(d); window._trackCache=null; if(window.__moTLRefresh) window.__moTLRefresh(); }
 function moTLMove(id, track, beforeId, after){
   if(!track) track='main';
