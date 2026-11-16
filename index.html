@@ -2798,6 +2798,7 @@ html[data-theme="gothic-gold"] .chip.active,html[data-theme="steampunk-brass"] .
 .tlp-editor .te-t{font-weight:700;margin-bottom:8px;color:var(--accent)}
 .tlp-editor label{display:block;margin-bottom:8px;color:var(--muted)}
 .tlp-editor input{width:100%;margin-top:3px;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink);font-size:12px;font-family:inherit}
+.tlp-editor .te-hint{display:block;font-style:normal;font-weight:400;font-size:11px;color:var(--faint);margin-top:3px;line-height:1.4}
 .tlp-editor .te-actions{display:flex;gap:8px;justify-content:flex-end}
 .tlp-editor .te-actions button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer;font-family:inherit;font-size:12px}
 .tlp-editor .te-actions button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -3165,7 +3166,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
     <div class="tlp-hover" id="tlp-hover" hidden></div>
     <div class="tlp-editor" id="tlp-editor" hidden>
       <div class="te-t">✎ 编辑时间线信息</div>
-      <label>剧情日期<input type="date" id="te-date"></label>
+      <label>剧情日期<input type="date" id="te-date"><i class="te-hint" id="te-date-hint"></i></label>
       <label>时间标签<input type="text" id="te-time" placeholder="如：第 3 天 / 黄昏 / 三个月后"></label>
       <div class="te-actions">
         <button type="button" id="te-cancel">取消</button>
@@ -10884,7 +10885,13 @@ function moTLDateMap(d){
       return;
     }
     if (op === 'date'){
-      var v = prompt('给选中的 ' + ids.length + ' 张卡设置剧情日期\n格式 2026-03-15（留空则清除日期）', '');
+      var seed = '';
+      for (var si = 0; si < ids.length && !seed; si++){
+        var sc = findCard(ids[si]);
+        if (sc && sc.date) seed = String(sc.date);
+      }
+      if (!seed && ids.length) seed = prevCardDate(ids[0]);
+      var v = prompt('给选中的 ' + ids.length + ' 张卡设置剧情日期\n格式 2026-03-15（留空则清除日期）', seed || '');
       if (v === null) return;
       var dt = String(v).trim();
       if (dt && !/^\d{4}-\d{2}-\d{2}$/.test(dt)){ alert('日期格式要像 2026-03-15'); return; }
@@ -10908,13 +10915,41 @@ function moTLDateMap(d){
 
   /* 双击：编辑内容 / 单击日期元素：行内编辑日期 */
   var ED = document.getElementById('tlp-editor');
+  /* 取时间线上"上一张有日期的卡"的日期：新卡沿用它，而不是落成现实今天 */
+  function prevCardDate(id){
+    try{
+      var d = data();
+      var act = d.active || 'all';
+      var tracks = act === 'all' ? MO_TRACKS.map(function(t){ return t.id; }) : [act];
+      var flat = [];
+      tracks.forEach(function(t){ (d.orders[t] || []).forEach(function(x){ flat.push(x); }); });
+      var idx = flat.indexOf(id);
+      if (idx > 0){
+        for (var i = idx - 1; i >= 0; i--){
+          var pc = findCard(flat[i]);
+          if (pc && pc.date) return String(pc.date);
+        }
+        return '';
+      }
+      if (idx < 0){
+        for (var j = flat.length - 1; j >= 0; j--){
+          var cc = findCard(flat[j]);
+          if (cc && cc.date) return String(cc.date);
+        }
+      }
+    }catch(e){}
+    return '';
+  }
   function showTlpDateEditor(cardEl, c){
     if (!cardEl || !ED || !c) return;
     EDIT_ID = c.id;
-    document.getElementById('te-date').value = c.date || '';
+    var lean = c.date ? '' : prevCardDate(c.id);
+    var hint = document.getElementById('te-date-hint');
+    document.getElementById('te-date').value = c.date || lean || '';
+    if (hint) hint.textContent = c.date ? '' : (lean ? '默认沿用上一张卡的日期 · ' + String(lean).slice(5) + '，可直接改' : '未填日期：默认沿用上一张卡的日期');
     document.getElementById('te-time').value = c.timeline || '';
     var r = cardEl.getBoundingClientRect();
-    var w = 258, h = 196;
+    var w = 258, h = 214;
     var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8);
     var top = Math.min(Math.max(8, r.bottom + 8), innerHeight - h - 8);
     ED.style.left = left + 'px'; ED.style.top = top + 'px';
