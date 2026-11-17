@@ -2701,6 +2701,15 @@ html[data-theme="gothic-gold"] .chip.active,html[data-theme="steampunk-brass"] .
 .tlp-fanbar input{padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font-size:12px;min-width:160px}
 .tlp-catbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 20px 6px}
 .tlp-catbar:empty{display:none}
+/* 时间线标签筛选条（与灵感模式 #tag-bar 同一视觉语言） */
+.tlp-tagbar{padding-top:0;padding-bottom:9px;gap:7px}
+.tlp-tagbar .chip{font-size:11.5px;padding:4px 11px;border-radius:999px;
+  border-color:var(--tag-border);background:var(--tag-bg);color:var(--tag-ink)}
+.tlp-tagbar .chip:hover{border-color:color-mix(in srgb,var(--tag-ink) 55%,var(--line));
+  background:color-mix(in srgb,var(--tag-bg) 78%,var(--card))}
+.tlp-tagbar .chip.tag-chip.active,.tlp-tagbar .chip.tag-chip.active:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.tlp-tagbar .chip.tlp-tagclear{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 34%,var(--line));
+  background:color-mix(in srgb,var(--accent) 8%,var(--card));text-decoration:none}
 .tlp-strip-cats{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:2px 4px;max-width:100%}
 .tlp-strip-cats:empty{display:none}
 .tlp-catbar .chip,.tlp-strip-cats .chip{
@@ -3122,6 +3131,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <span style="margin-left:auto">拖动卡片到下方时间线 → 排入 · 🖱 滚轮翻页</span>
     </div>
     <div class="tlp-catbar" id="tlp-cat-bar"></div>
+    <div class="tlp-catbar tlp-tagbar" id="tlp-tag-bar"></div>
       <div class="tlp-fanstage" id="tlp-fanstage">
       <div id="tlp-fan"></div>
       <div class="tlp-fanempty" id="tlp-fanempty" hidden></div>
@@ -10682,6 +10692,7 @@ function moTLDateMap(d){
   var showAll = false;
   var fanCat = '';   // 时间线分类筛选（空=全部）
   var stripCat = ''; // 横条分类筛选（空=全部）
+  var tlpTag = '';   // 标签筛选（空=全部）
   var DRAG_ID = null;
   var lastKey = '';
 
@@ -10695,6 +10706,7 @@ function moTLDateMap(d){
     var qq = q.trim().toLowerCase();
     return cards.filter(function(c){
       if (fanCat && (c.category || '其他') !== fanCat) return false;
+      if (tlpTag && (c.tags || []).indexOf(tlpTag) < 0) return false;
       if (!showAll && inAnyTrack(c.id)) return false;
       if (qq){
         var s2 = ((c.title||'') + ' ' + (c.content||'') + ' ' + (c.category||'')).toLowerCase();
@@ -10710,6 +10722,7 @@ function moTLDateMap(d){
     var cnt = {}; var total = 0;
     cards.forEach(function(c){
       if (!showAll && inAnyTrack(c.id)) return;
+      if (tlpTag && (c.tags || []).indexOf(tlpTag) < 0) return;
       var k = c.category || '其他'; cnt[k] = (cnt[k] || 0) + 1; total++;
     });
     allCatNames().forEach(function(k){ if (!(k in cnt)) cnt[k] = 0; });
@@ -10731,6 +10744,39 @@ function moTLDateMap(d){
         page = 0;
         renderFan();
         try { if (typeof renderLanes === 'function') renderLanes(); } catch(err){}
+      });
+    }
+  }
+  /* 标签筛选条：数据源与灵感模式一致（卡片 tags 频次），点击切换，再点一次取消 */
+  function tlpTagNames(){
+    var cnt = {};
+    cards.forEach(function(c){
+      (c.tags || []).forEach(function(t){ if (t) cnt[t] = (cnt[t] || 0) + 1; });
+    });
+    return Object.keys(cnt).sort(function(a, b){
+      return (cnt[b] - cnt[a]) || String(a).localeCompare(String(b), 'zh');
+    }).slice(0, 24);
+  }
+  function tlpRenderTags(){
+    var bar = document.getElementById('tlp-tag-bar');
+    if (!bar) return;
+    var tags = tlpTagNames();
+    if (tlpTag && tags.indexOf(tlpTag) < 0) tags = [tlpTag].concat(tags);
+    var html = tags.map(function(t){
+      return '<button type="button" class="chip tag-chip' + (tlpTag === t ? ' active' : '') + '" data-ttag="' + esc(t) + '">#' + esc(t) + '</button>';
+    }).join('');
+    if (tlpTag) html += '<button type="button" class="chip tlp-tagclear" id="tlp-tag-clear">✕ 清除标签</button>';
+    if (bar.innerHTML !== html) bar.innerHTML = html;
+    bar.style.display = tags.length ? 'flex' : 'none';
+    if (!bar.__bound){
+      bar.__bound = true;
+      bar.addEventListener('click', function(e){
+        if (e.target.closest('#tlp-tag-clear')){ tlpTag = ''; page = 0; refresh(); return; }
+        var b = e.target.closest('[data-ttag]'); if (!b) return;
+        var t = b.getAttribute('data-ttag') || '';
+        tlpTag = (tlpTag === t) ? '' : t;
+        page = 0;
+        refresh();
       });
     }
   }
@@ -10759,6 +10805,7 @@ function moTLDateMap(d){
   }
   function renderFan(){
     tlpRenderCats();
+    tlpRenderTags();
     var list = fanList();
     PER_PAGE = calcPerPage();
     var pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
@@ -10801,6 +10848,7 @@ function moTLDateMap(d){
     tracks.forEach(function(t){
       (d.orders[t] || []).forEach(function(id){
         var c = findCard(id); if (!c) return;
+        if (tlpTag && (c.tags || []).indexOf(tlpTag) < 0) return;
         var k = c.category || '其他'; catCnt[k] = (catCnt[k] || 0) + 1; catTotal++;
         if (stripCat && c.category !== stripCat) return;
         rows.push({ id: id, trk: t });
