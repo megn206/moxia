@@ -2222,7 +2222,7 @@ body.view-list .card.covered::before{content:none}
   .logo-seal{width:22px;height:22px;font-size:12px}
   .logo-sub{display:none}
   .header-actions{gap:6px;width:auto}
-  #btn-new,#btn-draw,#btn-sync,#btn-pause,#btn-more{font-size:12.5px;padding:7px 10px}
+  #btn-new,#btn-draw,#btn-sync,#btn-more{font-size:12.5px;padding:7px 10px}
   #btn-new{padding:7px 12px}
   .desk-only{display:none!important}
   #btn-more{display:inline-block;position:relative}
@@ -2308,7 +2308,6 @@ body.view-list .card.covered::before{content:none}
 #btn-sync.m-err .dot-led{background:#c0563e}
 #btn-sync.m-off .dot-led{background:var(--faint)}
 #btn-sync.m-pause .dot-led{background:#b98a3c}
-#btn-pause.on{color:var(--accent);border-color:var(--accent)}
 @keyframes led-blink{50%{opacity:.3}}
 #sync-modal .srv-line{
   background:var(--tag-bg);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--tag-ink);
@@ -3046,7 +3045,6 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
         <button type="button" class="rs-tool" data-hit="rel-export" title="导出整张图为 PNG">💾 导出</button>
         <button type="button" class="rs-tool" data-hit="wa-dock-theme" title="妆阁：主题 / 美化">🎨 妆阁</button>
         <button type="button" class="rs-tool" data-hit="wa-dock-sync" title="云阁：同步 / 备份">🏮 云阁</button>
-        <button type="button" class="rs-tool" id="rs-pause" data-hit="btn-pause" title="暂停后台自动同步" hidden>⏸ 暂停</button>
       </div>
       <div class="rs-sec">画布 <span class="rs-sec-tip">布局 / 折叠 / 聚焦</span></div>
     <div class="rs-tools" id="rs-canvas-tools">
@@ -3211,7 +3209,6 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <button class="btn ghost dock-mode-idea" id="btn-draw" title="随机抽一张灵感卡片">🎲 天机</button>
       <button class="btn ghost dock-mode-idea" id="btn-dupcheck" title="相似查重：找出相似度 70% 以上的卡片，一键删减重复内容">🪞 照鉴</button>
       <button class="btn ghost m-off" id="btn-sync" title="云端同步 / 备份导出 / 数据导入"><span class="dot-led"></span><span>🏮 墨匣云阁</span></button>
-      <button class="btn ghost" id="btn-pause" hidden title="暂停后台自动同步（改动会先攒在本机）">⏸ 暂停</button>
       <button id="streak-badge" class="dock-mode-idea" title="点我看创作日历">🔥 文火 0 天</button>
                   <button class="btn ghost" id="btn-sticky" title="贴一张便签，写临时备忘">🗒 便笺</button>
             <button class="btn ghost" id="btn-tools" title="功能工具箱：识别图片文字等，后续新功能都加在这里">🧩 百宝</button>
@@ -4194,6 +4191,13 @@ function catShape(n){
   for (var i=0;i<CATS.length;i++) if (CATS[i].name===n) return CATS[i].shape||'circle';
   return 'circle';
 }
+function allCatNames(){
+  var seen = {}, out = [];
+  CATS.forEach(function(c){ if(c && c.name && !seen[c.name]){ seen[c.name] = 1; out.push(c.name); } });
+  cards.forEach(function(c){ var k = c.category || '其他'; if(k && !seen[k]){ seen[k] = 1; out.push(k); } });
+  return out;
+}
+
 /* ---------- 同步引擎：IndexedDB 本地镜像 + 服务端推拉 ---------- */
 var DB = null;
 function openDB(){
@@ -4261,19 +4265,10 @@ function setCfg(c){
 function isPaused(){ var c = cfg(); return !!(c && c.paused); }
 function renderPauseBtn(){
   var c = cfg(), p = !!(c && c.paused);
-  var b = document.querySelector('#btn-pause');
-  if (b){
-    b.hidden = !c;
-    b.textContent = p ? '▶ 恢复' : '⏸ 暂停';
-    b.classList.toggle('on', p);
-    b.title = p ? '当前已暂停同步：点此恢复，改动会攒到恢复后统一上传' : '暂停后台自动同步（改动会先攒在本机）';
-  }
   var sw = document.getElementById('s-pause');
   if (sw){ sw.checked = p; sw.disabled = !c; }
   var st = document.getElementById('s-pause-state');
   if (st) st.textContent = !c ? '未配置云端' : (p ? '已暂停 · 改动仅存本机' : '同步运行中');
-  var rp = document.getElementById('rs-pause');
-  if (rp){ rp.hidden = !c; rp.textContent = p ? '▶ 恢复' : '⏸ 暂停'; rp.classList.toggle('on', p); }
 }
 function jget(k){ try { return JSON.parse(localStorage.getItem(k)) || {}; } catch(e){ return {}; } }
 function jset(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
@@ -5536,7 +5531,7 @@ function hl(s){
 }
 
 function renderCats(){
-  var names = ['全部','⭐ 收藏'].concat(CATS.map(function(c){ return c.name; }));
+  var names = ['全部','⭐ 收藏'].concat(allCatNames());
   $('#cat-bar').innerHTML = names.map(function(n){
     return '<button class="chip'+(filter.cat===n?' active':'')+'" data-cat="'+n+'">'+n+'</button>';
   }).join('');
@@ -8490,18 +8485,17 @@ function toggleSyncPause(){
   var c = cfg();
   if (!c){ showToast('请先在「墨匣云阁」保存云端配置，再暂停同步', false); return; }
   c.paused = !c.paused;
-  setCfg(c);                                  // 内部会刷新暂停按钮与开关状态
+  setCfg(c);                                  // 内部会刷新云阁里的暂停勾选与状态文案
   if (c.paused){
     if (syncTimer){ clearTimeout(syncTimer); syncTimer = null; }
     setMode('pause');
-    showToast('⏸ 已暂停后台同步：改动只存本机，点「▶ 恢复」后统一上传', false);
+    showToast('⏸ 已暂停后台同步：改动只存本机，回「🏮 墨匣云阁」取消勾选后统一上传', false);
   } else {
     setMode('ok');
     showToast('▶ 已恢复同步，正在补传暂停期间的改动', false);
     scheduleSync(300);
   }
 }
-$('#btn-pause').addEventListener('click', toggleSyncPause);
 function bindPauseSwitch(){
   var el = document.getElementById('s-pause');
   if (!el || el.__bound) return;
@@ -10578,7 +10572,7 @@ function moTLDateMap(d){
   }
   function renderPool(d){
     // 分类下拉
-    var cats={}; cards.forEach(function(c){ cats[c.category||'其他']=1; });
+    var cats={}; allCatNames().forEach(function(k){ cats[k]=1; });
     var sel=document.getElementById('tlp-pool-cat');
     if(sel){
       var cur=sel.value||poolCat;
@@ -10718,13 +10712,14 @@ function moTLDateMap(d){
       if (!showAll && inAnyTrack(c.id)) return;
       var k = c.category || '其他'; cnt[k] = (cnt[k] || 0) + 1; total++;
     });
+    allCatNames().forEach(function(k){ if (!(k in cnt)) cnt[k] = 0; });
     var keys = Object.keys(cnt).sort(function(a,b){ return cnt[b] - cnt[a]; });
     var AC = 'var(--accent)';
     var html = '<button class="chip' + (fanCat === '' ? ' active' : '') + '" data-tcat="" style="--cc:' + AC + '">' +
                '<i class="cdot"></i><span class="cname">全部</span><span class="cnum">' + total + '</span></button>';
     keys.forEach(function(k){
       var cc = tlpCatColor(k);
-      html += '<button class="chip' + (fanCat === k ? ' active' : '') + '" data-tcat="' + esc(k) + '" style="--cc:' + cc + '">' +
+      html += '<button class="chip' + (fanCat === k ? ' active' : '') + '" data-tcat="' + esc(k) + '" style="--cc:' + cc + (cnt[k] ? '' : ';opacity:.45') + '">' +
               '<i class="cdot"></i><span class="cname">' + esc(k) + '</span><span class="cnum">' + cnt[k] + '</span></button>';
     });
     if (bar.innerHTML !== html) bar.innerHTML = html;
@@ -10742,13 +10737,14 @@ function moTLDateMap(d){
   function tlpRenderStripCats(cnt, total){
     var bar = document.getElementById('tlp-strip-cats');
     if (!bar) return;
+    allCatNames().forEach(function(k){ if (!(k in cnt)) cnt[k] = 0; });
     var keys = Object.keys(cnt).sort(function(a,b){ return cnt[b] - cnt[a]; });
     var AC = 'var(--accent)';
     var html = '<button type="button" class="chip' + (stripCat === '' ? ' active' : '') + '" data-scat="" style="--cc:' + AC + '">' +
                '<i class="cdot"></i><span class="cname">全部</span><span class="cnum">' + total + '</span></button>';
     keys.forEach(function(k){
       var cc = tlpCatColor(k);
-      html += '<button type="button" class="chip' + (stripCat === k ? ' active' : '') + '" data-scat="' + esc(k) + '" style="--cc:' + cc + '">' +
+      html += '<button type="button" class="chip' + (stripCat === k ? ' active' : '') + '" data-scat="' + esc(k) + '" style="--cc:' + cc + (cnt[k] ? '' : ';opacity:.45') + '">' +
               '<i class="cdot"></i><span class="cname">' + esc(k) + '</span><span class="cnum">' + cnt[k] + '</span></button>';
     });
     if (bar.innerHTML !== html) bar.innerHTML = html;
@@ -11019,7 +11015,7 @@ function moTLDateMap(d){
         var sc = findCard(ids[si]);
         if (sc && sc.date) seed = String(sc.date);
       }
-      if (!seed && ids.length) seed = prevCardDate(ids[0]);
+      if (!seed && ids.length){ var pd = prevCardDate(ids[0]); seed = pd ? nextDayOf(pd) : ""; }
       var v = prompt('给选中的 ' + ids.length + ' 张卡设置剧情日期\n格式 2026-03-15（留空则清除日期）', seed || '');
       if (v === null) return;
       var dt = String(v).trim();
@@ -11069,13 +11065,26 @@ function moTLDateMap(d){
     }catch(e){}
     return '';
   }
+  /* 剧情日期默认：上一张有日期的卡的「次日」（+1 天），不再落成现实今天 */
+  function nextDayOf(s){
+    try{
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '').trim());
+      if (!m) return '';
+      var dt = new Date(Date.UTC(+m[1], (+m[2]) - 1, +m[3]));
+      if (isNaN(dt.getTime()) || dt.getUTCMonth() !== (+m[2]) - 1 || dt.getUTCDate() !== +m[3]) return '';
+      dt.setUTCDate(dt.getUTCDate() + 1);
+      var mm = ('0' + (dt.getUTCMonth() + 1)).slice(-2), dd = ('0' + dt.getUTCDate()).slice(-2);
+      return dt.getUTCFullYear() + '-' + mm + '-' + dd;
+    }catch(e){ return ''; }
+  }
   function showTlpDateEditor(cardEl, c){
     if (!cardEl || !ED || !c) return;
     EDIT_ID = c.id;
-    var lean = c.date ? '' : prevCardDate(c.id);
+    var prev = c.date ? '' : prevCardDate(c.id);
+    var lean = prev ? nextDayOf(prev) : '';
     var hint = document.getElementById('te-date-hint');
     document.getElementById('te-date').value = c.date || lean || '';
-    if (hint) hint.textContent = c.date ? '' : (lean ? '默认沿用上一张卡的日期 · ' + String(lean).slice(5) + '，可直接改' : '未填日期：默认沿用上一张卡的日期');
+    if (hint) hint.textContent = c.date ? '' : (lean ? '默认 = 上一张卡 ' + String(prev).slice(5) + ' 的次日 · ' + String(lean).slice(5) + '，可直接改' : '未填日期：默认取上一张卡的次日');
     document.getElementById('te-time').value = c.timeline || '';
     var r = cardEl.getBoundingClientRect();
     var w = 258, h = 214;
@@ -11328,13 +11337,13 @@ function moTLDateMap(d){
   if (!PANEL) return;
   var TLGROUP = document.getElementById('dock-tl');
   var ALL = ['btn-books','btn-theme','btn-outline','btn-cats-edit','btn-new','btn-draw',
-             'btn-dupcheck','streak-badge','btn-sticky','btn-tools','btn-more','btn-sync','btn-pause'];
+             'btn-dupcheck','streak-badge','btn-sticky','btn-tools','btn-more','btn-sync'];
   var PLANS = {
     idea: ['btn-new','btn-draw','btn-dupcheck','btn-books','btn-theme','btn-outline','btn-cats-edit',
-           'streak-badge','btn-sticky','btn-tools','btn-sync','btn-pause','btn-more'],
-    write: ['btn-outline','btn-books','btn-sync','btn-pause','btn-sticky','btn-tools','btn-more'],
-    rel:   ['btn-books','btn-sync','btn-pause','btn-sticky','btn-tools','btn-more'],
-    tl:    ['btn-sync','btn-pause','btn-sticky','btn-tools','btn-more']
+           'streak-badge','btn-sticky','btn-tools','btn-sync','btn-more'],
+    write: ['btn-outline','btn-books','btn-sync','btn-sticky','btn-tools','btn-more'],
+    rel:   ['btn-books','btn-sync','btn-sticky','btn-tools','btn-more'],
+    tl:    ['btn-sync','btn-sticky','btn-tools','btn-more']
   };
   var NAMES = { idea:'灵感', write:'写作', rel:'脉络', tl:'时间线' };
 
@@ -11636,7 +11645,7 @@ window.addEventListener('keydown', function(e){
   });
   document.getElementById('btn-cats-save').addEventListener('click',function(){
     var old=CATS.map(function(c){return {name:c.name,color:c.color,shape:c.shape||'circle'};});
-    var next=[];
+    var next=[]; var rename={};
     listEl.querySelectorAll('.cats-row').forEach(function(row,i){
       var prev=old[+row.dataset.oi]||null;
       var name=row.querySelector('.cat-name').value.trim()||('分类'+(i+1));
@@ -11645,23 +11654,22 @@ window.addEventListener('keydown', function(e){
       var defColor=prev?prev.color:PALETTE[i%PALETTE.length];
       var defShape=prev?(prev.shape||'circle'):'circle';
       next.push({name:name, color:onSw?onSw.dataset.color:defColor, shape:onSh?onSh.dataset.shape:defShape});
+      if(prev && prev.name && prev.name!==name) rename[prev.name]=name;
     });
-    var rename={};
-    old.forEach(function(o){
-      var matched=null;
-      next.forEach(function(n){ if(n.name===o.name) matched=n; });
-      if(matched && matched.name!==o.name) rename[o.name]=matched.name;
-    });
+
     if(Object.keys(rename).length){
-      cards.forEach(function(c){ if(c.category && rename[c.category]) c.category=rename[c.category]; });
+      cards.forEach(function(c){ if(c.category && rename[c.category]){ c.category=rename[c.category]; c.updatedAt=nowStamp(); } });
     }
     var removed=old.filter(function(o){ return !next.some(function(n){ return n.name===o.name; }); }).map(function(o){ return o.name; });
     if(removed.length){
-      cards.forEach(function(c){ if(c.category && removed.indexOf(c.category)>=0) c.category='其他'; });
+      cards.forEach(function(c){ if(c.category && removed.indexOf(c.category)>=0){ c.category='其他'; c.updatedAt=nowStamp(); } });
     }
     CATS=next;
     try{ localStorage.setItem(KEY+'-cats-custom', JSON.stringify(CATS)); }catch(e){}
     markMetaDirty();
+    if (typeof persist==='function') persist();
+    try{ if (window.__moTLFanRefresh) window.__moTLFanRefresh(); }catch(e){}
+    try{ if (window.__moTLRefresh) window.__moTLRefresh(); }catch(e){}
     buildCatPicker();
     modal.classList.remove('show');
     render(true);
