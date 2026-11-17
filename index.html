@@ -10942,15 +10942,30 @@ function moTLDateMap(d){
     var act = (data().active || 'all');
     var track = act === 'all' ? (trackOf(ids[0]) || 'main') : act;
     var beforeId = null;
+    /* 落点序号要以"屏幕上看得见的卡"为准：标签/分类筛选下的可见列表才是空档序号的基准，
+       否则拖到第 N 个空档会按全部卡计算，插进正在被筛掉的卡中间，看起来像"排不了" */
+    var visIds = [], visTrk = [];
+    (act === 'all' ? MO_TRACKS : [{id: track}]).forEach(function(t){
+      ((data().orders || {})[t.id] || []).forEach(function(x){
+        var cc = findCard(x); if (!cc) return;
+        if (tlpTag && (cc.tags || []).indexOf(tlpTag) < 0) return;
+        if (stripCat && (cc.category || '其他') !== stripCat) return;
+        visIds.push(x); visTrk.push(t.id);
+      });
+    });
     if (gap){
       var idx = Number(gap.dataset.idx);
-      var d = data(); var flat = [];
-      (act === 'all' ? MO_TRACKS : [{id: track}]).forEach(function(t){
-        (d.orders[t.id] || []).forEach(function(x){ if (findCard(x)) flat.push(x); });
-      });
-      beforeId = (isNaN(idx) || idx >= flat.length) ? null : flat[idx];
+      if (isNaN(idx) || idx >= visIds.length){
+        beforeId = null;
+        if (act === 'all' && visTrk.length) track = visTrk[visTrk.length - 1];
+      } else {
+        beforeId = visIds[idx];
+        if (act === 'all') track = visTrk[idx] || track;
+      }
     } else {
       beforeId = card.dataset.id;
+      /* 拖到别条轨道的卡上，就跟着进那条轨道，而不是原地弹回 */
+      if (act === 'all') track = trackOf(beforeId) || track;
     }
     if (beforeId && ids.length === 1 && beforeId === ids[0]) { DRAG_ID = null; DRAG_IDS = []; refresh(); return; }
     var anchor = beforeId;
