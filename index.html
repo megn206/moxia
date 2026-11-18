@@ -2779,6 +2779,10 @@ html[data-theme="gothic-gold"] .chip.active,html[data-theme="steampunk-brass"] .
 .tlp-stripcard .sc-body{font-size:11.5px;line-height:1.45;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
 .tlp-stripcard .sc-del{position:absolute;top:3px;right:4px;border:none;background:none;color:var(--faint,#999);cursor:pointer;font-size:12px;line-height:1;padding:2px 4px;border-radius:4px}
 .tlp-stripcard .sc-del:hover{background:var(--hov,var(--line));color:#e5484d}
+.tlp-stripcard .sc-omit{position:absolute;top:3px;right:24px;border:none;background:none;color:var(--faint,#999);cursor:pointer;font-size:11px;line-height:1;padding:2px 5px;border-radius:4px;letter-spacing:.5px}
+.tlp-stripcard .sc-omit:hover{background:var(--hov,var(--line));color:var(--accent)}
+.tl-homit{border:none;background:none;color:var(--faint,#999);cursor:pointer;font-size:11px;padding:1px 4px;border-radius:4px}
+.tl-homit:hover{background:var(--hov,var(--line));color:var(--accent)}
 .tlp-stripcard.tlp-dragging{opacity:.45}
 .tlp-stripgap{flex:0 0 auto;align-self:stretch;width:12px;border-radius:6px;transition:background .15s,width .15s}
 .tlp-stripgap.tlp-over{background:color-mix(in srgb,var(--accent) 55%,transparent);width:26px}
@@ -3105,6 +3109,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <button type="button" data-track="main">主线</button>
       <button type="button" data-track="sub">支线</button>
       <button type="button" data-track="memo">回忆</button>
+      <button type="button" data-track="omit">忽略</button>
     </span>
     <span class="tlp-actions">
       <span class="tlp-modes" id="tlp-modes" title="切换工作模式">
@@ -3115,7 +3120,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       </span>
       <button class="btn ghost" id="tlp-quick" title="时间线快捷功能">⏳ 快捷</button>
       <button class="btn ghost" id="tlp-dock-toggle" title="打开 / 收起功能区">🛠 功能区</button>
-      <button class="btn ghost" id="tlp-sort">📅 按日期排</button>
+      <button class="btn ghost" id="tlp-sort" title="按剧情日期一键排序">📅 按日期排</button>
       <button class="btn ghost" id="tlp-back">← 返回灵感</button>
     </span>
   </div>
@@ -3149,7 +3154,8 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <span class="lnk" id="tlp-strip-track"></span>
       <span id="tlp-strip-count"></span>
       <div class="tlp-strip-cats" id="tlp-strip-cats"></div>
-      <span style="margin-left:auto">拖卡片到空隙可插入排序 · ✕ 移出 · 双击编辑 · 点日期改日期 · Shift 多选 · 🖱 滚轮左右移动</span>
+      <select class="btn ghost tlp-laysel" id="tlp-layout" title="卡片排列方式" aria-label="卡片排列方式"><option value="row">排列：横排一行</option><option value="grid">排列：网格多行</option><option value="col">排列：纵列到底</option></select>
+      <span style="margin-left:auto">拖卡片到空隙可插入排序 · ✕ 移出 · 双击编辑 · 点日期改日期 · Shift 多选 · 🖱 滚轮移动</span>
       <button class="tlp-expbtn" id="tlp-export-md" title="导出当前时间线为 Markdown">⬇ MD</button>
       <button class="tlp-expbtn" id="tlp-export-csv" title="导出当前时间线为 CSV">⬇ CSV</button>
     </div>
@@ -3158,6 +3164,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <button type="button" data-bulk="main">→ 主线</button>
       <button type="button" data-bulk="sub">→ 支线</button>
       <button type="button" data-bulk="memo">→ 回忆</button>
+      <button type="button" data-bulk="omit">〰 省略</button>
       <button type="button" data-bulk="date">📅 批量设日期</button>
       <button type="button" data-bulk="remove">✕ 移出时间线</button>
       <button type="button" data-bulk="all">全选本页</button>
@@ -3225,7 +3232,8 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
             <button class="btn ghost" id="btn-more" title="更多功能">⋯</button>
       <div id="dock-tl" hidden>
       <div class="dock-sec">⏳ 时间线</div>
-      <button class="btn ghost" id="dock-tl-sort" title="把时间线按剧情日期排序">📅 按日期排</button>
+      <select class="btn ghost tlp-laysel" id="dock-tl-layout" title="卡片排列方式" aria-label="卡片排列方式"><option value="row">排列：横排一行</option><option value="grid">排列：网格多行</option><option value="col">排列：纵列到底</option></select>
+      <button class="btn ghost" id="dock-tl-sort" title="按剧情日期一键排序">📅 按日期排</button>
       <button class="btn ghost" id="dock-tl-md" title="导出当前时间线为 Markdown">⬇ 导出 MD</button>
       <button class="btn ghost" id="dock-tl-csv" title="导出当前时间线为 CSV">⬇ 导出 CSV</button>
       <button class="btn ghost" id="dock-tl-undated" title="切换：牌堆只显示未入线的 / 显示全部">👁 显示全部卡片</button>
@@ -3454,6 +3462,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <button type="button" data-track="main">主线</button>
       <button type="button" data-track="sub">支线</button>
       <button type="button" data-track="memo">回忆</button>
+      <button type="button" data-track="omit">忽略</button>
     </span>
     <button type="button" class="btn ghost" id="tl-bar-sort">📅 按日期排</button>
     <span class="tl-bar-tip">从灵感区拖卡片到这条栏任意位置加入 · 上下拖动排序 · ✕ 移出</span>
@@ -5712,11 +5721,29 @@ function updateStreakBadge(){
   if(el) el.textContent='🔥 文火 '+streak+' 天';
 }
 var _chunking = false;   // 分帧渲染进行中标志：期间不做增量渲染，避免与分帧写入冲突
+var _gridLimit = 40;     // v141：窄屏灵感墙首屏只渲染 40 张，避免一次铺满几千张卡
+window.__gridMore = function(){ _gridLimit += 40; render(true); };
+/* v145：窗口跨过 900px 断点时补一次重排，横竖屏切换后首屏限量与排列立刻生效 */
+var _mxNarrow = (window.matchMedia && matchMedia('(max-width:900px)').matches) ? 1 : 0;
+window.addEventListener('resize', function(){
+  var n = (window.matchMedia && matchMedia('(max-width:900px)').matches) ? 1 : 0;
+  if (n === _mxNarrow) return;
+  _mxNarrow = n;
+  clearTimeout(window.__mxResizeT);
+  window.__mxResizeT = setTimeout(function(){ try{ render(true); }catch(e){} }, 220);
+});
+var _lastFilterSig = '';
 function render(force, deltaId){
   var sig = cardsSig() + '##' + filterSig();
   if (!force && sig === lastSig) return;   // 数据和筛选都没变：跳过重建，消除周期闪屏
   lastSig = sig;
   var list = visible();
+  /* v141 手机端：灵感墙只先渲染一屏量，其余点「加载更多」，避免几千张卡的 DOM 与重排 */
+  var _fs = filterSig();
+  if (_fs !== _lastFilterSig){ _lastFilterSig = _fs; _gridLimit = 40; }
+  var _cap = (window.matchMedia && matchMedia('(max-width:900px)').matches) ? _gridLimit : 0;
+  var _more = 0;
+  if (_cap && list.length > _cap){ _more = list.length - _cap; list = list.slice(0, _cap); }
   _trackCache = null;   // 时间线轨道归属可能已变化，重读一次
   renderCats();
   renderTags();
@@ -5761,6 +5788,7 @@ function render(force, deltaId){
   } else {
     grid.innerHTML = list.map(function(c,i){ return cardHtml(c,i); }).join('');
   }
+  if (_more > 0) grid.insertAdjacentHTML('beforeend', '<button type="button" class="grid-more-btn" onclick="__gridMore()">加载更多 · 还有 ' + _more + ' 张</button>');
   var bc = cards.filter(function(x){ return bookOf(x)===curBookId() && x.scope!=='write' && x.scope!=='rel'; }).length;
   $('#stats').innerHTML = '📚 '+bookName(curBookId())+' · 共 ' + bc + ' 张卡片'
     + (list.length!==bc ? ' · 当前显示 ' + list.length + ' 张' : '')
@@ -10357,7 +10385,7 @@ $('#btn-backup-dismiss').addEventListener('click', function(){
 
 
 /* ---------- 多轨剧情时间线：数据 · 左侧面板 · 全页工作台（2026-10-23） ---------- */
-var MO_TRACKS=[{id:'main',name:'主线'},{id:'sub',name:'支线'},{id:'memo',name:'回忆'}];
+var MO_TRACKS=[{id:'main',name:'主线'},{id:'sub',name:'支线'},{id:'memo',name:'回忆'},{id:'omit',name:'忽略'}];
 function moTrackName(t){ for(var i=0;i<MO_TRACKS.length;i++){ if(MO_TRACKS[i].id===t) return MO_TRACKS[i].name; } return '主线'; }
 function tlpCatColor(cat){
   var F0={'人物':'#d9775f','人物卡':'#e06a8a','伏笔卡':'#b48ad9','情节':'#5f8d6e',
@@ -10368,7 +10396,7 @@ function tlpCatColor(cat){
          '世界观':'#7d6b9e','对话':'#c39a2a','场景':'#4a7fa5','作品':'#8a6fc0','其他':'#8a8578'};
   return F[cat]||'#8a8578';
 }
-function moLaneColor(t){ return t==='sub' ? 'var(--accent-hover)' : (t==='memo' ? 'var(--muted)' : 'var(--accent)'); }
+function moLaneColor(t){ if(t==='omit') return '#8a8578'; return t==='sub' ? 'var(--accent-hover)' : (t==='memo' ? 'var(--muted)' : 'var(--accent)'); }
 function moTLSortIds(ids){
   ids=(ids||[]).filter(function(id){ return !!findCard(id); });
   ids.sort(function(a,b){
@@ -10386,7 +10414,7 @@ function moTLSortIds(ids){
 function moTLData(){
   var d=null; try{ d=JSON.parse(localStorage.getItem('moxia-tl-tracks')||'null'); }catch(e){}
   if(!d||!d.orders||!d.trackOf){
-    d={active:'all',trackOf:{},orders:{main:[],sub:[],memo:[]}};
+    d={active:'all',trackOf:{},orders:{main:[],sub:[],memo:[],omit:[]},omitFrom:{}};
     var old=[]; try{ old=JSON.parse(localStorage.getItem('moxia-tl-order')||'[]'); }catch(e){}
     if(Array.isArray(old)&&old.length){
       old.forEach(function(id){ if(findCard(id)){ d.orders.main.push(id); d.trackOf[id]='main'; } });
@@ -10399,6 +10427,8 @@ function moTLData(){
   if(!d.orders.main) d.orders.main=[];
   if(!d.orders.sub) d.orders.sub=[];
   if(!d.orders.memo) d.orders.memo=[];
+  if(!d.orders.omit) d.orders.omit=[];
+  if(!d.omitFrom) d.omitFrom={};
   if(!d.trackOf) d.trackOf={};
   if(!d.active) d.active='all';
   return d;
@@ -10408,12 +10438,17 @@ function moTLSave(d, silent){
   if (silent) return;   // 自动初始化不算本机改动，避免反向覆盖云端已有时间线
   try{ localStorage.setItem('novel-idea-cards-v1-tl-dirty','1'); }catch(e){}
   try{ if (typeof scheduleSync==='function') scheduleSync(); }catch(e){}   // 有改动立即并入同步队列
+  try{ if (window.__tlStripNow) window.__tlStripNow(); }catch(e){}          // v145：本机改动立即刷新横条，不等 900ms 轮询
 }
 function moTLSetActive(t){ var d=moTLData(); d.active=t; moTLSave(d); window._trackCache=null; if(window.__moTLRefresh) window.__moTLRefresh(); }
 function moTLMove(id, track, beforeId, after){
   if(!track) track='main';
   var d=moTLData();
+  var prevT=d.trackOf?d.trackOf[id]:null;
   MO_TRACKS.forEach(function(tr){ var arr=d.orders[tr.id]||[]; var i=arr.indexOf(id); if(i>=0) arr.splice(i,1); });
+  if(!d.omitFrom) d.omitFrom={};
+  if(track==='omit'){ if(prevT && prevT!=='omit' && !d.omitFrom[id]) d.omitFrom[id]=prevT; }
+  else { delete d.omitFrom[id]; }
   var arr=d.orders[track]||(d.orders[track]=[]);
   d.trackOf[id]=track;
   if(beforeId){ var bi=arr.indexOf(beforeId); if(bi<0) bi=arr.length; arr.splice(bi+(after?1:0),0,id); }
@@ -10424,17 +10459,128 @@ function moTLRemove(id){
   var d=moTLData();
   MO_TRACKS.forEach(function(tr){ var arr=d.orders[tr.id]||[]; var i=arr.indexOf(id); if(i>=0) arr.splice(i,1); });
   if(d.trackOf) delete d.trackOf[id];
+  if(d.omitFrom) delete d.omitFrom[id];
   moTLSave(d); window._trackCache=null; if(window.__moTLRefresh) window.__moTLRefresh();
 }
+/* 省略：不动灵感区数据，只把卡片从剧情轨道挪到「忽略」格；再次整理时不会被拖回主线 */
+function moTLOmit(id){
+  var d=moTLData();
+  var from=d.trackOf?d.trackOf[id]:null;
+  MO_TRACKS.forEach(function(tr){ var a=d.orders[tr.id]||[]; var i=a.indexOf(id); if(i>=0) a.splice(i,1); });
+  if(!d.orders.omit) d.orders.omit=[];
+  if(!d.omitFrom) d.omitFrom={};
+  if(from && from!=='omit') d.omitFrom[id]=from;
+  d.orders.omit.push(id); d.trackOf[id]='omit';
+  moTLSave(d); window._trackCache=null;
+  if(window.__moTLRefresh) window.__moTLRefresh();
+  if(window.__moTLOpenFan) window.__moTLOpenFan();
+  return from;
+}
+/* 恢复：从「忽略」格回到省略前的轨道（默认主线），位置排在末尾 */
+function moTLRestore(id){
+  var d=moTLData();
+  var to=(d.omitFrom&&d.omitFrom[id])||'main';
+  if(to==='all'||to==='omit') to='main';
+  MO_TRACKS.forEach(function(tr){ var a=d.orders[tr.id]||[]; var i=a.indexOf(id); if(i>=0) a.splice(i,1); });
+  if(!d.orders[to]) d.orders[to]=[];
+  d.orders[to].push(id); d.trackOf[id]=to;
+  if(d.omitFrom) delete d.omitFrom[id];
+  moTLSave(d); window._trackCache=null;
+  if(window.__moTLRefresh) window.__moTLRefresh();
+  if(window.__moTLOpenFan) window.__moTLOpenFan();
+  return to;
+}
+window.moTLOmit=moTLOmit; window.moTLRestore=moTLRestore;
 function moTLSort(track){
   var d=moTLData();
   var tracks = (track&&track!=='all') ? [track] : MO_TRACKS.map(function(t){ return t.id; });
   tracks.forEach(function(t){ d.orders[t]=moTLSortIds(d.orders[t]||[]); });
   moTLSave(d); if(window.__moTLRefresh) window.__moTLRefresh();
 }
+/* ==== v142 时间线排序方式扩展（9 种，可记忆）==== */
+var TL_SORT_MODES=[
+  {id:'date',name:'剧情日期（正序）'}
+];
+var TL_SORT_KEY='moxia-tl-sort-mode';
+function tlSortMode(){
+  try{ var m=localStorage.getItem(TL_SORT_KEY)||'date'; for(var i=0;i<TL_SORT_MODES.length;i++){ if(TL_SORT_MODES[i].id===m) return m; } }catch(e){}
+  return 'date';
+}
+function tlSortModeName(m){
+  for(var i=0;i<TL_SORT_MODES.length;i++){ if(TL_SORT_MODES[i].id===m) return TL_SORT_MODES[i].name; }
+  return '剧情日期（正序）';
+}
+function tlSortNum(s){ var m=String(s||'').match(/\d+/); return m?parseInt(m[0],10):1e9; }
+function tlSortIds(ids, mode){
+  ids=(ids||[]).filter(function(id){ return !!findCard(id); });
+  function cmp(a,b){ return a<b?-1:(a>b?1:0); }
+  if(mode==='random'){
+    for(var i=ids.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)), t=ids[i]; ids[i]=ids[j]; ids[j]=t; }
+    return {ids:ids, undated:0};
+  }
+  ids.sort(function(a,b){
+    var ca=findCard(a)||{}, cb=findCard(b)||{};
+    if(mode==='created'||mode==='createdDesc'){
+      var ka=Number(ca.createdAt||0), kb=Number(cb.createdAt||0);
+      if(ka!==kb) return mode==='created'?(ka-kb):(kb-ka);
+      return cmp(String(ca.title||''),String(cb.title||''));
+    }
+    if(mode==='updatedDesc'){
+      var ua=Number(ca.updatedAt||0), ub=Number(cb.updatedAt||0);
+      if(ua!==ub) return ub-ua;
+      return cmp(String(ca.date||''),String(cb.date||''));
+    }
+    if(mode==='title'){
+      return String(ca.title||'').localeCompare(String(cb.title||''),'zh');
+    }
+    if(mode==='cat'){
+      var ga=String(ca.category||'其他'), gb=String(cb.category||'其他');
+      if(ga!==gb) return ga.localeCompare(gb,'zh');
+      var dca=String(ca.date||'').trim(), dcb=String(cb.date||'').trim();
+      if(!dca && dcb) return 1;
+      if(dca && !dcb) return -1;
+      return cmp(dca,dcb) || (tlSortNum(ca.timeline)-tlSortNum(cb.timeline));
+    }
+    if(mode==='timeline'){
+      var na=tlSortNum(ca.timeline), nb=tlSortNum(cb.timeline);
+      if(na!==nb) return na-nb;
+      return cmp(String(ca.date||''),String(cb.date||''));
+    }
+    var da=String(ca.date||'').trim(), db=String(cb.date||'').trim();
+    if(!da && db) return 1;
+    if(da && !db) return -1;
+    if(da!==db) return mode==='dateDesc'?(da<db?1:-1):(da<db?-1:1);
+    var ta=tlSortNum(ca.timeline), tb=tlSortNum(cb.timeline);
+    if(ta!==tb) return ta-tb;
+    return String(ca.title||'').localeCompare(String(cb.title||''),'zh');
+  });
+  var undated=0;
+  ids.forEach(function(id){ var c=findCard(id); if(c && !String(c.date||'').trim()) undated++; });
+  return {ids:ids, undated:undated};
+}
+function moTLSortBy(mode, track){
+  mode=mode||tlSortMode();
+  var d=moTLData();
+  var tracks=(track&&track!=='all')?[track]:MO_TRACKS.map(function(t){ return t.id; }).filter(function(id){ return id!=='omit'; });
+  var undated=0;
+  tracks.forEach(function(t){
+    var res=tlSortIds(d.orders[t]||[], mode);
+    d.orders[t]=res.ids; undated+=res.undated;
+  });
+  moTLSave(d); window._trackCache=null;
+  try{ localStorage.setItem(TL_SORT_KEY, mode); }catch(e){}
+  if(window.__moTLRefresh) window.__moTLRefresh();
+  if(window.__moTLOpenFan) window.__moTLOpenFan();
+  if(typeof showToast==='function'){
+    showToast('已按「'+tlSortModeName(mode)+'」排序'+(undated?'（'+undated+' 张无日期排在最后）':''), false);
+  }
+  return {mode:mode, undated:undated};
+}
+window.TL_SORT_MODES=TL_SORT_MODES; window.moTLSortBy=moTLSortBy; window.tlSortMode=tlSortMode;
 function moTLDateMap(d){
   var map={};
   MO_TRACKS.forEach(function(tr){
+    if(tr.id==='omit'){ map[tr.id]={}; return; }
     var s={}; (d.orders[tr.id]||[]).forEach(function(id){ var c=findCard(id); var dt=c?String(c.date||'').trim():''; if(dt) s[dt]=1; });
     map[tr.id]=s;
   });
@@ -10460,6 +10606,7 @@ function moTLDateMap(d){
       +(showTrack?badge(track):'')
       +'<button type="button" class="tl-hmove" data-dir="-1" title="上移">▲</button>'
       +'<button type="button" class="tl-hmove" data-dir="1" title="下移">▼</button>'
+      +(track==='omit' ? '<button type="button" class="tl-homit" data-restore="1" title="恢复到原轨道">↩</button>' : '<button type="button" class="tl-homit" title="省略（移入「忽略」格）">略</button>')
       +'<button type="button" class="tl-hdel" title="从时间线移除">✕</button></div>'
       +'<div class="tl-htitle">'+esc(c.title||'（无标题灵感）')+'</div>'
       +'<div class="tl-hbody">'+esc(c.content||'')+'</div>'
@@ -10491,7 +10638,7 @@ function moTLDateMap(d){
   if(BTN) BTN.addEventListener('click', function(){ show(BAR.hidden); });
   var c1=document.getElementById('tl-bar-close'); if(c1) c1.addEventListener('click', function(){ show(false); });
   var fb=document.getElementById('tl-bar-full'); if(fb) fb.addEventListener('click', function(){ if(window.__switchMode) window.__switchMode('tl'); });
-  var s1=document.getElementById('tl-bar-sort'); if(s1) s1.addEventListener('click', function(){ moTLSort(moTLData().active); showToast('已按日期 + 时间标记自动排序', false); });
+  var s1=document.getElementById('tl-bar-sort'); if(s1) s1.addEventListener('click', function(){ if(window.__tlSortApply) window.__tlSortApply(); else { moTLSort(moTLData().active); showToast('已按日期 + 时间标记自动排序', false); } });
   var suppress=false;
   LIST.addEventListener('dragstart', function(e){ var it=e.target.closest('.tl-hitem'); if(!it) return; e.dataTransfer.setData('text/plain', it.dataset.id); e.dataTransfer.effectAllowed='copyMove'; suppress=true; });
   LIST.addEventListener('dragend', function(){ setTimeout(function(){ suppress=false; }, 60); });
@@ -10508,6 +10655,15 @@ function moTLDateMap(d){
         moTLSave(d0); render(); if(window.__moTLPageRender) window.__moTLPageRender();
         showToast(dir<0?'已上移':'已下移', false);
       }
+      return;
+    }
+    var om=e.target.closest('.tl-homit');
+    if(om){
+      var it1=om.closest('.tl-hitem'); if(!it1) return;
+      var id1=it1.dataset.id;
+      if(om.dataset.restore){ var to1=moTLRestore(id1); showToast('已恢复到「'+moTrackName(to1)+'」', false); }
+      else { moTLOmit(id1); showToast('已省略，移入「忽略」格（卡片仍在灵感区）', false); }
+      render(); if(window.__moTLPageRender) window.__moTLPageRender();
       return;
     }
     var del=e.target.closest('.tl-hdel');
@@ -10648,7 +10804,30 @@ function moTLDateMap(d){
   var sortBtn=document.getElementById('tlp-sort'); if(sortBtn) sortBtn.addEventListener('click', function(){ moTLSort(moTLData().active); });
   var backBtn=document.getElementById('tlp-back'); if(backBtn) backBtn.addEventListener('click', function(){ if(window.__switchMode) window.__switchMode('idea'); });
   window.__moTLOpen=function(){ render(); };
-  setInterval(function(){ if(document.body.classList.contains('mode-tl-body') && !DRAG) render(); }, 2500);
+  /* v141 手机端性能：没有变化就不整页重建（原来每 2.5 秒无条件 render，滚动顿） */
+  var __tlSig = '';
+  function __tlSigCalc(){
+    var d = moTLData();
+    var s = (d.active || '');
+    MO_TRACKS.forEach(function(t){ s += '|' + (d.orders[t.id] || []).join(','); });
+    var ids = (d.orders.main || []).concat(d.orders.sub || [], d.orders.memo || [], d.orders.omit || []);
+    var sum = 0, len = 0;
+    for (var i = 0; i < ids.length; i++){
+      var c = findCard(ids[i]);
+      if (!c) continue;
+      len++;
+      sum += Number(c.updatedAt || 0);
+    }
+    return s + '|' + len + '|' + sum + '|' + cards.length;
+  }
+  setInterval(function(){
+    if (document.hidden) return;
+    if (!document.body.classList.contains('mode-tl-body') || DRAG) return;
+    var sig = __tlSigCalc();
+    if (sig === __tlSig) return;
+    __tlSig = sig;
+    render();
+  }, 2500);
 })();
 
 
@@ -10696,7 +10875,7 @@ function moTLDateMap(d){
   var DRAG_ID = null;
   var lastKey = '';
 
-  function data(){ try { return moTLData(); } catch(e){ return { active:'all', trackOf:{}, orders:{main:[],sub:[],memo:[]} }; } }
+  function data(){ try { return moTLData(); } catch(e){ return { active:'all', trackOf:{}, orders:{main:[],sub:[],memo:[],omit:[]}, omitFrom:{} }; } }
   function trackOf(id){ var d = data(); return d.trackOf[id] || null; }
   function activeTrack(){ var a = data().active || 'all'; return a === 'all' ? 'main' : a; }
   function inAnyTrack(id){ return !!trackOf(id); }
@@ -10885,7 +11064,10 @@ function moTLDateMap(d){
       var tagsHtml = (c.tags && c.tags.length)
         ? '<div class="sc-tags">' + c.tags.slice(0, 4).map(function(t){ return '<span class="sc-tag">#' + esc(t) + '</span>'; }).join('') + '</div>'
         : '';
-      el.innerHTML = '<button type="button" class="sc-del" title="移出时间线">✕</button>'
+      el.innerHTML = (r.trk === 'omit'
+          ? '<button type="button" class="sc-omit" data-restore="1" title="已省略：点击恢复到原轨道">↩</button>'
+          : '<button type="button" class="sc-omit" title="省略：移入「忽略」格">略</button>')
+        + '<button type="button" class="sc-del" title="移出时间线">✕</button>'
         + '<div class="sc-cat">' + esc(c.category || '其他') + '</div>'
         + tagsHtml
         + '<div class="sc-trk">' + esc(moTrackName(r.trk)) + '</div>'
@@ -10902,6 +11084,7 @@ function moTLDateMap(d){
     STRIP.appendChild(end);
   }
 
+  window.__tlStripNow=function(){ lastKey=''; try{ refresh(); }catch(e){} };
   function refresh(){ renderFan(); renderStrip(); try { applySel(); } catch(e) {} try { if (typeof hideHover === 'function') hideHover(); } catch(e) {} }
 
   // ---- 拖拽 ----
@@ -10994,6 +11177,15 @@ function moTLDateMap(d){
     refresh();
   }
   STRIP.addEventListener('click', function(e){
+    var om = e.target.closest('.sc-omit');
+    if (om){
+      var oc = om.closest('.tlp-stripcard'); if (!oc) return;
+      var oid = oc.dataset.id;
+      if (om.dataset.restore){ var to1 = moTLRestore(oid); showToast('已恢复到「' + moTrackName(to1) + '」', false); }
+      else { moTLOmit(oid); showToast('已省略，移入「忽略」格（卡片仍在灵感区）', false); }
+      SEL.delete(oid); applySel(); refresh();
+      return;
+    }
     var b = e.target.closest('.sc-del');
     if (!b) return;
     var card = b.closest('.tlp-stripcard');
@@ -11016,8 +11208,13 @@ function moTLDateMap(d){
     if (!document.body.classList.contains('mode-tl-body')) return;
     if (DRAG_ID) return;
     var d = data();
-    var key = (d.active || '') + '|' + cards.length + '|'
-      + MO_TRACKS.map(function(t){ return (d.orders[t.id] || []).length; }).join(',') + '|' + q + '|' + showAll;
+    var sig = 0, tot = 0;
+    MO_TRACKS.forEach(function(t){
+      var arr = d.orders[t.id] || [];
+      for (var i = 0; i < arr.length; i++){ sig = (sig * 31 + arr[i].charCodeAt(arr[i].length - 1) + i) % 1000000007; tot++; }
+      sig = (sig * 31 + tot) % 1000000007;
+    });
+    var key = (d.active || '') + '|' + cards.length + '|' + sig + '|' + tot + '|' + q + '|' + showAll;
     if (key !== lastKey){ lastKey = key; refresh(); }
   }, 900);
 
@@ -11070,6 +11267,21 @@ function moTLDateMap(d){
       ids.forEach(function(id){ d.orders[op].push(id); d.trackOf[id] = op; });
       moTLSave(d); window._trackCache = null;
       refresh(); showToast('已把 ' + ids.length + ' 张排入「' + moTrackName(op) + '」', false);
+      return;
+    }
+    if (op === 'omit'){
+      var d3 = data();
+      MO_TRACKS.forEach(function(t){ d3.orders[t.id] = (d3.orders[t.id] || []).filter(function(x){ return ids.indexOf(x) < 0; }); });
+      if (!d3.orders.omit) d3.orders.omit = [];
+      if (!d3.omitFrom) d3.omitFrom = {};
+      ids.forEach(function(id){
+        var f = d3.trackOf[id];
+        if (f && f !== 'omit' && !d3.omitFrom[id]) d3.omitFrom[id] = f;
+        d3.orders.omit.push(id); d3.trackOf[id] = 'omit';
+      });
+      moTLSave(d3); window._trackCache = null;
+      refresh(); if(window.__moTLRefresh) window.__moTLRefresh();
+      showToast('已省略 ' + ids.length + ' 张，移入「忽略」格', false);
       return;
     }
     if (op === 'date'){
@@ -11342,14 +11554,17 @@ function moTLDateMap(d){
       return;
     }
 
-    // 下半：横向滚动
-    var maxLeft = STRIP.scrollWidth - STRIP.clientWidth;
-    if (maxLeft <= 4) return;                                 // 没溢出：交还页面
-    var atStart = STRIP.scrollLeft <= 1;
-    var atEnd = STRIP.scrollLeft >= maxLeft - 1;
+    // 下半：横排横向滚动；网格 / 纵列纵向滚动
+    var vert = STRIP.classList.contains('lay-grid') || STRIP.classList.contains('lay-col');
+    var max = vert ? (STRIP.scrollHeight - STRIP.clientHeight) : (STRIP.scrollWidth - STRIP.clientWidth);
+    if (max <= 4) return;                                     // 没溢出：交还页面
+    var pos = vert ? STRIP.scrollTop : STRIP.scrollLeft;
+    var atStart = pos <= 1;
+    var atEnd = pos >= max - 1;
     if ((delta < 0 && atStart) || (delta > 0 && atEnd)) return;   // 到头：交还页面
     e.preventDefault();
-    STRIP.scrollLeft = Math.max(0, Math.min(maxLeft, STRIP.scrollLeft + delta));
+    if (vert) STRIP.scrollTop = Math.max(0, Math.min(max, pos + delta));
+    else STRIP.scrollLeft = Math.max(0, Math.min(max, pos + delta));
   }, { capture: true, passive: false });
 
   var _rzTimer = null;
@@ -11522,7 +11737,7 @@ function moTLDateMap(d){
     QM.addEventListener('click', function(e){
       var b = e.target.closest('[data-q]'); if (!b) return;
       var k = b.getAttribute('data-q');
-      if (k === 'sort') clickId('tlp-sort');
+      if (k === 'sort'){ if (window.__tlSortApply) window.__tlSortApply(); }
       else if (k === 'md') clickId('tlp-export-md');
       else if (k === 'csv') clickId('tlp-export-csv');
       else if (k === 'all'){
@@ -11540,7 +11755,6 @@ function moTLDateMap(d){
   function clickId(id){ var el = document.getElementById(id); if (el) el.click(); }
   function bulk(op){ var b = document.querySelector('#tlp-bulk [data-bulk="' + op + '"]'); if (b) b.click(); }
   var bind = function(id, fn){ var el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
-  bind('dock-tl-sort',   function(){ clickId('tlp-sort'); });
   bind('dock-tl-md',     function(){ clickId('tlp-export-md'); });
   bind('dock-tl-csv',    function(){ clickId('tlp-export-csv'); });
   bind('dock-tl-undated', function(){
@@ -16291,5 +16505,79 @@ header{backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14
 .mode-switch button{transition:transform .16s ease,background-color .16s ease,box-shadow .16s ease}
 .mode-switch button:hover{transform:translateY(-1px)}
 </style>
+<style id="mx-mobile-perf">
+/* ===== v141 手机端性能收敛：去掉最费 GPU 的几项，视觉基本不变 ===== */
+@media (max-width:900px),(pointer:coarse){
+  /* 1) 固定背景在手机上每滚动一帧都要重绘整屏大图，改成随内容滚动 */
+  html[data-theme] body,body.bg-custom-img,html body,body,#write-app,#rel-page{background-attachment:scroll!important}
+  /* 2) 毛玻璃（backdrop-filter）在移动 GPU 上极贵，换实色 */
+  header,.dock-panel,.overlay .modal,#write-topbar,.tlp-head,.chip,.cat-flag,html[data-theme] .card{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+  header{background:var(--bg)!important}
+  .dock-panel{background:var(--bg)!important}
+  .overlay .modal{background:var(--card)!important}
+  /* 3) 卡片不透明 + 轻阴影，减少每张卡单独的合成层 */
+  .grid .card{background:var(--card)!important;box-shadow:0 1px 4px rgba(0,0,0,.10)!important}
+  .tlp-fancard,.tlp-stripcard{box-shadow:0 2px 8px rgba(0,0,0,.12)!important}
+  .card,.tlp-fancard,.tlp-stripcard{animation:none!important;transition-duration:.12s!important}
+  .grid .card:hover{transform:none!important;box-shadow:0 1px 4px rgba(0,0,0,.10)!important}
+  /* 4) 屏幕外的灵感卡不参与布局与绘制 */
+  .grid .card{content-visibility:auto;contain-intrinsic-size:auto 200px}
+  *{-webkit-tap-highlight-color:transparent}
+  /* 5) 加载更多按钮 */
+  .grid-more-btn{grid-column:1/-1;width:100%;padding:14px 0;margin:6px 0 18px;border:1px dashed var(--line);border-radius:12px;background:color-mix(in srgb,var(--card) 92%,transparent);color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer}
+  .grid-more-btn:active{background:var(--card)}
+}
+</style>
+<style id="mx-v144-layout">
+.tlp-laysel{-webkit-appearance:none;appearance:none;padding:5px 24px 5px 10px;border-radius:999px;font-size:12.5px;line-height:1.4;cursor:pointer;color:var(--ink);border:1px solid var(--line);background-color:transparent;
+  background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 13px) 52%,calc(100% - 8px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.dock-panel .tlp-laysel{width:100%;text-align:left;padding:7px 24px 7px 10px;border-radius:10px}
+.tlp-laysel:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){.tlp-laysel{font-size:12px;padding:4px 20px 4px 8px}}
+#tlp-strip.lay-grid{flex-wrap:wrap;align-content:flex-start;align-items:flex-start;overflow-x:hidden;overflow-y:auto;gap:12px;padding:10px 12px}
+#tlp-strip.lay-grid .tlp-stripcard{max-height:none}
+#tlp-strip.lay-grid .tlp-stripend{margin-left:0}
+#tlp-strip.lay-grid::-webkit-scrollbar,#tlp-strip.lay-col::-webkit-scrollbar{display:block;width:9px;height:9px}
+#tlp-strip.lay-grid::-webkit-scrollbar-thumb,#tlp-strip.lay-col::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 34%,transparent);border-radius:8px}
+#tlp-strip.lay-col{flex-direction:column;align-items:stretch;overflow-x:hidden;overflow-y:auto;gap:8px;padding:10px 12px}
+#tlp-strip.lay-col .tlp-stripcard{width:100%;max-width:760px;max-height:none;margin:0 auto;box-sizing:border-box}
+#tlp-strip.lay-col .tlp-stripgap{width:auto;height:8px;align-self:stretch}
+#tlp-strip.lay-col .tlp-stripend{align-self:stretch;margin-left:0;text-align:center}
+#tlp-stripwrap.lay-grid,#tlp-stripwrap.lay-col{max-height:min(56vh,560px)}
+@media (max-width:720px){#tlp-stripwrap.lay-grid,#tlp-stripwrap.lay-col{max-height:min(52vh,460px)}}
+.tlp-actions{flex-wrap:wrap;justify-content:flex-end;row-gap:6px}
+@media (max-width:720px){.tlp-actions{width:100%;margin-left:0;justify-content:flex-start}}
+</style>
+<script>
+(function(){
+  var LAY_KEY='moxia-tl-layout';
+  function layGet(){ try{ var v=localStorage.getItem(LAY_KEY); return (v==='grid'||v==='col')?v:'row'; }catch(e){ return 'row'; } }
+  function layApply(v){
+    v=(v==='grid'||v==='col')?v:'row';
+    var strip=document.getElementById('tlp-strip'), wrap=document.getElementById('tlp-stripwrap');
+    if(strip){ strip.className=strip.className.replace(/\s*lay-(row|grid|col)/g,''); strip.classList.add('lay-'+v); }
+    if(wrap){ wrap.className=wrap.className.replace(/\s*lay-(row|grid|col)/g,''); wrap.classList.add('lay-'+v); }
+    var sels=[document.getElementById('tlp-layout'), document.getElementById('dock-tl-layout')];
+    for(var i=0;i<sels.length;i++){ if(sels[i]) sels[i].value=v; }
+    try{ localStorage.setItem(LAY_KEY, v); }catch(e){}
+    window.__tlLayout=v; window.__tlLayoutApply=layApply;
+    return v;
+  }
+  function wire(){
+    layApply(layGet());
+    [document.getElementById('tlp-layout'), document.getElementById('dock-tl-layout')].forEach(function(s){
+      if(!s) return;
+      s.addEventListener('change', function(){ layApply(this.value); });
+      s.addEventListener('click', function(e){ e.stopPropagation(); });
+    });
+    window.__tlSortApply=function(){ if(window.moTLSortBy) window.moTLSortBy('date'); };
+    ['tlp-sort','dock-tl-sort'].forEach(function(id){
+      var btn=document.getElementById(id); if(!btn) return;
+      btn.addEventListener('click', function(){ window.__tlSortApply(); });
+    });
+  }
+  if(document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded', wire);
+})();
+</script>
 </body>
 </html>
