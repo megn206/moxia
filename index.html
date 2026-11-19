@@ -2308,6 +2308,8 @@ body.view-list .card.covered::before{content:none}
 #btn-sync.m-err .dot-led{background:#c0563e}
 #btn-sync.m-off .dot-led{background:var(--faint)}
 #btn-sync.m-pause .dot-led{background:#b98a3c}
+#btn-sync-pause,#s-pause-btn{white-space:nowrap}
+#btn-sync-pause.pa-on,#s-pause-btn.pa-on{color:#8a6a21;border-color:#d3bd8e;background:rgba(211,189,142,.16)}
 @keyframes led-blink{50%{opacity:.3}}
 #sync-modal .srv-line{
   background:var(--tag-bg);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--tag-ink);
@@ -3226,6 +3228,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <button class="btn ghost dock-mode-idea" id="btn-draw" title="随机抽一张灵感卡片">🎲 天机</button>
       <button class="btn ghost dock-mode-idea" id="btn-dupcheck" title="相似查重：找出相似度 70% 以上的卡片，一键删减重复内容">🪞 照鉴</button>
       <button class="btn ghost m-off" id="btn-sync" title="云端同步 / 备份导出 / 数据导入"><span class="dot-led"></span><span>🏮 墨匣云阁</span></button>
+      <button class="btn ghost" id="btn-sync-pause" title="暂停 / 恢复后台同步" style="display:none">⏸ 暂停同步</button>
       <button id="streak-badge" class="dock-mode-idea" title="点我看创作日历">🔥 文火 0 天</button>
                   <button class="btn ghost" id="btn-sticky" title="贴一张便签，写临时备忘">🗒 便笺</button>
             <button class="btn ghost" id="btn-tools" title="功能工具箱：识别图片文字等，后续新功能都加在这里">🧩 百宝</button>
@@ -3649,11 +3652,8 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <span class="hint" id="s-auto-state" style="margin-left:auto"></span>
     </div>
     <div class="srv-line" id="s-pause-line" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">
-        <input type="checkbox" id="s-pause" style="accent-color:var(--accent)">
-        <span>⏸ 暂停后台同步（改动先攒在本机，恢复后统一上传）</span>
-      </label>
-      <span class="hint" id="s-pause-state" style="margin-left:auto"></span>
+      <button type="button" class="btn ghost" id="s-pause-btn" title="暂停后台同步：改动先攒在本机，恢复后统一上传">⏸ 暂停同步</button>
+      <span class="hint" id="s-pause-state" style="margin-left:auto">同步运行中</span>
     </div>
     <div id="s-sb">
       <input type="text" id="s-server" placeholder="Supabase 项目 URL，如 https://abcd1234.supabase.co">
@@ -4282,10 +4282,22 @@ function setCfg(c){
   renderPauseBtn();
 }
 function isPaused(){ var c = cfg(); return !!(c && c.paused); }
-function renderPauseBtn(){
+function renderPauseBtn(){   // v146：暂停改成按钮，面板 + 顶栏两处同源
   var c = cfg(), p = !!(c && c.paused);
-  var sw = document.getElementById('s-pause');
-  if (sw){ sw.checked = p; sw.disabled = !c; }
+  var btn = document.getElementById('s-pause-btn');
+  if (btn){
+    btn.textContent = p ? '▶ 恢复同步' : '⏸ 暂停同步';
+    btn.classList.toggle('pa-on', p);
+    btn.disabled = !c;
+    btn.title = !c ? '先在下方保存云端配置，才能暂停同步' : (p ? '点一下恢复同步，并补传暂停期间的改动' : '点一下暂停后台同步：改动先攒在本机，恢复后统一上传');
+  }
+  var quick = document.getElementById('btn-sync-pause');
+  if (quick){
+    quick.style.display = c ? '' : 'none';
+    quick.textContent = p ? '▶ 恢复同步' : '⏸ 暂停同步';
+    quick.classList.toggle('pa-on', p);
+    quick.title = p ? '已暂停：改动只存本机，点一下恢复并补传' : '点一下暂停后台同步：改动先攒在本机，恢复后统一上传';
+  }
   var st = document.getElementById('s-pause-state');
   if (st) st.textContent = !c ? '未配置云端' : (p ? '已暂停 · 改动仅存本机' : '同步运行中');
 }
@@ -8519,6 +8531,8 @@ else if (btn.getAttribute('data-ck')==='local' && item.local && item.local.id){
   renderConflicts(); updateConflictBtn();
 });
 $('#btn-sync').addEventListener('click', openSyncModal);
+bindPauseSwitch();
+renderPauseBtn();
 function toggleSyncPause(){
   var c = cfg();
   if (!c){ showToast('请先在「墨匣云阁」保存云端配置，再暂停同步', false); return; }
@@ -8527,7 +8541,7 @@ function toggleSyncPause(){
   if (c.paused){
     if (syncTimer){ clearTimeout(syncTimer); syncTimer = null; }
     setMode('pause');
-    showToast('⏸ 已暂停后台同步：改动只存本机，回「🏮 墨匣云阁」取消勾选后统一上传', false);
+    showToast('⏸ 已暂停后台同步：改动只存本机，点「▶ 恢复同步」后统一上传', false);
   } else {
     setMode('ok');
     showToast('▶ 已恢复同步，正在补传暂停期间的改动', false);
@@ -8535,10 +8549,10 @@ function toggleSyncPause(){
   }
 }
 function bindPauseSwitch(){
-  var el = document.getElementById('s-pause');
-  if (!el || el.__bound) return;
-  el.__bound = true;
-  el.addEventListener('change', toggleSyncPause);
+  var el = document.getElementById('s-pause-btn');
+  if (el && !el.__bound){ el.__bound = true; el.addEventListener('click', toggleSyncPause); }
+  var q = document.getElementById('btn-sync-pause');
+  if (q && !q.__bound){ q.__bound = true; q.addEventListener('click', toggleSyncPause); }
 }
 $('#btn-sync-cancel').addEventListener('click', function(){ syncModal.classList.remove('show'); });
 syncModal.addEventListener('click', function(e){ if (e.target===this) this.classList.remove('show'); });
@@ -8596,7 +8610,7 @@ $('#btn-sync-save').addEventListener('click', function(){
   setCfg(nc);
   syncModal.classList.remove('show');
   var afterSave = function(){
-    if (isPaused()){ var cp = cfg(); if (cp){ cp.paused = false; setCfg(cp); showToast('▶ 已恢复同步（手动保存并同步会自动恢复暂停）', false); } }
+    if (isPaused()){ var cp = cfg(); if (cp){ cp.paused = false; setCfg(cp); showToast('▶ 已恢复同步（手动「保存并同步」会自动解除暂停）', false); } }
     runSync(); scheduleSync(12000);
     showToast(wasSame ? '已保存' : '已开启云端同步', false);
   };
