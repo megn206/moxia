@@ -2516,21 +2516,37 @@ body.mode-rel-body #rel-minimap{display:block}
 #tl-bar{position:fixed;left:0;top:0;bottom:0;right:auto;width:340px;max-width:86vw;z-index:1050;background:var(--card);border-top:none;border-right:1px solid var(--line);box-shadow:14px 0 34px var(--modal-shadow);padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px;transition:background-color .3s}
 #tl-bar[hidden]{display:none}
 .tl-bar-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 2px 8px;border-bottom:1px dashed var(--line);margin-bottom:6px}
-.tl-bar-title{font-weight:700;font-size:14px;color:var(--ink);letter-spacing:.5px}
+.tl-bar-title{font-weight:700;font-size:14px;color:var(--ink);letter-spacing:.5px;flex:1 1 auto;min-width:0;white-space:nowrap}
 .tl-bar-tip{font-size:11px;color:var(--faint);flex-basis:100%;line-height:1.5}
-#tl-bar-sort{margin-left:auto}
+#tl-bar-sort{margin-left:0}
+.tl-bar-x{background:none;border:0;color:var(--faint);font-size:15px;line-height:1;cursor:pointer;padding:3px 6px;border-radius:6px;flex:none}
+.tl-bar-x:hover{color:var(--accent);background:var(--hover)}
+.tl-mini{background:var(--hover);border:1px solid var(--line);border-radius:8px;color:var(--ink-soft);font-size:11px;padding:3px 9px;cursor:pointer;line-height:1.45;transition:.15s}
+.tl-mini:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+/* 移动按钮常显，保持与旧版一致 */
+
+/* v149：面板内搜索 + 选中态 */
+.tl-bar-searchrow{display:flex;align-items:center;gap:6px;flex-basis:100%;margin-top:2px}
+#tl-bar-search{flex:1;min-width:80px;background:var(--input-bg);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:12px;color:var(--ink);outline:none;transition:.15s}
+#tl-bar-search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+#tl-bar-qcount{font-size:11px;color:var(--faint);white-space:nowrap}
+.tl-hitem.on .tl-hcard{border-color:var(--accent);background:color-mix(in srgb,var(--accent-soft) 55%,var(--card));box-shadow:0 0 0 3px var(--accent-soft),var(--shadow-hover);transform:none}
+.tl-hitem.on .tl-hdot{transform:scale(1.18)}
+/* 悬停时把两行摘要放开到六行，长内容不用点进去也能看个大概 */
+.tl-hitem:hover .tl-hbody{-webkit-line-clamp:6}
+.tl-hitem:hover .tl-htitle{-webkit-line-clamp:3}
 .tl-bar-body{position:relative;min-height:0;overflow-x:hidden;overflow-y:auto;flex:1;padding:0 4px 6px}
 .tl-hline{position:absolute;left:6px;top:2px;bottom:10px;width:2px;height:auto;background:linear-gradient(180deg,transparent,var(--accent-line) 6%,var(--accent-line) 94%,transparent);border-radius:2px}
 #tl-bar-list{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:18px 2px 14px 24px;min-width:0;position:relative}
 .tl-hitem{position:relative;width:100%;flex:none;cursor:grab;transition:.15s}
 .tl-hitem.tl-hdrag{opacity:.4}
 .tl-hdot{position:absolute;left:-27px;top:16px;width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-deep));border:3px solid var(--card);box-shadow:0 0 0 2px var(--accent-line);box-sizing:border-box}
-.tl-hcard{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;text-align:left;cursor:pointer;transition:.15s;width:100%;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.tl-hcard{position:relative;display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 11px;text-align:left;cursor:pointer;transition:.15s;width:100%;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .tl-hcard:hover{border-color:var(--accent);box-shadow:var(--shadow-hover);transform:translateY(-1px)}
-.tl-hhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.tl-hdate{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--accent);background:var(--hover);padding:1px 8px;border-radius:999px;white-space:nowrap}
+.tl-hhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-right:16px}
+.tl-hdate{display:inline-block;vertical-align:middle;font-size:11px;font-weight:600;color:var(--accent);background:var(--hover);padding:1px 8px;border-radius:999px;white-space:nowrap;max-width:66%;overflow:hidden;text-overflow:ellipsis}
 .tl-htime{font-size:11px;color:var(--faint);white-space:nowrap}
-.tl-hdel{margin-left:auto;background:none;border:none;color:var(--faint);font-size:11px;cursor:pointer;padding:1px 4px;border-radius:5px;line-height:1}
+.tl-hdel{position:absolute;right:7px;top:6px;background:none;border:none;color:var(--faint);font-size:11px;cursor:pointer;padding:1px 4px;border-radius:5px;line-height:1;z-index:1}
 .tl-hdel:hover{background:var(--hover);color:var(--accent)}
 .tl-htitle{font-size:13px;font-weight:600;color:var(--ink);margin:6px 0 3px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .tl-hbody{font-size:11.5px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;word-break:break-word}
@@ -3461,6 +3477,9 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
 <div id="tl-bar" hidden>
   <div class="tl-bar-head">
     <span class="tl-bar-title">⏱ 剧情时间线</span>
+    <button type="button" class="tl-mini" id="tl-bar-sort">📅 按日期排</button>
+    <button type="button" class="tl-mini" id="tl-bar-full" title="打开整页多轨时间线">⏳ 全屏</button>
+    <button type="button" class="tl-bar-x" id="tl-bar-close" title="收起时间线">✕</button>
     <span class="tl-tracks" id="tl-tracks">
       <button type="button" data-track="all" class="on">全部</button>
       <button type="button" data-track="main">主线</button>
@@ -3468,10 +3487,11 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <button type="button" data-track="memo">回忆</button>
       <button type="button" data-track="omit">忽略</button>
     </span>
-    <button type="button" class="btn ghost" id="tl-bar-sort">📅 按日期排</button>
-    <span class="tl-bar-tip">从灵感区拖卡片到这条栏任意位置加入 · 上下拖动排序 · ✕ 移出</span>
-    <button type="button" class="btn ghost" id="tl-bar-full" title="打开整页多轨时间线">⏳ 全屏</button>
-    <button type="button" class="btn ghost" id="tl-bar-close">收起</button>
+    <div class="tl-bar-searchrow">
+      <input type="text" id="tl-bar-search" placeholder="在时间线里搜标题 / 正文 / 标签…" autocomplete="off">
+      <span id="tl-bar-qcount"></span>
+    </div>
+    <span class="tl-bar-tip">拖入即加入 · 上下拖动排序 · ✕ 移出 · 单击定位，双击编辑</span>
   </div>
   <div class="tl-bar-body">
     <div class="tl-hline"></div>
@@ -5868,6 +5888,27 @@ function render(force, deltaId){
   if (!_chunking && _gridList && _gridList.length > _gridShown) grid.insertAdjacentHTML('beforeend', gridMoreHtml(_gridList.length - _gridShown));
   paintGridStats();
 }
+/* v149：时间线面板点条目时，把对应卡片铺出来并定位高亮（超出首批就按索引扩一批） */
+window.__revealCard = function(id){
+  try{
+    var list = visible();
+    var idx = -1;
+    for (var i=0;i<list.length;i++){ if (list[i].id===id){ idx=i; break; } }
+    if (idx < 0) return false;
+    var sel = '.card[data-id="'+id+'"]';
+    var el = grid.querySelector(sel);
+    if (!el || idx >= _gridShown){
+      _gridLimit = Math.min(list.length, idx + 1);
+      render(true);
+      el = grid.querySelector(sel);
+    }
+    if (!el) return false;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.classList.remove('link-target'); void el.offsetWidth; el.classList.add('link-target');
+    setTimeout(function(){ try{ el.classList.remove('link-target'); }catch(e){} }, 1800);
+    return true;
+  }catch(e){ return false; }
+};
 
 /* ================= 章节体系：章号/状态/分卷 + 目录树 + 导出成书 ================= */
 function chapLabel(c){
@@ -10689,14 +10730,16 @@ function moTLDateMap(d){
   var TRACK_EL=document.getElementById('tl-tracks');
   if(!BAR||!LIST) return;
   function badge(track){ return '<span class="tl-htrack">'+moTrackName(track)+'</span>'; }
+  var panelQ = '', panelQText = '', selId = '';
   function itemHtml(id, track, showTrack){
     var c=findCard(id); if(!c) return '';
-    return '<div class="tl-hitem" data-id="'+id+'" data-track="'+track+'" draggable="true" style="--lane-color:'+moLaneColor(track)+'">'
+    return '<div class="tl-hitem'+(selId===id?' on':'')+'" data-id="'+id+'" data-track="'+track+'" draggable="true" style="--lane-color:'+moLaneColor(track)+'">'
       +'<span class="tl-hdot"></span>'
       +'<div class="tl-hcard">'
       +'<div class="tl-hhead">'
-      +(c.date?'<span class="tl-hdate">📅 '+esc(String(c.date).slice(5))+'</span>':'<span class="tl-hdate">📎 未标日期</span>')
-      +(c.timeline?'<span class="tl-htime">⏱ '+esc(c.timeline)+'</span>':'')
+      +(c.date
+          ? '<span class="tl-hdate" title="'+esc(String(c.date))+(c.timeline?' '+esc(c.timeline):'')+'">'+esc(String(c.date).slice(5))+(c.timeline?' · '+esc(c.timeline):'')+'</span>'
+          : '<span class="tl-hdate">未标日期'+(c.timeline?' · '+esc(c.timeline):'')+'</span>')
       +(showTrack?badge(track):'')
       +'<button type="button" class="tl-hmove" data-dir="-1" title="上移">▲</button>'
       +'<button type="button" class="tl-hmove" data-dir="1" title="下移">▼</button>'
@@ -10706,24 +10749,38 @@ function moTLDateMap(d){
       +'<div class="tl-hbody">'+esc(c.content||'')+'</div>'
       +'</div></div>';
   }
+  function matchQ(c){
+    if(!panelQ) return true;
+    return (((c.title||'')+' '+(c.content||'')+' '+((c.tags||[]).join(' '))).toLowerCase().indexOf(panelQ)>=0);
+  }
   function render(){
     var d=moTLData(), active=d.active;
     if(TRACK_EL){ [].forEach.call(TRACK_EL.querySelectorAll('button'), function(b){ b.classList.toggle('on', b.dataset.track===active); }); }
-    var html='';
+    var html='', total=0;
     if(active==='all'){
       MO_TRACKS.forEach(function(tr){
-        var ids=(d.orders[tr.id]||[]).filter(function(id){ return !!findCard(id); });
+        var all=(d.orders[tr.id]||[]).filter(function(id){ return !!findCard(id); });
+        var ids=all.filter(function(id){ return matchQ(findCard(id)); });
         if(!ids.length) return;
-        html+='<div class="tl-all-group">'+tr.name+' · '+ids.length+' 张</div>';
+        total+=ids.length;
+        html+='<div class="tl-all-group">'+tr.name+' · '+ids.length+' 张'+(panelQ?'（共 '+all.length+'）':'')+'</div>';
         ids.forEach(function(id){ html+=itemHtml(id,tr.id,true); });
       });
-      if(!html) html='<div class="tl-hdrop-hint">把主页面里的灵感卡片拖到这里，开始整理剧情时间线</div>';
+      if(!html) html = panelQ
+        ? '<div class="tl-hdrop-hint">时间线里没有匹配「'+esc(panelQText)+'」的卡片</div>'
+        : '<div class="tl-hdrop-hint">把主页面里的灵感卡片拖到这里，开始整理剧情时间线</div>';
     }else{
-      var ids=(d.orders[active]||[]).filter(function(id){ return !!findCard(id); });
-      if(!ids.length) html='<div class="tl-hdrop-hint">「'+moTrackName(active)+'」还没有卡片：把灵感卡片拖到这里加入</div>';
-      else ids.forEach(function(id){ html+=itemHtml(id,active,false); });
+      var all2=(d.orders[active]||[]).filter(function(id){ return !!findCard(id); });
+      var ids2=all2.filter(function(id){ return matchQ(findCard(id)); });
+      total=ids2.length;
+      if(!ids2.length) html = panelQ
+        ? '<div class="tl-hdrop-hint">「'+moTrackName(active)+'」里没有匹配「'+esc(panelQText)+'」的卡片</div>'
+        : '<div class="tl-hdrop-hint">「'+moTrackName(active)+'」还没有卡片：把灵感卡片拖到这里加入</div>';
+      else ids2.forEach(function(id){ html+=itemHtml(id,active,false); });
     }
     LIST.innerHTML=html;
+    var qc=document.getElementById('tl-bar-qcount');
+    if(qc) qc.textContent = panelQ ? ('匹配 '+total+' 张') : '';
   }
   window.__moTLPanelRender=render;
   window.__moTLRefresh=function(){ if(window.__moTLPanelRender) window.__moTLPanelRender(); if(window.__moTLPageRender) window.__moTLPageRender(); };
@@ -10733,6 +10790,17 @@ function moTLDateMap(d){
   var c1=document.getElementById('tl-bar-close'); if(c1) c1.addEventListener('click', function(){ show(false); });
   var fb=document.getElementById('tl-bar-full'); if(fb) fb.addEventListener('click', function(){ if(window.__switchMode) window.__switchMode('tl'); });
   var s1=document.getElementById('tl-bar-sort'); if(s1) s1.addEventListener('click', function(){ if(window.__tlSortApply) window.__tlSortApply(); else { moTLSort(moTLData().active); showToast('已按日期 + 时间标记自动排序', false); } });
+  /* v149：面板内搜索（标题/正文/标签），Esc 清空 */
+  var SEARCH=document.getElementById('tl-bar-search'), qT=0;
+  if(SEARCH){
+    SEARCH.addEventListener('input', function(){
+      clearTimeout(qT);
+      qT=setTimeout(function(){ panelQText=SEARCH.value.trim(); panelQ=panelQText.toLowerCase(); render(); }, 150);
+    });
+    SEARCH.addEventListener('keydown', function(e){
+      if(e.key==='Escape' && SEARCH.value){ e.stopPropagation(); SEARCH.value=''; panelQText=''; panelQ=''; render(); }
+    });
+  }
   var suppress=false;
   LIST.addEventListener('dragstart', function(e){ var it=e.target.closest('.tl-hitem'); if(!it) return; e.dataTransfer.setData('text/plain', it.dataset.id); e.dataTransfer.effectAllowed='copyMove'; suppress=true; });
   LIST.addEventListener('dragend', function(){ setTimeout(function(){ suppress=false; }, 60); });
@@ -10762,7 +10830,19 @@ function moTLDateMap(d){
     }
     var del=e.target.closest('.tl-hdel');
     if(del){ var it=del.closest('.tl-hitem'); if(!it) return; moTLRemove(it.dataset.id); showToast('已从时间线移除，卡片仍保留在灵感区', false); return; }
-    var row=e.target.closest('.tl-hitem'); if(row && findCard(row.dataset.id)) openEditor(row.dataset.id);
+    var row=e.target.closest('.tl-hitem');
+    if(row && findCard(row.dataset.id)){
+      selId=row.dataset.id;
+      [].forEach.call(LIST.querySelectorAll('.tl-hitem.on'), function(x){ x.classList.remove('on'); });
+      row.classList.add('on');
+      var okReveal=false;
+      if(window.__revealCard){ try{ okReveal=!!window.__revealCard(row.dataset.id); }catch(err){} }
+      if(!okReveal) showToast('灵感区当前筛选里看不到这张卡，先清掉上方筛选再定位', false);
+    }
+  });
+  LIST.addEventListener('dblclick', function(e){
+    if(e.target.closest('button')) return;
+    var it=e.target.closest('.tl-hitem'); if(it) openEditor(it.dataset.id);
   });
   function dropHandle(e){
     e.preventDefault(); BAR.classList.remove('tl-hover');
