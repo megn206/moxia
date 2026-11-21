@@ -3155,6 +3155,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <b>⏳ 横向时间线</b>
       <span class="lnk" id="tlp-strip-track"></span>
       <span id="tlp-strip-count"></span>
+      <button class="tlp-expbtn" id="tlp-strip-restore" title="把忽略格里的卡全部放回原轨道" hidden>↩ 全部恢复</button>
       <div class="tlp-strip-cats" id="tlp-strip-cats"></div>
       <select class="btn ghost tlp-laysel" id="tlp-layout" title="卡片排列方式" aria-label="卡片排列方式"><option value="row">排列：横排一行</option><option value="grid">排列：网格多行</option><option value="col">排列：纵列到底</option></select>
       <span style="margin-left:auto">拖卡片到空隙可插入排序 · ✕ 移出 · 双击编辑 · 点日期改日期 · Shift 多选 · 🖱 滚轮移动</span>
@@ -5365,6 +5366,18 @@ function hideToast(){
 }
 $('#toast-act').addEventListener('click', function(){ hideToast(); });
 
+/* v148：搜索文本缓存。卡片 2000+ 时每次按键都重新拼接并小写整段正文很费，
+   按 id + updatedAt 缓存，编辑后自动失效 */
+var _searchCache = new Map();
+function searchTextOf(c){
+  var key = c.id || '';
+  var stamp = (Number(c.updatedAt)||0) + '|' + (c.title||'').length + '|' + (c.content||'').length + '|' + ((c.tags||[]).length);
+  var hit = _searchCache.get(key);
+  if (hit && hit.stamp === stamp) return hit.t;
+  var t = ((c.title||'')+' '+(c.content||'')+' '+(c.tags||[]).join(' ')).toLowerCase();
+  _searchCache.set(key, { stamp: stamp, t: t });
+  return t;
+}
 /* ---------- 筛选 ---------- */
 function visible(){
   var q = filter.q.trim().toLowerCase();
@@ -5384,7 +5397,7 @@ function visible(){
       else if (filter.time==='year'){ var y=new Date(); y.setMonth(0,1); y.setHours(0,0,0,0); if (ct < y.getTime()) return false; }
     }
     if (q){
-      var t = ((c.title||'')+' '+(c.content||'')+' '+(c.tags||[]).join(' ')).toLowerCase();
+      var t = searchTextOf(c);
       var ws = q.split(/\s+/).filter(function(x){ return x; });
       if (filter.mode==='exact'){
         /* 全对（精确）：所有关键词都必须命中 */
@@ -5733,8 +5746,48 @@ function updateStreakBadge(){
   if(el) el.textContent='🔥 文火 '+streak+' 天';
 }
 var _chunking = false;   // 分帧渲染进行中标志：期间不做增量渲染，避免与分帧写入冲突
-var _gridLimit = 40;     // v141：窄屏灵感墙首屏只渲染 40 张，避免一次铺满几千张卡
-window.__gridMore = function(){ _gridLimit += 40; render(true); };
+/* v148：灵感墙分批铺卡。桌面每批 120 张、窄屏 40 张，往下滚自动续，
+   不再一次性把几千张卡塞进 DOM；「加载更多」保留作手动兜底 */
+var _gridLimit = 0;      // 当前已铺开的张数，0=按屏宽取默认
+var _gridList = null;    // 上一次可见列表，追加时复用
+var _gridShown = 0;
+var _gridChunkUsed = 0;  // 上次使用的批大小；横竖屏切换后按新断点重排
+function gridChunkSize(){ return (window.matchMedia && matchMedia('(max-width:900px)').matches) ? 40 : 120; }
+function gridMoreHtml(n){ return '<button type="button" class="grid-more-btn" onclick="__gridMore()">加载更多 · 还有 ' + n + ' 张</button>'; }
+/* v148：统计条单独刷新——追加一批后「已展开」要跟着变，不能停在首屏数字 */
+function paintGridStats(){
+  var el = $('#stats'); if (!el) return;
+  var bc = cards.filter(function(x){ return bookOf(x)===curBookId() && x.scope!=='write' && x.scope!=='rel'; }).length;
+  var full = _gridList ? _gridList.length : bc;
+  el.innerHTML = '📚 '+bookName(curBookId())+' · 共 ' + bc + ' 张卡片'
+    + (full!==bc ? ' · 当前显示 ' + full + ' 张' : '')
+    + ((_gridList && full>_gridShown) ? ' · 已展开 ' + _gridShown + ' 张' : '')
+    + ' <u id="stats-open" style="cursor:pointer;text-decoration:underline">📊 统计</u>';
+}
+window.__gridMore = function(){
+  if (!_gridList){ try{ render(true); }catch(e){} return; }
+  var from = _gridShown, to = Math.min(_gridList.length, from + gridChunkSize());
+  if (to <= from) return;
+  var more = grid.querySelector('.grid-more-btn'); if (more) more.parentNode.removeChild(more);
+  var html = '';
+  for (var i=from;i<to;i++) html += cardHtml(_gridList[i], i);
+  grid.insertAdjacentHTML('beforeend', html);
+  _gridShown = to; _gridLimit = to;
+  if (to < _gridList.length) grid.insertAdjacentHTML('beforeend', gridMoreHtml(_gridList.length - to));
+  paintGridStats();
+};
+/* 桌面滚到底自动续一批（窄屏保留手动，避免手机越用越卡） */
+var _gridAutoT = 0;
+function gridAutoMore(){
+  if (window.matchMedia && matchMedia('(max-width:900px)').matches) return;
+  if (!_gridList || _gridShown >= _gridList.length) return;
+  var btn = grid.querySelector('.grid-more-btn'); if (!btn) return;
+  var r = btn.getBoundingClientRect();
+  if (r.top > window.innerHeight + 600) return;
+  var now = Date.now(); if (now - _gridAutoT < 160) return; _gridAutoT = now;
+  try{ window.__gridMore(); }catch(e){}
+}
+window.addEventListener('scroll', gridAutoMore, { passive:true });
 /* v145：窗口跨过 900px 断点时补一次重排，横竖屏切换后首屏限量与排列立刻生效 */
 var _mxNarrow = (window.matchMedia && matchMedia('(max-width:900px)').matches) ? 1 : 0;
 window.addEventListener('resize', function(){
@@ -5752,14 +5805,23 @@ function render(force, deltaId){
   var list = visible();
   /* v141 手机端：灵感墙只先渲染一屏量，其余点「加载更多」，避免几千张卡的 DOM 与重排 */
   var _fs = filterSig();
-  if (_fs !== _lastFilterSig){ _lastFilterSig = _fs; _gridLimit = 40; }
-  var _cap = (window.matchMedia && matchMedia('(max-width:900px)').matches) ? _gridLimit : 0;
-  var _more = 0;
-  if (_cap && list.length > _cap){ _more = list.length - _cap; list = list.slice(0, _cap); }
+  var _chunk = gridChunkSize();
+  if (_chunk !== _gridChunkUsed){ _gridChunkUsed = _chunk; _gridLimit = _chunk; }   // v148：跨 900px 断点后按新批大小重排
+  if (_fs !== _lastFilterSig){
+    var _fsFirst = !_lastFilterSig;
+    _lastFilterSig = _fs; _gridLimit = _chunk;
+    /* v148：筛选一变回到顶部，避免页面变短时停在底部立刻触发自动续批 */
+    if (!_fsFirst && !deltaId){ try{ if (window.scrollY > 0) window.scrollTo(0,0); }catch(e){} }
+  }
+  if (!_gridLimit) _gridLimit = _chunk;
+  _gridList = list;
+  var _fullLen = list.length;
+  if (list.length > _gridLimit) list = list.slice(0, _gridLimit);
+  _gridShown = list.length;
   _trackCache = null;   // 时间线轨道归属可能已变化，重读一次
   renderCats();
   renderTags();
-  grid.classList.toggle('many-cards', list.length>60);   // 卡片多时跳过逐张入场动画
+  grid.classList.toggle('many-cards', _fullLen>60);   // 卡片多时跳过逐张入场动画
   kbdClearFocus();
   var empty = $('#empty');
   if (list.length===0){
@@ -5794,17 +5856,17 @@ function render(force, deltaId){
       while (_i < list.length && n < 150){ s += cardHtml(list[_i], _i); _i++; n++; }
       grid.insertAdjacentHTML('beforeend', s);
       if (_i < list.length) requestAnimationFrame(chunkRender);
-      else _chunking = false;
+      else { _chunking = false; _gridShown = grid.querySelectorAll('.card').length;
+        if (_gridList && _gridList.length > _gridShown) grid.insertAdjacentHTML('beforeend', gridMoreHtml(_gridList.length - _gridShown));
+        paintGridStats(); }
     };
     requestAnimationFrame(chunkRender);
   } else {
     grid.innerHTML = list.map(function(c,i){ return cardHtml(c,i); }).join('');
   }
-  if (_more > 0) grid.insertAdjacentHTML('beforeend', '<button type="button" class="grid-more-btn" onclick="__gridMore()">加载更多 · 还有 ' + _more + ' 张</button>');
-  var bc = cards.filter(function(x){ return bookOf(x)===curBookId() && x.scope!=='write' && x.scope!=='rel'; }).length;
-  $('#stats').innerHTML = '📚 '+bookName(curBookId())+' · 共 ' + bc + ' 张卡片'
-    + (list.length!==bc ? ' · 当前显示 ' + list.length + ' 张' : '')
-    + ' <u id="stats-open" style="cursor:pointer;text-decoration:underline">📊 统计</u>';
+  _gridShown = grid.querySelectorAll('.card').length;
+  if (!_chunking && _gridList && _gridList.length > _gridShown) grid.insertAdjacentHTML('beforeend', gridMoreHtml(_gridList.length - _gridShown));
+  paintGridStats();
 }
 
 /* ================= 章节体系：章号/状态/分卷 + 目录树 + 导出成书 ================= */
@@ -6111,7 +6173,7 @@ $('#tag-bar').addEventListener('click', function(e){
 $('#search').addEventListener('input', function(){
   filter.q = this.value;
   clearTimeout($('#search')._db);
-  $('#search')._db=setTimeout(render,150);
+  $('#search')._db=setTimeout(render,200);
 });
 var stSel=document.getElementById('search-time');
 if(stSel){
@@ -10505,6 +10567,24 @@ function moTLRestore(id){
   return to;
 }
 window.moTLOmit=moTLOmit; window.moTLRestore=moTLRestore;
+/* v148：把「忽略」格里的卡一次性放回原轨道，只存一次盘 */
+function moTLRestoreAll(){
+  var d=moTLData(); var n=0; var omit=(d.orders.omit||[]).slice();
+  omit.forEach(function(id){
+    var to=(d.omitFrom&&d.omitFrom[id])||'main';
+    if(to==='all'||to==='omit') to='main';
+    if(!d.orders[to]) d.orders[to]=[];
+    d.orders[to].push(id); d.trackOf[id]=to;
+    if(d.omitFrom) delete d.omitFrom[id];
+    n++;
+  });
+  d.orders.omit=[];
+  moTLSave(d); window._trackCache=null;
+  if(window.__moTLRefresh) window.__moTLRefresh();
+  if(window.__moTLOpenFan) window.__moTLOpenFan();
+  return n;
+}
+window.moTLRestoreAll=moTLRestoreAll;
 function moTLSort(track){
   var d=moTLData();
   var tracks = (track&&track!=='all') ? [track] : MO_TRACKS.map(function(t){ return t.id; });
@@ -11041,7 +11121,6 @@ function moTLDateMap(d){
     tracks.forEach(function(t){
       (d.orders[t] || []).forEach(function(id){
         var c = findCard(id); if (!c) return;
-        if (tlpTag && (c.tags || []).indexOf(tlpTag) < 0) return;
         var k = c.category || '其他'; catCnt[k] = (catCnt[k] || 0) + 1; catTotal++;
         if (stripCat && c.category !== stripCat) return;
         rows.push({ id: id, trk: t });
@@ -11052,6 +11131,12 @@ function moTLDateMap(d){
     if (stTrack) stTrack.textContent = act === 'all' ? '全部轨道' : moTrackName(act);
     var stCount = document.getElementById('tlp-strip-count');
     if (stCount) stCount.textContent = rows.length + ' 张';
+    var rb = document.getElementById('tlp-strip-restore');
+    if (rb){
+      var omitN = (d.orders.omit||[]).length;
+      if (omitN && (act==='all' || act==='omit')){ rb.hidden=false; rb.textContent='↩ 全部恢复 '+omitN; }
+      else rb.hidden=true;
+    }
     STRIP.innerHTML = '';
     if (!rows.length){
       var e = document.createElement('div');
@@ -11099,6 +11184,13 @@ function moTLDateMap(d){
   }
 
   window.__tlStripNow=function(){ lastKey=''; try{ refresh(); }catch(e){} };
+  (function(){
+    var rb=document.getElementById('tlp-strip-restore'); if(!rb) return;
+    rb.addEventListener('click', function(){
+      var n = (window.moTLRestoreAll ? window.moTLRestoreAll() : 0);
+      if (n) showToast('已恢复 '+n+' 张到原轨道', false);
+    });
+  })();
   function refresh(){ renderFan(); renderStrip(); try { applySel(); } catch(e) {} try { if (typeof hideHover === 'function') hideHover(); } catch(e) {} }
 
   // ---- 拖拽 ----
@@ -11139,13 +11231,12 @@ function moTLDateMap(d){
     var act = (data().active || 'all');
     var track = act === 'all' ? (trackOf(ids[0]) || 'main') : act;
     var beforeId = null;
-    /* 落点序号要以"屏幕上看得见的卡"为准：标签/分类筛选下的可见列表才是空档序号的基准，
+    /* 落点序号要以"横条上看得见的卡"为准：分类筛选下的可见列表才是空档序号的基准，
        否则拖到第 N 个空档会按全部卡计算，插进正在被筛掉的卡中间，看起来像"排不了" */
     var visIds = [], visTrk = [];
     (act === 'all' ? MO_TRACKS : [{id: track}]).forEach(function(t){
       ((data().orders || {})[t.id] || []).forEach(function(x){
         var cc = findCard(x); if (!cc) return;
-        if (tlpTag && (cc.tags || []).indexOf(tlpTag) < 0) return;
         if (stripCat && (cc.category || '其他') !== stripCat) return;
         visIds.push(x); visTrk.push(t.id);
       });
