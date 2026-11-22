@@ -8540,7 +8540,7 @@ function openSyncModal(){
   $('#s-token').value = c ? (c.token||'') : '';
   var stat = c
     ? ('当前：云端同步 · ' + (bk==='cb' ? ('腾讯云开发 ' + c.env) : c.server) + (lastErr ? ' · ' + lastErr : ' · 正常'))
-    : '当前：本地模式（数据只存在这台设备上）';
+    : '当前：本地模式（数据只存在这台设备上）　ℹ 换设备同步：填与另一台设备相同的地址 / 房间名 / 口令，再点「保存并同步」拉取';
   if (c && isFileMode()) stat += '　ℹ 当前是本地文件模式：云端同步已支持直连，若个别浏览器拦截请改用线上版 https://megn206.github.io/moxia/';
   $('#s-stat').textContent = stat;
   var ow=$('#btn-open-web'); if (ow) ow.hidden = !isFileMode();
