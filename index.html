@@ -2779,6 +2779,8 @@ html[data-theme="gothic-gold"] .chip.active,html[data-theme="steampunk-brass"] .
 .tlp-fanempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;text-align:center;padding:0 20px}
 /* 下半：横向时间线 */
 #tlp-stripwrap{flex:0 0 auto!important;display:flex;flex-direction:column;max-height:min(34vh,320px);padding:6px 14px 14px;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--accent) 4%,transparent))}
+.tlp-striphead .tlp-strip-indep{font-size:11px;font-weight:400;color:var(--muted);opacity:.85;margin-left:2px;padding:1px 6px;border:1px solid var(--line);border-radius:8px}
+@media (max-width:720px){.tlp-striphead .tlp-strip-indep{display:none}}
 .tlp-striphead{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);padding:0 2px 8px;flex-wrap:wrap}
 .tlp-striphead b{color:var(--ink);font-size:13px}
 .tlp-striphead .lnk{border:1px dashed var(--line);border-radius:999px;padding:1px 9px;font-size:11px}
@@ -3168,7 +3170,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
   <!-- 下半：横向时间线 -->
   <div id="tlp-stripwrap">
     <div class="tlp-striphead">
-      <b>⏳ 横向时间线</b>
+      <b>⏳ 横向时间线</b><span class="tlp-strip-indep" title="这里显示的是完整时间线，上方牌堆的分类/标签/搜索只筛牌堆，不会动这条时间线">独立于上方筛选</span>
       <span class="lnk" id="tlp-strip-track"></span>
       <span id="tlp-strip-count"></span>
       <button class="tlp-expbtn" id="tlp-strip-restore" title="把忽略格里的卡全部放回原轨道" hidden>↩ 全部恢复</button>
@@ -11071,7 +11073,7 @@ function moTLDateMap(d){
   var stripCat = ''; // 横条分类筛选（空=全部）
   var tlpTag = '';   // 标签筛选（空=全部）
   var DRAG_ID = null;
-  var lastKey = '';
+  var lastKey = '', lastWallKey = null;
 
   function data(){ try { return moTLData(); } catch(e){ return { active:'all', trackOf:{}, orders:{main:[],sub:[],memo:[],omit:[]}, omitFrom:{} }; } }
   function trackOf(id){ var d = data(); return d.trackOf[id] || null; }
@@ -11148,12 +11150,12 @@ function moTLDateMap(d){
     if (!bar.__bound){
       bar.__bound = true;
       bar.addEventListener('click', function(e){
-        if (e.target.closest('#tlp-tag-clear')){ tlpTag = ''; page = 0; refresh(); return; }
+        if (e.target.closest('#tlp-tag-clear')){ tlpTag = ''; page = 0; fanOnlyRefresh(); return; }
         var b = e.target.closest('[data-ttag]'); if (!b) return;
         var t = b.getAttribute('data-ttag') || '';
         tlpTag = (tlpTag === t) ? '' : t;
         page = 0;
-        refresh();
+        fanOnlyRefresh();
       });
     }
   }
@@ -11179,6 +11181,11 @@ function moTLDateMap(d){
         renderStrip();
       });
     }
+  }
+  function fanOnlyRefresh(){
+    renderFan();
+    try { if (typeof renderLanes === 'function') renderLanes(); } catch(e){}
+    lastWallKey = (tlpTag || '') + '|' + (fanCat || '') + '|' + q + '|' + (showAll ? 1 : 0);
   }
   function renderFan(){
     tlpRenderCats();
@@ -11217,6 +11224,7 @@ function moTLDateMap(d){
   }
 
   function renderStrip(){
+    var _sl = STRIP.scrollLeft, _st = STRIP.scrollTop;
     var d = data();
     var act = d.active || 'all';
     var tracks = act === 'all' ? MO_TRACKS.map(function(t){ return t.id; }) : [act];
@@ -11285,6 +11293,7 @@ function moTLDateMap(d){
     end.dataset.end = '1';
     end.textContent = '＋ 放到最后';
     STRIP.appendChild(end);
+    STRIP.scrollLeft = _sl; STRIP.scrollTop = _st;
   }
 
   var _tlRaf=null;
@@ -11443,8 +11452,10 @@ function moTLDateMap(d){
       for (var i = 0; i < arr.length; i++){ sig = (sig * 31 + arr[i].charCodeAt(arr[i].length - 1) + i) % 1000000007; tot++; }
       sig = (sig * 31 + tot) % 1000000007;
     });
-    var key = (d.active || '') + '|' + cards.length + '|' + sig + '|' + tot + '|' + q + '|' + showAll;
-    if (key !== lastKey){ lastKey = key; refresh(); }
+    var key = (d.active || '') + '|' + cards.length + '|' + sig + '|' + tot;   // 只含时间线自身数据
+    var wkey = (tlpTag || '') + '|' + (fanCat || '') + '|' + q + '|' + (showAll ? 1 : 0);   // 上方牌堆筛选
+    if (key !== lastKey){ lastKey = key; lastWallKey = wkey; refresh(); }
+    else if (wkey !== lastWallKey){ lastWallKey = wkey; fanOnlyRefresh(); }
   }, 900);
 
   /* ===== 第一档功能：多选 / 批量 / 双击编辑 / 导出 ===== */
