@@ -3491,7 +3491,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
       <input type="text" id="tl-bar-search" placeholder="在时间线里搜标题 / 正文 / 标签…" autocomplete="off">
       <span id="tl-bar-qcount"></span>
     </div>
-    <span class="tl-bar-tip">拖入即加入 · 上下拖动排序 · ✕ 移出 · 单击定位，双击编辑</span>
+    <span class="tl-bar-tip">拖入即加入 · 上下拖动排序 · ✕ 移出 · <span class="tip-desk">单击定位，双击编辑</span><span class="tip-mob">单击预览，点「编辑卡片」进编辑</span></span>
   </div>
   <div class="tl-bar-body">
     <div class="tl-hline"></div>
@@ -3658,7 +3658,7 @@ html[data-theme="night"] .chip.active,html[data-theme="ink"] .chip.active,html[d
 <!-- 同步设置弹窗 -->
 <div class="overlay" id="sync-modal">
   <div class="modal">
-    <h3 class="serif">🔗 同步</h3>
+    <h3 class="serif" style="display:flex;align-items:center;gap:10px">🔗 同步<button type="button" id="btn-sync-x" title="关闭" style="margin-left:auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;line-height:1;cursor:pointer">×</button></h3>
     <div class="srv-line" id="srv-hint"></div>
     <div class="srv-line" id="srv-backend-line" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
       <span style="white-space:nowrap">后端类型：</span>
@@ -5891,6 +5891,10 @@ function render(force, deltaId){
 /* v149：时间线面板点条目时，把对应卡片铺出来并定位高亮（超出首批就按索引扩一批） */
 window.__revealCard = function(id){
   try{
+    /* 手机/窄屏：不做整墙扩批（几千张卡会把手机 DOM 撑爆），改为底部卡片预览 */
+    if (window.matchMedia && window.matchMedia('(max-width:900px)').matches && typeof window.__tlPreview==='function'){
+      return window.__tlPreview(id);
+    }
     var list = visible();
     var idx = -1;
     for (var i=0;i<list.length;i++){ if (list[i].id===id){ idx=i; break; } }
@@ -5902,7 +5906,18 @@ window.__revealCard = function(id){
       render(true);
       el = grid.querySelector(sel);
     }
-    if (!el) return false;
+    if (!el){
+      /* 分帧渲染时卡片要等几帧才出现，轮询到它再定位，别直接放弃 */
+      var tries = 0;
+      (function waitEl(){
+        var el2 = grid.querySelector(sel);
+        if (!el2){ if (tries++ < 60) return requestAnimationFrame(waitEl); return; }
+        el2.scrollIntoView({behavior:'smooth', block:'center'});
+        el2.classList.remove('link-target'); void el2.offsetWidth; el2.classList.add('link-target');
+        setTimeout(function(){ try{ el2.classList.remove('link-target'); }catch(e){} }, 1800);
+      })();
+      return true;
+    }
     el.scrollIntoView({behavior:'smooth', block:'center'});
     el.classList.remove('link-target'); void el.offsetWidth; el.classList.add('link-target');
     setTimeout(function(){ try{ el.classList.remove('link-target'); }catch(e){} }, 1800);
@@ -6518,6 +6533,7 @@ $('#f-tags').addEventListener('input', scheduleDraft);
     document.addEventListener('pointerup', up);
   });
 })();
+window.__openCardEditor = openEditor;   /* v150：供手机时间线预览抽屉调用 */
 $('#btn-new-empty').addEventListener('click', function(){ openEditor(null); });
 var overlayClicks = 0;
 $('#editor').addEventListener('click', function(e){
@@ -16762,6 +16778,66 @@ header{backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14
     });
   }
   if(document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded', wire);
+})();
+</script>
+<style id="mx-v150-mobile">
+/* v150 移动端：云阁单屏可滚 + 手机时间线预览抽屉 */
+@media (max-width:900px),(pointer:coarse){
+  #sync-modal{padding:10px}
+  #sync-modal .modal{max-height:calc(100dvh - 20px);width:100%;padding:16px 14px 20px;gap:10px}
+  #sync-modal .modal>h3{position:sticky;top:-16px;z-index:5;background:var(--card);padding:10px 0 8px;margin:-16px 0 0}
+  #sync-modal input[type=text]{font-size:13px;padding:9px 10px}
+  #sync-modal .sync-groups{gap:8px}
+  #sync-modal .sync-group{padding:8px}
+  #sync-modal .sync-group-btns .btn{padding:9px 12px}
+  #sync-modal .srv-line{gap:8px!important}
+}
+.tip-mob{display:none}
+@media (max-width:900px),(pointer:coarse){.tip-desk{display:none}.tip-mob{display:inline}}
+#tl-prev{position:fixed;inset:0;z-index:1400;background:rgba(0,0,0,.38);display:none;align-items:flex-end}
+#tl-prev.on{display:flex}
+#tl-prev .tl-prev-card{background:var(--card);width:100%;border-radius:18px 18px 0 0;padding:16px 16px calc(14px + env(safe-area-inset-bottom));max-height:76vh;display:flex;flex-direction:column;gap:10px;box-shadow:0 -10px 40px rgba(0,0,0,.22);animation:tlPrevUp .18s ease-out}
+@keyframes tlPrevUp{from{transform:translateY(24px);opacity:.85}to{transform:none;opacity:1}}
+#tl-prev .tl-prev-h{display:flex;align-items:center;gap:10px}
+#tl-prev .tl-prev-h b{font-size:17px;flex:1;line-height:1.45;word-break:break-word}
+#tl-prev .tl-prev-x{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;line-height:1;cursor:pointer;flex:none}
+#tl-prev .tl-prev-meta{font-size:12px;color:var(--accent);background:var(--hover);padding:3px 10px;border-radius:999px;align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tl-prev .tl-prev-body{font-size:14px;line-height:1.8;color:var(--tag-ink);overflow:auto;-webkit-overflow-scrolling:touch;white-space:pre-wrap;word-break:break-word;flex:1;min-height:60px}
+#tl-prev .tl-prev-acts{display:flex;gap:10px}
+#tl-prev .tl-prev-acts .btn{flex:1;padding:11px 0}
+</style>
+<script>
+(function(){
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var wrap=null, curId='';
+  function close(){ if(wrap) wrap.classList.remove('on'); }
+  window.__tlPreview=function(id){
+    var c = window.__findCard ? window.__findCard(id) : null;
+    if(!c) return false;
+    if(!wrap){
+      wrap=document.createElement('div'); wrap.id='tl-prev';
+      wrap.innerHTML='<div class="tl-prev-card"><div class="tl-prev-h"><b></b><button type="button" class="tl-prev-x">×</button></div><div class="tl-prev-meta"></div><div class="tl-prev-body"></div><div class="tl-prev-acts"><button type="button" class="btn ghost" data-act="close">关闭</button><button type="button" class="btn primary" data-act="edit">编辑卡片</button></div></div>';
+      document.body.appendChild(wrap);
+      wrap.addEventListener('click', function(e){
+        var t=e.target.closest ? e.target.closest('[data-act],.tl-prev-x') : null;
+        var act = t ? (t.dataset.act || (t.classList.contains('tl-prev-x')?'close':'')) : '';
+        if (act==='edit'){ var eid=curId; close(); var fn=window.__openCardEditor; if(eid && fn){ try{ fn(eid); }catch(err){} } return; }
+        if (act==='close'){ close(); return; }
+        if (e.target===wrap) close();
+      });
+    }
+    curId=id;
+    var d=String(c.date||'');
+    var meta=(d? d.slice(5):'未标日期')+(c.timeline? ' · '+c.timeline:'')+(c.category? ' · '+c.category:'');
+    wrap.querySelector('.tl-prev-h b').textContent = c.title || '（无标题）';
+    wrap.querySelector('.tl-prev-meta').textContent = meta;
+    var body=String(c.content||'').trim();
+    wrap.querySelector('.tl-prev-body').textContent = body ? body.slice(0,800) : '（这张卡没有正文）';
+    wrap.classList.add('on');
+    return true;
+  };
+  var sx=document.getElementById('btn-sync-x');
+  if(sx) sx.addEventListener('click', function(){ var m=document.getElementById('sync-modal'); if(m) m.classList.remove('show'); });
 })();
 </script>
 </body>
