@@ -10571,7 +10571,7 @@ function moTLSave(d, silent){
   if (silent) return;   // 自动初始化不算本机改动，避免反向覆盖云端已有时间线
   try{ localStorage.setItem('novel-idea-cards-v1-tl-dirty','1'); }catch(e){}
   try{ if (typeof scheduleSync==='function') scheduleSync(); }catch(e){}   // 有改动立即并入同步队列
-  try{ if (window.__tlStripNow) window.__tlStripNow(); }catch(e){}          // v145：本机改动立即刷新横条，不等 900ms 轮询
+  try{ if (window.__tlRefreshSoon) window.__tlRefreshSoon(); else if (window.__tlStripNow) window.__tlStripNow(); }catch(e){}   // v151：拖放等连续改动合并到下一帧，只重绘一次
 }
 function moTLSetActive(t){ var d=moTLData(); d.active=t; moTLSave(d); window._trackCache=null; if(window.__moTLRefresh) window.__moTLRefresh(); }
 function moTLMove(id, track, beforeId, after){
@@ -10799,7 +10799,15 @@ function moTLDateMap(d){
     if(qc) qc.textContent = panelQ ? ('匹配 '+total+' 张') : '';
   }
   window.__moTLPanelRender=render;
-  window.__moTLRefresh=function(){ if(window.__moTLPanelRender) window.__moTLPanelRender(); if(window.__moTLPageRender) window.__moTLPageRender(); };
+  var _moRaf=null;
+  function _moPaint(){
+    var inTL = document.body.classList.contains('mode-tl-body');
+    var bar = document.getElementById('tl-bar');
+    if (window.__moTLPanelRender && !inTL && bar && !bar.hidden) window.__moTLPanelRender();
+    if (window.__moTLPageRender && inTL) window.__moTLPageRender();
+  }
+  window.__moTLRefreshNow=function(){ if(_moRaf!=null){ cancelAnimationFrame(_moRaf); _moRaf=null; } _moPaint(); };
+  window.__moTLRefresh=function(){ if(_moRaf!=null) return; _moRaf=requestAnimationFrame(function(){ _moRaf=null; _moPaint(); }); };
   if(TRACK_EL){ TRACK_EL.addEventListener('click', function(e){ var b=e.target.closest('button[data-track]'); if(!b) return; moTLSetActive(b.dataset.track); }); }
   function show(v){ BAR.hidden=!v; if(v) render(); document.body.classList.toggle('tl-open', v); }
   if(BTN) BTN.addEventListener('click', function(){ show(BAR.hidden); });
@@ -10993,7 +11001,7 @@ function moTLDateMap(d){
   PAGE.addEventListener('dblclick', function(e){ var it=e.target.closest('.tlp-card, .tlp-pool-item'); if(it && findCard(it.dataset.id) && typeof openEditor==='function') openEditor(it.dataset.id); });
   var sortBtn=document.getElementById('tlp-sort'); if(sortBtn) sortBtn.addEventListener('click', function(){ moTLSort(moTLData().active); });
   var backBtn=document.getElementById('tlp-back'); if(backBtn) backBtn.addEventListener('click', function(){ if(window.__switchMode) window.__switchMode('idea'); });
-  window.__moTLOpen=function(){ render(); };
+  window.__moTLOpen=function(){ render(); if(window.__tlStripNow) window.__tlStripNow(); };
   /* v141 手机端性能：没有变化就不整页重建（原来每 2.5 秒无条件 render，滚动顿） */
   var __tlSig = '';
   function __tlSigCalc(){
@@ -11279,7 +11287,12 @@ function moTLDateMap(d){
     STRIP.appendChild(end);
   }
 
-  window.__tlStripNow=function(){ lastKey=''; try{ refresh(); }catch(e){} };
+  var _tlRaf=null;
+  function _tlPaint(){ if(!document.body.classList.contains('mode-tl-body')) return; try{ refresh(); }catch(e){} }
+  window.__tlRefreshSoon=function(){ if(_tlRaf!=null) return; _tlRaf=requestAnimationFrame(function(){ _tlRaf=null; _tlPaint(); }); };
+  window.__tlCancelRefresh=function(){ if(_tlRaf!=null){ cancelAnimationFrame(_tlRaf); _tlRaf=null; } };
+  window.__tlRefreshNow=function(){ window.__tlCancelRefresh(); lastKey=''; _tlPaint(); };
+  window.__tlStripNow=function(){ lastKey=''; _tlPaint(); };
   (function(){
     var rb=document.getElementById('tlp-strip-restore'); if(!rb) return;
     rb.addEventListener('click', function(){
@@ -11357,8 +11370,24 @@ function moTLDateMap(d){
       if (x === anchor) return;
       moTLMove(x, track, anchor, false);
     });
+    var singleId = ids.length === 1 ? ids[0] : null;
+    var movedEl = singleId ? STRIP.querySelector('.tlp-stripcard[data-id="' + singleId + '"]') : null;
     DRAG_ID = null; DRAG_IDS = [];
-    refresh();
+    if (movedEl && (gap || card)) {
+      if (window.__tlCancelRefresh) window.__tlCancelRefresh();
+      if (card && card !== movedEl) STRIP.insertBefore(movedEl, card);
+      else if (gap) STRIP.insertBefore(movedEl, gap);
+      movedEl.style.setProperty('--tc', moLaneColor(track));
+      var trkEl = movedEl.querySelector('.sc-trk'); if (trkEl) trkEl.textContent = moTrackName(track);
+      var gi = 0;
+      for (var ci = 0; ci < STRIP.children.length; ci++) {
+        var ch = STRIP.children[ci];
+        if (ch.classList && ch.classList.contains('tlp-stripgap')) ch.dataset.idx = String(gi++);
+      }
+      try { applySel(); } catch(e) {}
+    } else {
+      refresh();
+    }
     showToast(ids.length > 1
       ? ('已批量排入「' + moTrackName(track) + '」' + ids.length + ' 张')
       : ('已排入「' + moTrackName(track) + '」' + (beforeId ? '（插到该卡前）' : '（末尾）')), false);
@@ -11375,7 +11404,6 @@ function moTLDateMap(d){
     delete d.trackOf[id];
     try { moTLSave(d); } catch(e) {}
     window._trackCache = null;
-    refresh();
   }
   STRIP.addEventListener('click', function(e){
     var om = e.target.closest('.sc-omit');
@@ -11384,7 +11412,7 @@ function moTLDateMap(d){
       var oid = oc.dataset.id;
       if (om.dataset.restore){ var to1 = moTLRestore(oid); showToast('已恢复到「' + moTrackName(to1) + '」', false); }
       else { moTLOmit(oid); showToast('已省略，移入「忽略」格（卡片仍在灵感区）', false); }
-      SEL.delete(oid); applySel(); refresh();
+      SEL.delete(oid); applySel();
       return;
     }
     var b = e.target.closest('.sc-del');
